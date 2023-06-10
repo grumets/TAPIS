@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<title>Sensor Things API plus viewer</title>
+<script type="text/javascript" src="vis.min.js"></script>
+<style type="text/css">
+#mynetwork {
+	width: 600px;
+        height: 400px;
+        border: 1px solid lightgray;
+}
+</style>
+<link rel="stylesheet" href="vis.min.css">
+
+</head>
+<body>
+	<h2>Sensor Things API plus viewer</h2>
+    
+<button onclick="addSTA()"><img src="ogc.png" height="20" valign="middle"> Add a STA service</button><br>
+<button onclick="addTable()"><img src="table.png" height="20" valign="middle"> View Table</button><br>
+<button onclick="addEdge()">Connect nodes</button><br>
+<div id="clarification"></div>
+
+<div id="mynetwork"></div>
+
+<dialog id="DialogSTAURL">
+  <form>
+    <p>
+      <label>STA service URL:
+        <input type="text" id="DialogSTAURLInput" size="100"></input>
+      </label>
+    </p>
+    <div>
+      <button value="cancel" formmethod="dialog">Cancel</button>
+      <button value="default" onClick="GetSTAURL(event)">OK</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="DialogContext">
+  <form>
+    <p>
+	<button onclick="addSTA(event, 'DialogContext')"><img src="ogc.png" height="20" valign="middle"> Add a STA service</button><br>
+	<button onclick="addTable(event, 'DialogContext')"><img src="table.png" height="20" valign="middle"> View Table</button><br>
+    </p>
+    <div>
+      <button value="cancel" onClick="startingNodeContext=null;" formmethod="dialog">Cancel</button>
+    </div>
+  </form>
+</dialog>
+
+
+<dialog id="DialogOK">
+  <form>
+    <span id="DialogOKHTML">
+    </span>
+    <div>
+      <button value="cancel" formmethod="dialog">OK</button>
+    </div>
+  </form>
+</dialog>
+
+<h2 id="eventSpanHeading"></h2>
+<pre id="eventSpanContent"></pre>
+
+<script type="text/javascript">
+
+"use strict"
+var currentNode=null, connectionInProcess=false, startingNodeContext=null;
+
+	async function LoadJSONData(node) {
+		const response = await fetch(node.STAURL);
+		const jsonData = await response.json();
+		node.data=(jsonData.value) ? jsonData.value : jsonData;
+		nodes.update(node);
+	}
+
+	function GetSTAURL(event)
+	{
+  		event.preventDefault(); // We don't want to submit this form
+  		currentNode.STAURL=document.getElementById("DialogSTAURLInput").value; // Have to send the select box value here.
+		nodes.update(currentNode);    //https://visjs.github.io/vis-data/data/dataset.html#Data_Manipulation
+		document.getElementById("DialogSTAURL").close(currentNode.STAURL);
+		LoadJSONData(currentNode);
+	};
+
+	// create an array with nodes	
+	var nodes = new vis.DataSet([]);
+
+	// create an array with edges	
+	var edges = new vis.DataSet([]);
+
+	// create a network
+	var container = document.getElementById("mynetwork");
+	var data = {
+		nodes: nodes,
+		edges: edges,
+	};
+
+	var network = new vis.Network(container, data, { interaction: { hover: true },	
+				manipulation: {  //https://stackoverflow.com/questions/39701703/add-edge-dynamically-visjs
+					enabled: false,
+					addEdge: function (data, callback) {
+						console.log('add edge', data);
+						if (data.from == data.to) 
+							alert("Connection to the same node is not allowed");					
+              					else	
+							edges.add([{from: data.from, to: data.to}]);
+						connectionInProcess=false;
+						document.getElementById("clarification").innerHTML="";
+              				}
+          			}
+			});
+
+	network.on("click", function (params) {
+        	params.event = "[original event]";
+        	document.getElementById("eventSpanHeading").innerText = "Click event:";
+        	document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
+        	console.log("click event, getNodeAt returns: " + this.getNodeAt(params.pointer.DOM));
+		if (params.nodes && params.nodes.length && !connectionInProcess)
+		{	
+			currentNode=nodes.get(params.nodes[0])
+			if (currentNode.image=="ogc.png")
+			{
+				document.getElementById("DialogSTAURLInput").value=currentNode.STAURL;
+				document.getElementById("DialogSTAURL").showModal();
+			}
+			else if (currentNode.image=="table.png")
+			{
+				//Determino de quin node depèn.
+				var nodeids=network.getConnectedNodes(currentNode.id, "from");
+				if (nodeids && nodeids.length)
+				{	
+					if (nodes.get(nodeids[0]) && nodes.get(nodeids[0]).data)
+					{
+						var data=nodes.get(nodeids[0]).data;
+						var dataAttributes=[], s;
+						for (var i=0; i<data.length; i++)
+						{
+							var keys = Object.keys(data[i]);
+							for (var k=0; k<keys.length; k++)
+							{
+								for (var a=0; a<dataAttributes.length; a++)
+									if (dataAttributes[a]==keys[k])
+										break;
+								if (a==dataAttributes.length)
+									dataAttributes.push(keys[k]);
+							}
+						}
+						s="<table><tr>";
+						for (var a=0; a<dataAttributes.length; a++)
+							s+="<th>"+dataAttributes[a]+"</th>";
+						s+="</tr>";
+						for (var i=0; i<data.length; i++)
+						{
+							s+="<tr>";
+							for (var a=0; a<dataAttributes.length; a++)
+							{
+								s+="<td>"
+								if (typeof data[i][dataAttributes[a]]!== "undefined")
+									s+=JSON.stringify(data[i][dataAttributes[a]]);
+								s+="<td>"
+							}	
+							s+="</tr>"
+						}
+						s+="</table>";
+						document.getElementById("DialogOKHTML").innerHTML=s;
+					}
+					document.getElementById("DialogOK").showModal();
+				}
+			}
+		}
+	});
+	network.on("doubleClick", function (params) {
+		params.event = "[original event]";
+		document.getElementById("eventSpanHeading").innerText = "doubleClick event:";	
+		document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
+      	});
+	network.on("oncontext", function (params) {
+		params.event.preventDefault();  //https://stackoverflow.com/questions/38258940/open-an-extension-popup-html-list-on-right-click-of-node-contextmenu-in-visj
+		if (params.nodes && params.nodes.length)
+		{
+			startingNodeContext=params.nodes[0];
+			document.getElementById("DialogContext").showModal();
+		}
+		params.event = "[original event]";
+		document.getElementById("eventSpanHeading").innerText = "oncontext (right click) event:";
+		document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
+	});
+      	network.on("dragStart", function (params) {
+		// There's no point in displaying this event on screen, it gets immediately overwritten
+		params.event = "[original event]";
+		console.log("dragStart Event:", params);
+		console.log("dragStart event, getNodeAt returns: " + this.getNodeAt(params.pointer.DOM));
+	});
+	network.on("dragging", function (params) {
+		params.event = "[original event]";	
+		document.getElementById("eventSpanHeading").innerText = "dragging event:";
+		document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
+	});
+	network.on("dragEnd", function (params) {
+		params.event = "[original event]";
+		document.getElementById("eventSpanHeading").innerText = "dragEnd event:";
+		document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
+		console.log("dragEnd Event:", params);
+		console.log("dragEnd event, getNodeAt returns: " + this.getNodeAt(params.pointer.DOM));	
+	});
+	network.on("controlNodeDragging", function (params) {
+		params.event = "[original event]";
+		document.getElementById("eventSpanHeading").innerText = "control node dragging event:";
+		document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
+	});
+	network.on("controlNodeDragEnd", function (params) {
+		params.event = "[original event]";
+		document.getElementById("eventSpanHeading").innerText = "control node drag end event:";
+		document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
+		console.log("controlNodeDragEnd Event:", params);
+	});
+	network.on("zoom", function (params) {
+		document.getElementById("eventSpanHeading").innerText = "zoom event:";
+		document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
+	});
+	network.on("showPopup", function (params) {
+		document.getElementById("eventSpanHeading").innerText = "showPopup event: ";
+		document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
+	});
+	network.on("hidePopup", function () {
+		console.log("hidePopup Event");
+	});
+	network.on("select", function (params) {
+		console.log("select Event:", params);
+	});
+	network.on("selectNode", function (params) {
+		console.log("selectNode Event:", params);
+	});
+	network.on("selectEdge", function (params) {
+		console.log("selectEdge Event:", params);
+	});
+	network.on("deselectNode", function (params) {
+		console.log("deselectNode Event:", params);
+	});
+	network.on("deselectEdge", function (params) {
+		console.log("deselectEdge Event:", params);
+	});
+	network.on("hoverNode", function (params) {
+		console.log("hoverNode Event:", params);
+	});
+	network.on("hoverEdge", function (params) {
+		console.log("hoverEdge Event:", params);
+	});
+	network.on("blurNode", function (params) {
+		console.log("blurNode Event:", params);
+	});
+	network.on("blurEdge", function (params) {
+		console.log("blurEdge Event:", params);
+	});
+
+
+	function addSTA(event, dialog) 
+	{
+		if (event)
+			event.preventDefault(); // We don't want to submit this form
+		if (dialog)
+			document.getElementById(dialog).close();
+        	var newId = (Math.random() * 1e7).toString(32);
+        	nodes.add({ id: newId, label: "STAplus", image: "ogc.png", shape: "circularImage", STAURL: "https://cos4cloud.demo.secure-dimensions.de/staplus/v1.1"});
+		if (startingNodeContext)
+		{
+			edges.add([{from: startingNodeContext, to: newId}]);
+			startingNodeContext=null;
+		}
+		network.selectNodes([newId]);
+	}
+
+	function addTable(event, dialog) 
+	{
+		if (event)
+			event.preventDefault(); // We don't want to submit this form
+		if (dialog)
+			document.getElementById(dialog).close();
+        	var newId = (Math.random() * 1e7).toString(32);
+        	nodes.add({ id: newId, label: "Table", image: "table.png", shape: "circularImage"});
+		if (startingNodeContext)
+		{
+			edges.add([{from: startingNodeContext, to: newId}]);
+			startingNodeContext=null;
+		}
+		network.selectNodes([newId]);
+	}
+
+
+	function addEdge()
+	{
+		network.addEdgeMode();
+		connectionInProcess=true;
+		document.getElementById("clarification").innerHTML="Press the mouse botton on the starting node, and drag and drop the mouse on the end node.";
+	}
+
+</script>
+</body>
+</html>
