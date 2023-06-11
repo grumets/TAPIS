@@ -15,6 +15,10 @@ body {
 	font-family: Arial
 }
 
+td {
+	font-size: 0.5em
+}
+
 .center {
   margin: 0 auto;
   text-align: center;
@@ -26,9 +30,10 @@ body {
 <body>
 	<h2>Sensor Things API plus viewer</h2>
     
-<button onclick="addSTA()"><img src="ogc.png" height="20" valign="middle"> Add a STA service</button><br>
-<button onclick="addTable()"><img src="table.png" height="20" valign="middle"> View Table</button><br>
-<button onclick="addEdge()">Connect nodes</button><br>
+<button onclick='addCircularImage(null, null, "STAplus", "ogc.png");'><img src="ogc.png" height="20" valign="middle"> Add a STA service</button><br>
+<button onclick='addCircularImage(null, null, "observedProperties", "observedProperties.png");'><img src="observedProperties.png" height="20" valign="middle"> observedProperties</button><br>
+<button onclick='addCircularImage(null, null, "Table", "table.png");'><img src="table.png" height="20" valign="middle"> View Table</button><br>
+<button onclick="addEdge();">Connect two nodes</button><br>
 <div id="clarification"></div>
 
 <div id="mynetwork"></div>
@@ -50,8 +55,9 @@ body {
 <dialog id="DialogContext">
   <form>
     <p>
-	<button onclick="addSTA(event, 'DialogContext')"><img src="ogc.png" height="20" valign="middle"> Add a STA service</button><br>
-	<button onclick="addTable(event, 'DialogContext')"><img src="table.png" height="20" valign="middle"> View Table</button><br>
+	<button onclick='addCircularImage(event, "DialogContext" "STAplus", "ogc.png");'><img src="ogc.png" height="20" valign="middle"> Add a STA service</button><br>
+	<button onclick='addCircularImage(event, "DialogContext", "observedProperties", "observedProperties.png");'><img src="observedProperties.png" height="20" valign="middle"> observedProperties</button><br>
+	<button onclick='addCircularImage(event, "DialogContext", "Table", "table.png")'><img src="table.png" height="20" valign="middle"> View Table</button><br>
     </p>
     <div class="center">
       <button value="cancel" onClick="startingNodeContext=null;" formmethod="dialog">Cancel</button>
@@ -77,6 +83,9 @@ body {
 <script type="text/javascript">
 
 "use strict"
+
+window.onbeforeunload = function() { return "Your work will be lost."; }
+
 var currentNode=null, connectionInProcess=false, startingNodeContext=null;
 
 	async function LoadJSONData(node) {
@@ -129,7 +138,14 @@ var currentNode=null, connectionInProcess=false, startingNodeContext=null;
 			{
 				s+="<td>"
 				if (typeof data[i][dataAttributes[a]]!== "undefined")
-					s+=JSON.stringify(data[i][dataAttributes[a]]);
+				{
+					if ((dataAttributes[a]=="url" || dataAttributes[a]=="definition" ||
+						dataAttributes[a].endsWith("@iot.selfLink") || 
+						dataAttributes[a].endsWith("@iot.navigationLink")) && data[i][dataAttributes[a]].length)
+						s+="<a href='"+data[i][dataAttributes[a]]+"' target='_blank'>"+data[i][dataAttributes[a]]+"</a>";
+					else
+						s+=JSON.stringify(data[i][dataAttributes[a]]);
+				}
 				s+="</td>"
 			}	
 			s+="</tr>"
@@ -158,8 +174,18 @@ var currentNode=null, connectionInProcess=false, startingNodeContext=null;
 						console.log('add edge', data);
 						if (data.from == data.to) 
 							alert("Connection to the same node is not allowed");					
-              					else	
+              					else
+						{	
 							edges.add([{from: data.from, to: data.to}]);
+							var nodeTo=nodes.get(data.to);
+							var nodeFrom=nodes.get(data.from);
+							if (nodeFrom.image=="ogc.png" && nodeTo.image=="observedProperties.png")
+							{
+								var startingNode=nodes.get(startingNodeContext);
+								nodeTo.STAURL=nodeFrom.STAURL+"/ObservedProperties";
+								LoadJSONData(nodeTo);
+							}
+						}
 						connectionInProcess=false;
 						document.getElementById("clarification").innerHTML="";
               				}
@@ -280,38 +306,35 @@ var currentNode=null, connectionInProcess=false, startingNodeContext=null;
 	});
 
 
-	function addSTA(event, dialog) 
+	function addCircularImage(event, dialog, label, image) 
 	{
 		if (event)
 			event.preventDefault(); // We don't want to submit this form
 		if (dialog)
 			document.getElementById(dialog).close();
         	var newId = (Math.random() * 1e7).toString(32);
-        	nodes.add({ id: newId, label: "STAplus", image: "ogc.png", shape: "circularImage", STAURL: "https://cos4cloud.demo.secure-dimensions.de/staplus/v1.1"});
+		var node={ id: newId, label: label, image: image, shape: "circularImage"};
+		if (image=="ogc.png")
+			node.STAURL="https://cos4cloud.demo.secure-dimensions.de/staplus/v1.1";
+		else if (startingNodeContext && image=="observedProperties.png")
+		{
+			var startingNode=nodes.get(startingNodeContext);
+			node.STAURL=startingNode.STAURL+"/ObservedProperties";
+		}
+        	nodes.add(node);
+
+		if (image=="ogc.png")
+			LoadJSONData(node);
+		
 		if (startingNodeContext)
 		{
 			edges.add([{from: startingNodeContext, to: newId}]);
+			if (image=="observedProperties.png")
+				LoadJSONData(node);
 			startingNodeContext=null;
 		}
 		network.selectNodes([newId]);
 	}
-
-	function addTable(event, dialog) 
-	{
-		if (event)
-			event.preventDefault(); // We don't want to submit this form
-		if (dialog)
-			document.getElementById(dialog).close();
-        	var newId = (Math.random() * 1e7).toString(32);
-        	nodes.add({ id: newId, label: "Table", image: "table.png", shape: "circularImage"});
-		if (startingNodeContext)
-		{
-			edges.add([{from: startingNodeContext, to: newId}]);
-			startingNodeContext=null;
-		}
-		network.selectNodes([newId]);
-	}
-
 
 	function addEdge()
 	{
