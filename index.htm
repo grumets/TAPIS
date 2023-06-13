@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 
-<title>Sensor Things API plus viewer</title>
+<title>Sensor Things API plus Explorer</title>
 <script type="text/javascript" src="vis.min.js"></script>
 <style type="text/css">
 #mynetwork {
@@ -26,14 +26,16 @@ td {
 </style>
 <link rel="stylesheet" href="vis.min.css">
 
+
 </head>
-<body>
-	<h2>Sensor Things API plus viewer</h2>
+<body onLoad="StartSTAPage();">
+	<h2>Sensor Things API plus Explorer</h2>
     
 <button onclick='addCircularImage(null, null, "STAplus", "ogc.png");'><img src="ogc.png" height="20" valign="middle"> Add a STA service</button><br>
-<button onclick='addCircularImage(null, null, "observedProperties", "observedProperties.png");'><img src="observedProperties.png" height="20" valign="middle"> observedProperties</button><br>
+<span id="ButtonsSTAObjects"></span>
 <button onclick='addCircularImage(null, null, "Table", "table.png");'><img src="table.png" height="20" valign="middle"> View Table</button><br>
 <button onclick="addEdge();">Connect two nodes</button><br>
+
 <div id="clarification"></div>
 
 <div id="mynetwork"></div>
@@ -56,8 +58,9 @@ td {
   <form>
     <p>
 	<button onclick='addCircularImage(event, "DialogContext" "STAplus", "ogc.png");'><img src="ogc.png" height="20" valign="middle"> Add a STA service</button><br>
-	<button onclick='addCircularImage(event, "DialogContext", "observedProperties", "observedProperties.png");'><img src="observedProperties.png" height="20" valign="middle"> observedProperties</button><br>
+	<span id="ButtonsContextSTAObjects"></span>
 	<button onclick='addCircularImage(event, "DialogContext", "Table", "table.png")'><img src="table.png" height="20" valign="middle"> View Table</button><br>
+        <button onclick='removeCircularImage(event, "DialogContext")'>Remove</button><br>
     </p>
     <div class="center">
       <button value="cancel" onClick="startingNodeContext=null;" formmethod="dialog">Cancel</button>
@@ -87,87 +90,181 @@ td {
 window.onbeforeunload = function() { return "Your work will be lost."; }
 
 var currentNode=null, connectionInProcess=false, startingNodeContext=null;
+const STAObjects=["ObservedProperties", "Sensors", "Observations", "FeaturesOfInterest", "Things", "Locations", "HistoricalLocations", "Projects", "Licenses", "Parties", "Groups", "Relations", "Datastreams", "MultiDatastreams"];
 
-	async function LoadJSONData(node) {
-		const response = await fetch(node.STAURL);
-		const jsonData = await response.json();
-		node.data=(jsonData.value) ? jsonData.value : jsonData;
-		nodes.update(node);
+function StartSTAPage()
+{
+var s="";
+	for (var i=0; i<STAObjects.length; i++)
+		s+="<button onclick='addCircularImage(null, null, \"" + STAObjects[i] + "\", \"" + STAObjects[i] + ".png\");'><img src='" + STAObjects[i] + ".png' height='20' valign='middle'> " + STAObjects[i] + "</button> ";
+	document.getElementById("ButtonsSTAObjects").innerHTML=s+"<br>";
+
+	s=""
+	for (var i=0; i<STAObjects.length; i++)
+		s+="<button onclick='addCircularImage(event, \"DialogContext\", \"" + STAObjects[i] + "\", \"" + STAObjects[i] + ".png\");'><img src='" + STAObjects[i] + ".png' height='20' valign='middle'> " + STAObjects[i] + "</button><br>";
+
+	document.getElementById("ButtonsContextSTAObjects").innerHTML=s;
+}
+
+//https://web.dev/fetch-api-error-handling/
+async function LoadJSONData(node) {
+var response, jsonData;
+	try {
+		response = await fetch(node.STAURL);
+	} 
+	catch (error) {
+		document.getElementById("clarification").innerHTML='Error getting ' + node.STAURL + ": " + error.message;
+		console.log('There was an error', error);
+		node.data=null;
+		networkNodes.update(node);
+		return;
 	}
-
-	function GetSTAURL(event)
-	{
-  		event.preventDefault(); // We don't want to submit this form
-  		currentNode.STAURL=document.getElementById("DialogSTAURLInput").value; // Have to send the select box value here.
-		nodes.update(currentNode);    //https://visjs.github.io/vis-data/data/dataset.html#Data_Manipulation
-		document.getElementById("DialogSTAURL").close(currentNode.STAURL);
-		LoadJSONData(currentNode);
+	// Uses the 'optional chaining' operator
+	if (!(response?.ok)){
+		document.getElementById("clarification").innerHTML="HTTP Response Code: " + response?.status + " reading <small>" + node.STAURL + "</small>: " + response?.statusText;
+		console.log("HTTP Response Code: " + response?.status + ": " + response?.statusText);
+		node.data=null;
+		networkNodes.update(node);
+		return;
 	}
-
-	function ShowTableDialogOK(nodeId)
-	{
-		var data=nodes.get(nodeId).data;
-		var dataAttributes=[], s;
-		var rowNumbers=document.getElementById("ShowTableRowNumberDialogOK").checked ? true : false
-		for (var i=0; i<data.length; i++)
+	try {
+		jsonData = await response.json();
+	} catch (error) {
+		if (error instanceof SyntaxError) 
 		{
-			var keys = Object.keys(data[i]);
-			for (var k=0; k<keys.length; k++)
+    			document.getElementById("clarification").innerHTML='Syntax error reading ' + node.STAURL+ ": " + error.message;
+    			console.log('There was a SyntaxError', error);
+			node.data=null;
+			networkNodes.update(node);
+			return;
+  		} 
+		else 
+		{
+    			document.getElementById("clarification").innerHTML='Error interpreting ' + node.STAURL+ ": " + error.message;
+    			console.log('There was an error', error);
+			node.data=null;
+			networkNodes.update(node);
+			return;
+  		}
+	}
+	node.data=(jsonData.value) ? jsonData.value : jsonData;
+	networkNodes.update(node);
+}
+
+function GetSTAURL(event)
+{
+	event.preventDefault(); // We don't want to submit this form
+	document.getElementById("DialogSTAURL").close(currentNode.STAURL);
+
+	if (currentNode.STAURL==document.getElementById("DialogSTAURLInput").value)
+		return;
+
+	currentNode.STAURL=document.getElementById("DialogSTAURLInput").value; // Have to send the select box value here.
+	if (currentNode.STAURL.charAt(currentNode.STAURL.length - 1)=='/')
+		currentNode.STAURL.slice(0, -1);  //remove last character
+	networkNodes.update(currentNode);    //https://visjs.github.io/vis-data/data/dataset.html#Data_Manipulation
+	LoadJSONData(currentNode);
+	
+	//if childen nodes have also STAURL
+	UpdateChildenSTAURL(currentNode);
+}
+
+function IdOfSTAObject(node)
+{
+	for (var i=0; i<STAObjects.length; i++)
+	{
+		if (node.image==STAObjects[i]+".png")
+			return i;
+	}
+	return -1;
+}
+
+function UpdateChildenSTAURL(parentNode)
+{
+	var nodeIds=network.getConnectedNodes(parentNode.id, 'to');
+	for (var i=0; i<nodeIds.length; i++)
+	{
+		var node=networkNodes.get(nodeIds[i])
+		if (node.STAURL)
+		{
+			if (IdOfSTAObject(node)!=-1)
 			{
-				for (var a=0; a<dataAttributes.length; a++)
-				{
-					if (dataAttributes[a]==keys[k])
-						break;
-				}
-				if (a==dataAttributes.length)
-					dataAttributes.push(keys[k]);
+				node.STAURL=currentNode.STAURL+"/"+STAObjects[IdOfSTAObject(node)];
+				LoadJSONData(node);
 			}
 		}
-		s="<table><tr>";
-		if (rowNumbers)
-			s+="<th></th>";
-		for (var a=0; a<dataAttributes.length; a++)
-			s+="<th>"+dataAttributes[a]+"</th>";
-		s+="</tr>";
-		for (var i=0; i<data.length; i++)
+		UpdateChildenSTAURL(node);
+	}
+}
+
+function ShowTableDialogOK(nodeId)
+{
+	var data=networkNodes.get(nodeId).data;
+	var dataAttributes=[], s;
+	var rowNumbers=document.getElementById("ShowTableRowNumberDialogOK").checked ? true : false
+
+	if (!data || !data.length)
+	{
+		document.getElementById("DialogOKHTML").innerHTML="No data to show.";
+		return;
+	}
+	for (var i=0; i<data.length; i++)
+	{
+		var keys = Object.keys(data[i]);
+		for (var k=0; k<keys.length; k++)
 		{
-			s+="<tr>";
-			if (rowNumbers)
-				s+="<td>"+(i+1)+"</td>";
 			for (var a=0; a<dataAttributes.length; a++)
 			{
-				s+="<td>"
-				if (typeof data[i][dataAttributes[a]]!== "undefined")
-				{
-					if ((dataAttributes[a]=="url" || dataAttributes[a]=="definition" ||
-						dataAttributes[a].endsWith("@iot.selfLink") || 
-						dataAttributes[a].endsWith("@iot.navigationLink")) && data[i][dataAttributes[a]].length)
-						s+="<a href='"+data[i][dataAttributes[a]]+"' target='_blank'>"+data[i][dataAttributes[a]]+"</a>";
-					else
-						s+=JSON.stringify(data[i][dataAttributes[a]]);
-				}
-				s+="</td>"
-			}	
-			s+="</tr>"
+				if (dataAttributes[a]==keys[k])
+					break;
+			}
+			if (a==dataAttributes.length)
+				dataAttributes.push(keys[k]);
 		}
-		s+="</table>";
-		document.getElementById("DialogOKHTML").innerHTML=s;
 	}
+	s="<table><tr>";
+	if (rowNumbers)
+		s+="<th></th>";
+	for (var a=0; a<dataAttributes.length; a++)
+		s+="<th>"+dataAttributes[a]+"</th>";
+	s+="</tr>";
+	for (var i=0; i<data.length; i++)
+	{
+		s+="<tr>";
+		if (rowNumbers)
+			s+="<td>"+(i+1)+"</td>";
+		for (var a=0; a<dataAttributes.length; a++)
+		{
+			s+="<td>"
+			if (typeof data[i][dataAttributes[a]]!== "undefined")
+			{
+				if ((dataAttributes[a]=="url" || dataAttributes[a]=="definition" ||
+					dataAttributes[a].endsWith("@iot.selfLink") || 
+					dataAttributes[a].endsWith("@iot.navigationLink")) && data[i][dataAttributes[a]].length)
+					s+="<a href='"+data[i][dataAttributes[a]]+"' target='_blank'>"+data[i][dataAttributes[a]]+"</a>";
+				else
+					s+=JSON.stringify(data[i][dataAttributes[a]]);
+			}
+			s+="</td>"
+		}	
+		s+="</tr>"
+	}
+	s+="</table>";
+	document.getElementById("DialogOKHTML").innerHTML=s;
+}
 
 	// create an array with nodes	
-	var nodes = new vis.DataSet([]);
+	var networkNodes = new vis.DataSet([]);
 
 	// create an array with edges	
-	var edges = new vis.DataSet([]);
+	var networkEdges = new vis.DataSet([]);
 
-	// create a network
-	var container = document.getElementById("mynetwork");
-	var data = {
-		nodes: nodes,
-		edges: edges,
-	};
-
-	var network = new vis.Network(container, data, { interaction: { hover: true },	
+	var network = new vis.Network(document.getElementById("mynetwork"), {
+				nodes: networkNodes,
+				edges: networkEdges
+			}, 
+			{
+				interaction: { hover: true },	
 				manipulation: {  //https://stackoverflow.com/questions/39701703/add-edge-dynamically-visjs
 					enabled: false,
 					addEdge: function (data, callback) {
@@ -176,13 +273,14 @@ var currentNode=null, connectionInProcess=false, startingNodeContext=null;
 							alert("Connection to the same node is not allowed");					
               					else
 						{	
-							edges.add([{from: data.from, to: data.to}]);
-							var nodeTo=nodes.get(data.to);
-							var nodeFrom=nodes.get(data.from);
-							if (nodeFrom.image=="ogc.png" && nodeTo.image=="observedProperties.png")
+							networkEdges.add([{from: data.from, to: data.to}]);
+							var nodeTo=networkNodes.get(data.to);
+							var nodeFrom=networkNodes.get(data.from);
+							if (nodeFrom.image=="ogc.png" && IdOfSTAObject(nodeTo)!=-1)
 							{
-								var startingNode=nodes.get(startingNodeContext);
-								nodeTo.STAURL=nodeFrom.STAURL+"/ObservedProperties";
+								var startingNode=networkNodes.get(startingNodeContext);
+								nodeTo.STAURL=nodeFrom.STAURL+"/"+STAObjects[IdOfSTAObject(nodeTo)];
+								networkNodes.update(nodeTo); 
 								LoadJSONData(nodeTo);
 							}
 						}
@@ -204,7 +302,7 @@ var currentNode=null, connectionInProcess=false, startingNodeContext=null;
 		document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
 		if (params.nodes && params.nodes.length && !connectionInProcess)
 		{	
-			currentNode=nodes.get(params.nodes[0])
+			currentNode=networkNodes.get(params.nodes[0])
 			if (currentNode.image=="ogc.png")
 			{
 				document.getElementById("DialogSTAURLInput").value=currentNode.STAURL;
@@ -216,9 +314,11 @@ var currentNode=null, connectionInProcess=false, startingNodeContext=null;
 				var nodeids=network.getConnectedNodes(currentNode.id, "from");
 				if (nodeids && nodeids.length)
 				{	
-					if (nodes.get(nodeids[0]) && nodes.get(nodeids[0]).data)
+					if (networkNodes.get(nodeids[0]))
 					{
-						document.getElementById("DialogOKOptions").innerHTML="<label><input type='checkbox' checked='checked' id='ShowTableRowNumberDialogOK' onChange='ShowTableDialogOK(\""+nodeids[0]+"\");'/> Show row numbers</label>";
+						var data=networkNodes.get(nodeids[0]).data;
+						if (data && data.length)
+							document.getElementById("DialogOKOptions").innerHTML="<label><input type='checkbox' checked='checked' id='ShowTableRowNumberDialogOK' onChange='ShowTableDialogOK(\""+nodeids[0]+"\");'/> Show row numbers</label>";
 						ShowTableDialogOK(nodeids[0]);
 					}
 					document.getElementById("DialogOK").showModal();
@@ -228,11 +328,13 @@ var currentNode=null, connectionInProcess=false, startingNodeContext=null;
       	});
 	network.on("oncontext", function (params) {
 		params.event.preventDefault();  //https://stackoverflow.com/questions/38258940/open-an-extension-popup-html-list-on-right-click-of-node-contextmenu-in-visj
-		if (params.nodes && params.nodes.length)
+		
+		var node=network.getNodeAt(params.pointer.DOM); //params.nodes is not useful here as params.nodes are the selected ones and not the ones rightclicked.
+		if (node)  
 		{
-			startingNodeContext=params.nodes[0];
+			startingNodeContext=node;
 			document.getElementById("DialogContext").showModal();
-		}
+		}		
 		params.event = "[original event]";
 		document.getElementById("eventSpanHeading").innerText = "oncontext (right click) event:";
 		document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);
@@ -306,43 +408,56 @@ var currentNode=null, connectionInProcess=false, startingNodeContext=null;
 	});
 
 
-	function addCircularImage(event, dialog, label, image) 
+function addCircularImage(event, dialog, label, image) 
+{
+	if (event)
+		event.preventDefault(); // We don't want to submit this form
+	if (dialog)
+		document.getElementById(dialog).close();
+        var newId = (Math.random() * 1e7).toString(32);
+	var node={ id: newId, label: label, image: image, shape: "circularImage"};
+	if (image=="ogc.png")
+		node.STAURL="https://cos4cloud.demo.secure-dimensions.de/staplus/v1.1";
+	else if (startingNodeContext && IdOfSTAObject(node)!=-1)
 	{
-		if (event)
-			event.preventDefault(); // We don't want to submit this form
-		if (dialog)
-			document.getElementById(dialog).close();
-        	var newId = (Math.random() * 1e7).toString(32);
-		var node={ id: newId, label: label, image: image, shape: "circularImage"};
-		if (image=="ogc.png")
-			node.STAURL="https://cos4cloud.demo.secure-dimensions.de/staplus/v1.1";
-		else if (startingNodeContext && image=="observedProperties.png")
-		{
-			var startingNode=nodes.get(startingNodeContext);
-			node.STAURL=startingNode.STAURL+"/ObservedProperties";
-		}
-        	nodes.add(node);
+		var startingNode=networkNodes.get(startingNodeContext);
+		node.STAURL=startingNode.STAURL+"/"+STAObjects[IdOfSTAObject(node)];
+	}
+        networkNodes.add(node);
 
-		if (image=="ogc.png")
+	if (image=="ogc.png")
+		LoadJSONData(node);
+	if (startingNodeContext)
+	{
+		networkEdges.add([{from: startingNodeContext, to: newId}]);
+		if (IdOfSTAObject(node)!=-1)
 			LoadJSONData(node);
-		
-		if (startingNodeContext)
-		{
-			edges.add([{from: startingNodeContext, to: newId}]);
-			if (image=="observedProperties.png")
-				LoadJSONData(node);
-			startingNodeContext=null;
-		}
-		network.selectNodes([newId]);
+		startingNodeContext=null;
 	}
+	network.selectNodes([newId]);
+}
 
-	function addEdge()
+function removeCircularImage(event, dialog) 
+{
+	if (event)
+		event.preventDefault(); // We don't want to submit this form
+	if (dialog)
+		document.getElementById(dialog).close();
+	if (startingNodeContext)
 	{
-		network.addEdgeMode();
-		connectionInProcess=true;
-		document.getElementById("clarification").innerHTML="Press the mouse botton on the starting node, and drag and drop the mouse on the end node.";
+		networkNodes.remove(startingNodeContext);
+		startingNodeContext=null;
 	}
+}
+
+function addEdge()
+{
+	network.addEdgeMode();
+	connectionInProcess=true;
+	document.getElementById("clarification").innerHTML="Press the mouse botton on the starting node, and drag and drop the mouse on the end node.";
+}
 
 </script>
+
 </body>
 </html>
