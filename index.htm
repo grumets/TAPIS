@@ -6,6 +6,8 @@
 	<title>TAPIS: Tables from APIs for Sensors (Sensor Things API plus Explorer)</title>
 	<script type="text/javascript" src="vis.min.js"></script>
 	<script type="text/javascript" src="papaparse.min.js"></script>
+	<script type="text/javascript" src="mmn_postmessage.js"></script>
+
 	<style type="text/css">
 		#mynetwork {
 			width: 600px;
@@ -163,8 +165,7 @@
 
 	<dialog id="DialogSaveLayer">
 		<form>
-			Save table as GeoJSON
-			<be>
+			<span id="DialogSaveLayerTitle"></span>
 			<fieldset>
     				<legend>Position:</legend>
 				<label>Place description:
@@ -183,18 +184,37 @@
 			<label>Date and time:
 				<span id="DialogSaveLayerTime"></span>
 			</label>
+			<fieldset>
+    				<legend>Variables:</legend>
+				<label>Name:
+					<span id="DialogSaveLayerVariable"></span>
+				</label>
+				<br>
+				<span id="DialogSaveLayerVariableDescriptionUoM">
+					<label>Description:
+						<span id="DialogSaveLayerVariableDescription"></span>
+					</label>
+					<br>
+					<label>Definition:
+						<span id="DialogSaveLayerVariableDefinition"></span>
+					</label>
+					<br>
+					<label>Units of measurement symbol:
+						<span id="DialogSaveLayerVariableUoM"></span>
+					</label>
+					<br>
+					<label>Units of measurement definition:
+						<span id="DialogSaveLayerVariableUoMDefinition"></span>
+					</label>
+					<br>	
+				</span>
+				<label>Value:
+					<span id="DialogSaveLayerValue"></span>
+				</label>
+			</fieldset>
 			<br>
-			<label>Variable name:
-				<span id="DialogSaveLayerVariable"></span>
-			</label>
-			<br>
-			<label>Value:
-				<span id="DialogSaveLayerValue"></span>
-			</label>
-			<br>
-			</span>
 			<div class="center">
-				<button value="default" onClick="SaveLayer(event)">Save</button>
+				<span id="DialogSaveLayerSave"></span>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
@@ -207,22 +227,26 @@
 
 		"use strict"
 
+		//var STAurl = "https://citiobs.demo.secure-dimensions.de/inaturalist/v1.1";
+		var STAurl="https://citiobs.demo.secure-dimensions.de/staplus/v1.1";
+		var MMNpath="../osm";
+
 		const STAEntities = {ObservedProperties: {singular: "ObservedProperty", entities: ["Datastreams", "MultiDatastreams"], properties: ["name", "definition", "description", "properties"]}, 
-				Sensors: {singular: "Sensor", entities: ["Datastreams", "MultiDatastreams"], properties: ["name", "description", "encodingType", "metadata", "properties"]}, 
-				Observations: {singular: "Observation", entities: ["Datastream", "MultiDatastream", "FeatureOfInterest", "Groups", "Subjects", "Objects"], properties: ["phenomenonTime", "resultTime", "result", "resultQuality", "validTime", "parameters"]}, 
+				Observations: {singular: "Observation", entities: ["Datastream", "MultiDatastream", "FeatureOfInterest", "ObservationGroups", "Subjects", "Objects"], properties: ["phenomenonTime", "resultTime", "result", "resultQuality", "validTime", "parameters"]}, 
       				FeaturesOfInterest: {singular: "FeatureOfInterest", entities: ["Observations"], properties: ["name", "description", "encodingType", "feature", "properties"]}, 
+				Sensors: {singular: "Sensor", entities: ["Datastreams", "MultiDatastreams"], properties: ["name", "description", "encodingType", "metadata", "properties"]}, 
 				Things: {singular: "Thing", entities: ["Datastreams", "MultiDatastreams", "Party", "Locations", "HistoricalLocations"], properties: ["name", "description", "properties"]},     
 				Locations: {singular: "Location", entities: ["Things", "HistoricalLocations"], properties: ["name", "description", "encodingType", "location", "properties"]}, 
 				HistoricalLocations: {singular: "HistoricalLocation", entities: ["Things", "Location"], properties: ["time"]}, 
-				Projects: {singular: "Project", entities: ["Datastreams", "MultiDatastreams", "Party", "License"], properties: ["name", "description", "classification", "termsOfUse", "privacyPolicy", "creationTime", "startTime", "endTime", "url", "properties"]}, 
-				Licenses: {singular: "License", entities: ["Datastreams", "MultiDatastreams", "Projects", "Groups"], properties: ["name", "description", "definition", "logo", "attributionText"]}, 
-				Parties: {singular: "Party", entities: ["Datastreams", "MultiDatastreams", "Projects", "Groups", "Things"], properties: ["description", "authId", "role", "displayName"]}, 
-				Groups: {singular: "Group", entities: ["Party", "Projects", "License", "Observations", "Relations"], properties: ["name", "description", "purpose", "creationTime", "endTime", "termsOfUsed", "privacyPolicy", "properties", "dataQuality"]}, 
-				Relations: {singular: "Relation", entities: ["Object", "Subject", "Groups"], properties: ["role", "description", "externalObject", "properties"]}, 
-				Datastreams: {singular: "Datastream", entities: ["Party", "Sensor", "ObservedProperty", "Projects", "License", "Observations", "Thing"], properties: ["name", "description", "unitOfMeasurement", "observationType", "observedArea", "phenomenonTime", "resultTime", "properties"]}, 
-				MultiDatastreams: {singular: "MultiDatastream", entities: ["Party", "Sensor", "ObservedProperties", "Projects", "License", "Observations", "Thing"], properties: ["name", "description", "unitOfMeasurements", "observationType", "observedArea", "phenomenonTime", "resultTime", "multiObservationDataTypes", "properties"]}};
+				Datastreams: {singular: "Datastream", entities: ["Party", "Sensor", "ObservedProperty", "Campaigns", "License", "Observations", "Thing"], properties: ["name", "description", "unitOfMeasurement", "observationType", "observedArea", "phenomenonTime", "resultTime", "properties"]}, 
+				MultiDatastreams: {singular: "MultiDatastream", entities: ["Party", "Sensor", "ObservedProperties", "Campaigns", "License", "Observations", "Thing"], properties: ["name", "description", "unitOfMeasurements", "observationType", "observedArea", "phenomenonTime", "resultTime", "multiObservationDataTypes", "properties"]},
+				Parties: {singular: "Party", entities: ["Datastreams", "MultiDatastreams", "Campaigns", "ObservationGroups", "Things"], properties: ["description", "authId", "role", "displayName"]}, 
+				Campaigns: {singular: "Campaign", entities: ["Datastreams", "MultiDatastreams", "Party", "License"], properties: ["name", "description", "classification", "termsOfUse", "privacyPolicy", "creationTime", "startTime", "endTime", "url", "properties"]}, 
+				Licenses: {singular: "License", entities: ["Datastreams", "MultiDatastreams", "Campaigns", "ObservationGroups"], properties: ["name", "description", "definition", "logo", "attributionText"]}, 
+				ObservationGroups: {singular: "ObservationGroup", entities: ["Party", "Campaigns", "License", "Observations", "Relations"], properties: ["name", "description", "purpose", "creationTime", "endTime", "termsOfUsed", "privacyPolicy", "properties", "dataQuality"]}, 
+				Relations: {singular: "Relation", entities: ["Object", "Subject", "ObservationGroups"], properties: ["role", "description", "externalObject", "properties"]}};
 		const STAEntitiesArray = Object.keys(STAEntities);
-		const STASpecialQueries = {ObsLayer: {description: "Observations Layer", query: "Observations?$orderby=phenomenonTime%20desc&$expand=Datastream($select=unitOfMeasurement),Datastream/ObservedProperty($select=name,%20definition),FeatureOfInterest($select=description,feature)&$select=phenomenonTime,result"}}
+		const STASpecialQueries = {ObsLayer: {description: "Observations Layer", query: "Observations?$orderby=phenomenonTime%20desc&$expand=Datastream($select=unitOfMeasurement),Datastream/ObservedProperty($select=name,description,definition),FeatureOfInterest($select=description,feature)&$select=phenomenonTime,result"}}
 		const STASpecialQueriesArray = Object.keys(STASpecialQueries);
 		const TableOperations = {Table: {description: "View Table"}, 
 					SelectColumns: {description: "Select Columns"},
@@ -230,7 +254,8 @@
 					SeparateColumns: {description: "Separate Columns"},
 					ViewQuery: {description: "View Query"},
 					SaveTable: {description: "Save Table"},
-					SaveLayer: {description: "Save Layer"}};
+					SaveLayer: {description: "Save Layer"},
+					OpenMap: {description: "Open Map"}};
 		const TableOperationsArray = Object.keys(TableOperations);
 
 
@@ -657,8 +682,151 @@
 			return geojson;
 		}
 
+		function GetGeoJSONSchema(data, selectedOptions) {
+			var dataSorted=JSON.parse(JSON.stringify(data)), 
+			atributs=[
+				{
+					"nom": "Place",
+					"descripcio": "Place name",
+					"mostrar": "si"
+				}
+			];
+
+			//Sorted by variable.
+			dataSorted.sort(function (a, b) {
+				if (a[selectedOptions.variable]<b[selectedOptions.variable])
+					return -1;
+				if (a[selectedOptions.variable]>b[selectedOptions.variable])
+					return 1;
+				return 0;});
+			var a, b;
+			for (var i = 0; i < dataSorted.length; i++) {
+				a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
+				if (i==0 || a[selectedOptions.variable]!=b[selectedOptions.variable])
+				{
+					//selectedOptions.variableDefinition
+					//selectedOptions.variableUoM
+					//selectedOptions.variableUoMDefinition
+					atributs.push({
+						"nom": a[selectedOptions.variable] + "_{time?f=ISO}",
+						"descripcio": a[selectedOptions.variableDescription],
+						"mostrar": "si",
+						"serieTemporal": {
+							"color": "#ff0000"
+						}
+					});
+				}
+			}
+			return atributs;
+		}
+
+		function GetGeoJSONStyles(data, selectedOptions) {
+			var dataSorted=JSON.parse(JSON.stringify(data)), estil=[];
+
+			//Sorted by variable.
+			dataSorted.sort(function (a, b) {
+				if (a[selectedOptions.variable]<b[selectedOptions.variable])
+					return -1;
+				if (a[selectedOptions.variable]>b[selectedOptions.variable])
+					return 1;
+				return 0;});
+			var a, b, maximum;
+			for (var i = 0, f=-1; i < dataSorted.length; i++) {
+				a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
+				if (i==0 || a[selectedOptions.variable]!=b[selectedOptions.variable])
+				{
+					if (f>=0)
+						estil[f].simbols[0].simbol[0].icona.r=maximum>0.001 ? 10/maximum: 1; 
+					f++;
+					maximum=a[selectedOptions.value];
+					estil[f]={
+						"nom": null,
+						"desc": a[selectedOptions.variableDescription],
+						"DescItems": a[selectedOptions.variableUoM],
+						"TipusObj": "P",
+						"ItemLleg": [
+							{
+								"color": "#ff0000",
+								"DescColor": a[selectedOptions.variableDescription]
+							}
+						],
+						"ncol": 1,
+						"simbols": [
+							{
+								"NomCampFEscala": a[selectedOptions.variable] + "_{time?f=ISO}",
+								"simbol": [
+									{
+										"icona": {
+											"type": "circle",
+											"r": 1
+										}
+									}
+								]
+							}
+						],
+						"formes": [{
+						"vora": {
+							"paleta": {
+								"colors": [
+									"#ff0000"
+								]
+							}
+						},
+						"interior": {
+							"paleta": {
+								"colors": [
+									"rgba(255,0,0,0.4)"
+								]
+							}
+						}}],
+						"fonts": {
+							"NomCampText": a[selectedOptions.variable] + "_{time?f=ISO}",
+							"aspecte": [
+								{
+									"font": {
+										"font": "12px Verdana",
+										"color": "#B50000",
+										"align": "center",
+										"i": 0,
+										"j": -5
+									}
+								}
+							]
+						}
+					};
+				}
+				else
+				{
+					if (maximum<a[selectedOptions.value])
+						maximum=a[selectedOptions.value];
+				}
+			}
+			if (f>=0)
+				estil[f].simbols[0].simbol[0].icona.r=maximum>0.001 ? 10/maximum: 1;
+			return estil;
+		}
+
+		function GetGeoJSONDates(data, selectedOptions) {
+			var dataSorted=JSON.parse(JSON.stringify(data)), datetimes=[];
+
+			//Sorted by date (older first).
+			dataSorted.sort(function (a, b) {
+				if (a[selectedOptions.time]<b[selectedOptions.time])
+					return -1;
+				if (a[selectedOptions.time]>b[selectedOptions.time])
+					return 1;
+				return 0;});
+			var a, b;
+			for (var i = 0; i < dataSorted.length; i++) {
+				a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
+				if (i==0 || a[selectedOptions.time]!=b[selectedOptions.time])
+					datetimes.push(a[selectedOptions.time]);
+			}
+			return datetimes;
+		} 
+
 		function ShowSaveTableDialog(nodeId) {
-			;
+			;   //Nothing to do
 		}
 
 		function PopulateSelectSaveLayerDialog(id, dataAttributes, selectedOption)
@@ -670,7 +838,7 @@
 			document.getElementById(id).innerHTML=s;
 		}
 
-		function ShowSaveLayerDialog(nodeId) {
+		function ShowSaveLayerDialogSelects(nodeId, descripUoM) {
 			var nodeids = network.getConnectedNodes(nodeId, "from");
 			if (nodeids && nodeids.length) {
 				var data = networkNodes.get(nodeids[0]).STAdata;
@@ -680,22 +848,50 @@
 				PopulateSelectSaveLayerDialog("DialogSaveLayerLatitude", dataAttributes, "FeatureOfInterest/feature/coordinates_1");
 				PopulateSelectSaveLayerDialog("DialogSaveLayerTime", dataAttributes, "PhenomenonTime");
 				PopulateSelectSaveLayerDialog("DialogSaveLayerVariable", dataAttributes, "Datastream/ObservedProperty/name");
+				if (descripUoM){
+					document.getElementById("DialogSaveLayerVariableDescriptionUoM").display="block";
+					PopulateSelectSaveLayerDialog("DialogSaveLayerVariableDescription", dataAttributes, "Datastream/ObservedProperty/description");
+					PopulateSelectSaveLayerDialog("DialogSaveLayerVariableDefinition", dataAttributes, "Datastream/ObservedProperty/definition");
+					PopulateSelectSaveLayerDialog("DialogSaveLayerVariableUoM", dataAttributes, "Datastream/unitOfMeasurement/symbol");
+					PopulateSelectSaveLayerDialog("DialogSaveLayerVariableUoMDefinition", dataAttributes, "Datastream/unitOfMeasurement/definition");
+				}
+				else
+					document.getElementById("DialogSaveLayerVariableDescriptionUoM").display="none";
+
 				PopulateSelectSaveLayerDialog("DialogSaveLayerValue", dataAttributes, "result");
 			}
 		}
 
-		function GetSelectedOptionsSaveLayer(){
+		function GetSelectedOptionsSaveLayer(descripUoM){
 			var selectedOptions={};
 			selectedOptions.place=document.getElementById("DialogSaveLayerPlaceSelect").value;
 			selectedOptions.longitude=document.getElementById("DialogSaveLayerLongitudeSelect").value;
 			selectedOptions.latitude=document.getElementById("DialogSaveLayerLatitudeSelect").value;
 			selectedOptions.time=document.getElementById("DialogSaveLayerTimeSelect").value;
 			selectedOptions.variable=document.getElementById("DialogSaveLayerVariableSelect").value;
+			if (descripUoM){
+				selectedOptions.variableDescription=document.getElementById("DialogSaveLayerVariableDescriptionSelect").value;
+				selectedOptions.variableDefinition=document.getElementById("DialogSaveLayerVariableDefinitionSelect").value;
+				selectedOptions.variableUoM=document.getElementById("DialogSaveLayerVariableUoMSelect").value;
+				selectedOptions.variableUoMDefinition=document.getElementById("DialogSaveLayerVariableUoMDefinitionSelect").value;
+			}
 			selectedOptions.value=document.getElementById("DialogSaveLayerValueSelect").value;
 			return selectedOptions;
 		}
 
-		function SaveTable() {
+		function ShowSaveLayerDialog(nodeId) {
+			ShowSaveLayerDialogSelects(nodeId, false);
+			document.getElementById("DialogSaveLayerTitle").innerHTML="Save table as GeoJSON";
+			document.getElementById("DialogSaveLayerSave").innerHTML="<button value=\"default\" onClick=\"SaveLayer(event)\">Save</button>";
+		}
+
+		function ShowOpenMapDialog(nodeId) {
+			ShowSaveLayerDialogSelects(nodeId, true);
+			document.getElementById("DialogSaveLayerTitle").innerHTML="Open in the Map Browser";
+			document.getElementById("DialogSaveLayerSave").innerHTML="<button value=\"default\" onClick=\"OpenMap(event)\">Open</button>";
+		}
+
+		function SaveTable(event) {
 			event.preventDefault(); // We don't want to submit this form
 			var delimiter=document.getElementById("DialogSaveTableDelimiter").value;
 			document.getElementById("DialogSaveTable").close();
@@ -707,15 +903,84 @@
 			}
 		}
 
-		function SaveLayer() {
+		function SaveLayer(event) {
 			event.preventDefault(); // We don't want to submit this form
-			var delimiter=document.getElementById("DialogSaveTableDelimiter").value;
 			document.getElementById("DialogSaveLayer").close();
 			var nodeids = network.getConnectedNodes(currentNode.id, "from");
 			if (nodeids && nodeids.length) {
 				if (networkNodes.get(nodeids[0]))
-					SaveLocalDataFile(JSON.stringify(GetGeoJSON(networkNodes.get(nodeids[0]).STAdata, GetSelectedOptionsSaveLayer())), "GeoJSON", ".geojson", "application/geo+json");   
+					SaveLocalDataFile(JSON.stringify(GetGeoJSON(networkNodes.get(nodeids[0]).STAdata, GetSelectedOptionsSaveLayer(false))), "GeoJSON", ".geojson", "application/geo+json");   
 			}
+		}
+
+		function OpenMap(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogSaveLayer").close();
+			var nodeids = network.getConnectedNodes(currentNode.id, "from");
+			if (nodeids && nodeids.length) {
+				if (networkNodes.get(nodeids[0]))
+				{
+					var selectedOptionsSaveLayer=GetSelectedOptionsSaveLayer(true);
+					OpenMapMMN(location.href.substring(0, location.href.lastIndexOf("/")) + "/"+ MMNpath + (MMNpath.indexOf('?')>0 ? "&" : "?") + "reset=1", GetGeoJSON(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONSchema(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONStyles(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONDates(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer));
+				}
+			}
+		}
+
+		var MiraMonMapBrowserVars={};
+
+		function DisplayMapMMN(){
+			MiraMonMapBrowserVars.mmn.postMessage("CommandMMNAddGeoJSONLayer('SensorThings API data', "+ JSON.stringify(MiraMonMapBrowserVars.geojson) + ", " + JSON.stringify(MiraMonMapBrowserVars.geojsonSchema) + ", " + JSON.stringify(MiraMonMapBrowserVars.geojsonStyle) + ", " + JSON.stringify(MiraMonMapBrowserVars.geojsonDates) + ")", GetCleanURLMiraMonMapBrowser(MiraMonMapBrowserVars.mmnURL));
+		}
+
+		function OpenMapMMN(url, geojson, geojsonSchema, geojsonStyle, geojsonDates){
+			MiraMonMapBrowserVars.geojson=geojson;
+			MiraMonMapBrowserVars.geojsonSchema=geojsonSchema;
+			MiraMonMapBrowserVars.geojsonStyle=geojsonStyle;
+			MiraMonMapBrowserVars.geojsonDates=geojsonDates;
+			if (MiraMonMapBrowserVars.mmn)
+				DisplayMapMMN();
+			else
+			{
+				window.addEventListener("message", ProcessMessageFromMiraMonMapBrowser);
+				MiraMonMapBrowserVars.mmnURL=url;
+				MiraMonMapBrowserVars.mmn=window.open(url, "_blank", "width=1000,height=800");
+			}
+		}
+
+		function ProcessMessageFromMiraMonMapBrowser(event)
+		{
+			if (!IsTrustedMiraMonMapBrowser(event, MiraMonMapBrowserVars.mmnURL))
+				return;
+
+			try
+			{
+				var data=JSON.parse(event.data);
+			}	
+			catch (e) 
+			{
+				document.getElementById("clarification").innerHTML="JSON message parse error: " + e + " The response was:\n" + event.data;
+				return;
+			}
+
+			if (data.msg === MMN_PM_IsListening)
+			{
+				document.getElementById("clarification").innerHTML="MiraMon Map Browser is open and ready to show layers.";
+				DisplayMapMMN();
+				return;
+			}
+
+			if (data.msg === MMN_PM_Closed)
+			{
+				document.getElementById("clarification").innerHTML="MiraMon Map Browser has been closed.";
+				MiraMonMapBrowserVars.mmn=null;
+				MiraMonMapBrowserVars.mmnURL=null;
+				return;
+			}
+			/*if (data.msg === MMN_PM_CurrentLocationText)
+			{
+				MiraMonMapBrowserVars.currentLocText=data.text;
+				return;
+			}*/
 		}
 
 		function ShowTableSelectColumnsDialog(nodeParentId,nodeId) {
@@ -971,6 +1236,10 @@
 					ShowSaveLayerDialog(currentNode.id);
 					document.getElementById("DialogSaveLayer").showModal();
 				}
+				else if (currentNode.image == "OpenMap.png") {
+					ShowOpenMapDialog(currentNode.id);
+					document.getElementById("DialogSaveLayer").showModal();
+				}
 				else if (currentNode.image == "SelectColumns.png") {
 					//Determining the parent node.
 					var nodeids = network.getConnectedNodes(currentNode.id, "from");
@@ -1092,8 +1361,7 @@
 
 			if (image == "ogc.png")
 			{
-				//node.STAURL = "https://citiobs.demo.secure-dimensions.de/inaturalist/v1.1";
-				node.STAURL = "https://citiobs.demo.secure-dimensions.de/staplus/v1.1";
+				node.STAURL = STAurl;
 				networkNodes.add(node);
 				LoadJSONData(node);
 			}
