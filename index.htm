@@ -93,9 +93,14 @@
 
 	<dialog id="DialogSelectExpands">
 		<form>
-			Select what do you want to expand:
-			<span id="DialogSelectExpandsHTML">
-			</span>
+			<fieldset id="DialogSelectExpandsHTML">
+				<legend>Select what do you want to expand:</legend>
+				<span id="DialogSelectExpandsCheckBoxes">
+				</span>
+			</fieldset>
+			<label>Number records to request:
+				<input type="text" id="SelectExpandsNumberOfRecords" size="6" maxlength="6" value="100"></input>
+			</label>
 			<div class="center">
 				<button value="default" onClick="GetSelectExpands(event)">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
@@ -142,7 +147,7 @@
 			<span id="DialogOKHTML">
 			</span>
 			<div class="center">
-				<button value="cancel" formmethod="dialog">OK</button>
+				<button value="cancel" formmethod="dialog">Close</button>
 			</div>
 		</form>
 	</dialog>
@@ -199,17 +204,20 @@
 						<span id="DialogSaveLayerVariableDefinition"></span>
 					</label>
 					<br>
-					<label>Units of measurement:
-						<span id="DialogSaveLayerVariableUoM"></span>
-					</label>
-					<br>
-					<label>Units of measurement symbol:
-						<span id="DialogSaveLayerVariableUoMSymbol"></span>
-					</label>
-					<br>
-					<label>Units of measurement definition:
-						<span id="DialogSaveLayerVariableUoMDefinition"></span>
-					</label>
+					<fieldset>
+    						<legend>Units of measurement:</legend>
+						<label>Name:
+							<span id="DialogSaveLayerVariableUoM"></span>
+						</label>
+						<br>
+						<label>Symbol:
+							<span id="DialogSaveLayerVariableUoMSymbol"></span>
+						</label>
+						<br>
+						<label>Definition:
+							<span id="DialogSaveLayerVariableUoMDefinition"></span>
+						</label>
+					<fieldset>
 					<br>	
 				</span>
 				<label>Value:
@@ -264,6 +272,12 @@
 
 		window.onbeforeunload = function () { return "Your work will be lost."; }
 
+		function AddKVPToURL(url, kvp){
+			if (url.indexOf('?')==-1)
+				return url + "?" + kvp;
+			return url + "&" + kvp;
+		}
+
 		var currentNode = null, connectionInProcess = false, startingNodeContextId = null;
 
 		function StartSTAPage() {
@@ -297,10 +311,18 @@
 		}
 
 		//https://web.dev/fetch-api-error-handling/
-		async function LoadJSONData(node) {
+		async function LoadJSONData(node, url) {
 			var response, jsonData;
 			try {
-				response = await fetch(node.STAURL);
+				var url_fetch;
+				if (url)
+					url_fetch=url;
+				else if (typeof node.STAExpectedLength==="undefined")
+					url_fetch=AddKVPToURL(node.STAURL);
+				else
+					url_fetch=AddKVPToURL(node.STAURL, "$top="+node.STAExpectedLength);
+					
+				response = await fetch(url_fetch);
 			}
 			catch (error) {
 				document.getElementById("clarification").innerHTML = 'Error getting ' + node.STAURL + ": " + error.message;
@@ -335,8 +357,17 @@
 					return;
 				}
 			}
-			node.STAdata = (jsonData.value) ? jsonData.value : [jsonData];
+			if (url && typeof node.STAExpectedLength)  //node.STAExpectedLength
+			{
+				node.STAdata = node.STAdata.concat(jsonData.value);
+				if (node.STAdata.length>node.STAExpectedLength)  //too much data. Trucating
+					node.STAdata.length=node.STAExpectedLength;	
+			}
+			else
+				node.STAdata = (typeof jsonData.value!=="undefined") ? jsonData.value : [jsonData];
 			networkNodes.update(node);
+			if (jsonData.value && node.STAExpectedLength && node.STAdata.length<node.STAExpectedLength && jsonData["@iot.nextLink"])
+				LoadJSONData(node, jsonData["@iot.nextLink"]);
 		}
 
 		var savedFile = null;
@@ -411,7 +442,7 @@
 			if (a < dataAttributes.length) //A checked attribute has been found ("for" breaks before ending).
 			{
 				var s;
-				currentNode.STAURL += "?$select="
+				currentNode.STAURL=AddKVPToURL(currentNode.STAURL, "$select=");
 				for (var a = 0; a < dataAttributes.length; a++) {
 					if (document.getElementById("SelectColumn_" + a).checked) {
 						if (dataAttributes[a].startsWith("@iot."))
@@ -424,7 +455,8 @@
 					else
 						currentNode.STASelectedColumns[a]=false;
 				}
-				currentNode.STAURL = currentNode.STAURL.slice(0, -1); //remove the last coma.	
+				currentNode.STAURL = currentNode.STAURL.slice(0, -1); //remove the last coma.
+				currentNode.STAExpectedLength = node.STAExpectedLength;
 				networkNodes.update(currentNode);
 				LoadJSONData(currentNode);
 				UpdateChildenSTAURL(currentNode);
@@ -444,34 +476,41 @@
 			var dataAttributes = getDataAttributes(currentNode.STAdata);
 			if (!currentNode.STASelectedExpands)
 				currentNode.STASelectedExpands={STAURLUnexpanded: currentNode.STAURL, dataAttributesUnexpanded: dataAttributes.slice(), selected: []};
+			else
+				currentNode.STAURL = currentNode.STASelectedExpands.STAURLUnexpanded;
 			
-			var dataAttr=currentNode.STASelectedExpands.dataAttributesUnexpanded;
-			for (var a = 0; a < dataAttr.length; a++) {
-				if (document.getElementById("SelectExpand_" + a) && document.getElementById("SelectExpand_" + a).checked)
-					break;
-			}
-			if (a < dataAttr.length) //A checked attribute has been found ("for" breaks before ending).
+			if (document.getElementById("DialogSelectExpandsHTML").style.display != "none")
 			{
-				var s;
-				currentNode.STAURL = currentNode.STASelectedExpands.STAURLUnexpanded + "?$expand="
+				var dataAttr=currentNode.STASelectedExpands.dataAttributesUnexpanded;
 				for (var a = 0; a < dataAttr.length; a++) {
-					if (document.getElementById("SelectExpand_" + a) && 
-						document.getElementById("SelectExpand_" + a).checked && 
-						dataAttr[a].endsWith("@iot.navigationLink")){
-						s = dataAttr[a].substring(0, dataAttr[a].length-"@iot.navigationLink".length);
-						currentNode.STAURL += s + ",";
-						currentNode.STASelectedExpands.selected[a]=true;
-					}
-					else
-						currentNode.STASelectedExpands.selected[a]=false;
+					if (document.getElementById("SelectExpand_" + a) && document.getElementById("SelectExpand_" + a).checked)
+						break;
 				}
-				currentNode.STAURL = currentNode.STAURL.slice(0, -1); //remove the last coma.	
-				networkNodes.update(currentNode);
-				LoadJSONData(currentNode);
-				UpdateChildenSTAURL(currentNode);
+				if (a < dataAttr.length) //A checked attribute has been found ("for" breaks before ending).
+				{
+					var s;
+					currentNode.STAURL = AddKVPToURL(currentNode.STAURL, "$expand=");
+					for (var a = 0; a < dataAttr.length; a++) {
+						if (document.getElementById("SelectExpand_" + a) && 
+							document.getElementById("SelectExpand_" + a).checked && 
+							dataAttr[a].endsWith("@iot.navigationLink")){
+							s = dataAttr[a].substring(0, dataAttr[a].length-"@iot.navigationLink".length);
+							currentNode.STAURL += s + ",";
+							currentNode.STASelectedExpands.selected[a]=true;
+						}
+						else
+							currentNode.STASelectedExpands.selected[a]=false;
+					}
+					currentNode.STAURL = currentNode.STAURL.slice(0, -1); //remove the last coma.
+				}
+				/*else   //If no selected collumn has been found, no expand is needed and the previous request is fine
+					;*/
 			}
-			/*else   //If no selected collumn has been found, no expand is needed and the previous request is fine
-				;*/
+			if (!isNaN(parseInt(document.getElementById("SelectExpandsNumberOfRecords").value)))
+				currentNode.STAExpectedLength = parseInt(document.getElementById("SelectExpandsNumberOfRecords").value);
+			networkNodes.update(currentNode);
+			LoadJSONData(currentNode);
+			UpdateChildenSTAURL(currentNode);
 		}
 
 		function isNumeric(str) {
@@ -492,6 +531,8 @@
 				if (node.STAdata)
 					currentNode.STAdata = node.STAdata;
 			}
+			else
+				return;
 
 			if (document.getElementById("DialogSelectRowsTableRadio").checked) {
 				var elems = document.getElementsByName("SelectRowRadio");
@@ -511,6 +552,7 @@
 			else {
 				alert("TBD");
 			}
+			currentNode.STAExpectedLength = node.STAExpectedLength;
 			networkNodes.update(currentNode);
 			LoadJSONData(currentNode);
 			UpdateChildenSTAURL(currentNode);
@@ -539,8 +581,11 @@
 				var node = networkNodes.get(nodeIds[i])
 				if (node.STAURL) {
 					if (IdOfSTAEntity(node) != -1) {
-						node.STAURL = parentNode.STAURL + "/" + STAEntitiesArray[IdOfSTAEntity(node)];
-						if (node.STASelectedExpands) node.STASelectedExpands=null;
+						node.STAURL = parentNode.STAURL + "/" + STAEntitiesArray[IdOfSTAEntity(node)];  //·$· Segurament només s'ha de canviar el node arrel i assumir que tot el demés està bé.
+						if (node.STASelectedExpands) 
+							node.STASelectedExpands=null;
+						node.STAExpectedLength = parentNode.STAExpectedLength;
+
 						networkNodes.update(node);
 						LoadJSONData(node);
 					}
@@ -1226,36 +1271,45 @@
 			document.getElementById("DialogSelectColumnsHTML").innerHTML = s;
 		}
 
-		function ShowTableSelectExpandsDialog(nodeId) {
-			var data = networkNodes.get(nodeId).STAdata, 
-					entities=STAEntities[STAEntitiesArray[IdOfSTAEntity(networkNodes.get(nodeId))]].entities,
-					selectedExpands=networkNodes.get(nodeId).STASelectedExpands;
-
-			if (!data || !data.length) {
-				document.getElementById("DialogSelectExpandsHTML").innerHTML = "No data to show.";
-				return;
-			}
-
-			var dataAttributes = selectedExpands ? selectedExpands.dataAttributesUnexpanded : getDataAttributes(data);
-
-			var s = "<table>";
-			for (var a = 0; a < dataAttributes.length; a++)
+		function ShowTableSelectExpandsDialog(nodeId, expandCheckboxes) {
+			var node=networkNodes.get(nodeId);
+			if (expandCheckboxes)
 			{
-				if (dataAttributes[a].endsWith("@iot.navigationLink"))
+				var data = node.STAdata, 
+						entities=STAEntities[STAEntitiesArray[IdOfSTAEntity(node)]].entities,
+						selectedExpands=node.STASelectedExpands;
+		
+				if (!data || !data.length) {
+					document.getElementById("DialogSelectExpandsCheckBoxes").innerHTML = "No data to show.";
+					return;
+				}
+	
+				var dataAttributes = selectedExpands ? selectedExpands.dataAttributesUnexpanded : getDataAttributes(data);
+	
+				var s = "<table>";
+				for (var a = 0; a < dataAttributes.length; a++)
 				{
-					var da=dataAttributes[a].substring(0, dataAttributes[a].length-"@iot.navigationLink".length);
-					for (var e=0; e < entities.length; e++)
+					if (dataAttributes[a].endsWith("@iot.navigationLink"))
 					{
-						if (entities[e]==da)
+						var da=dataAttributes[a].substring(0, dataAttributes[a].length-"@iot.navigationLink".length);
+						for (var e=0; e < entities.length; e++)
 						{
-							s += "<tr><td><label><input type='checkbox'" + ((selectedExpands && a<selectedExpands.selected.length && selectedExpands.selected[a]) ? "checked='checked'" : "") + " id='SelectExpand_" + a + "' /> " + da + "</label></td></tr>";
-							break;
+							if (entities[e]==da)
+							{
+								s += "<tr><td><label><input type='checkbox'" + ((selectedExpands && a<selectedExpands.selected.length && selectedExpands.selected[a]) ? "checked='checked'" : "") + " id='SelectExpand_" + a + "' /> " + da + "</label></td></tr>";
+								break;
+							}
 						}
 					}
 				}
+				s += "</table>";
+				document.getElementById("DialogSelectExpandsCheckBoxes").innerHTML = s;
+				document.getElementById("DialogSelectExpandsHTML").style.display = "block";
 			}
-			s += "</table>";
-			document.getElementById("DialogSelectExpandsHTML").innerHTML = s;
+			else
+				document.getElementById("DialogSelectExpandsHTML").style.display = "none";
+			document.getElementById("SelectExpandsNumberOfRecords").value=node.STAExpectedLength;
+			
 		}
 
 		function ShowTableSelectRowsDialog(nodeId) {
@@ -1338,6 +1392,7 @@
 		function SeparateColumns(node, nodeParent) {
 			var data=nodeParent.STAdata, record, recordParent;
 			node.STAURL=nodeParent.STAURL;
+			node.STAExpectedLength = nodeParent.STAExpectedLength;
 			node.STAdata=[];
 			for (var i = 0; i < data.length; i++) {
 				record=node.STAdata[i]={};
@@ -1351,7 +1406,9 @@
 		function StartCircularImage(nodeTo, nodeFrom, calUnir)
 		{
 			if (nodeFrom.STAURL && IdOfSTAEntity(nodeTo) != -1) {
-				nodeTo.STAURL = nodeFrom.STAURL + "/" + STAEntitiesArray[IdOfSTAEntities(nodeTo)];
+				nodeTo.STAURL = nodeFrom.STAURL + "/" + STAEntitiesArray[IdOfSTAEntity(nodeTo)];
+				nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
+
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
@@ -1360,6 +1417,7 @@
 			}
 			if (nodeFrom.STAURL && IdOfSTASpecialQueries(nodeTo) != -1) {
 				nodeTo.STAURL = nodeFrom.STAURL + "/" + STASpecialQueries[STASpecialQueriesArray[IdOfSTASpecialQueries(nodeTo)]].query;
+				nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
@@ -1368,6 +1426,7 @@
 			}
 			if (nodeFrom.STAURL && (nodeTo.image == "SelectColumns.png" || nodeTo.image == "SelectRows.png")) {
 				nodeTo.STAURL = nodeFrom.STAURL;
+				nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
@@ -1491,7 +1550,12 @@
 				else if (IdOfSTAEntity(currentNode) != -1)
 				{
 					//Offering expand
-					ShowTableSelectExpandsDialog(currentNode.id);
+					ShowTableSelectExpandsDialog(currentNode.id, true);
+					document.getElementById("DialogSelectExpands").showModal();
+				}
+				else if (IdOfSTASpecialQueries(currentNode) != -1)
+				{
+					ShowTableSelectExpandsDialog(currentNode.id, false);
 					document.getElementById("DialogSelectExpands").showModal();
 				}
 			}
@@ -1588,6 +1652,7 @@
 			if (image == "ogc.png")
 			{
 				node.STAURL = STAurl;
+				node.STAExpectedLength = 100;
 				networkNodes.add(node);
 				LoadJSONData(node);
 			}
