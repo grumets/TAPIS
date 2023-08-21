@@ -311,7 +311,7 @@
 		}
 
 		//https://web.dev/fetch-api-error-handling/
-		async function LoadJSONData(node, url) {
+		async function LoadJSONData(node, callback, url) {
 			var response, jsonData;
 			try {
 				var url_fetch;
@@ -367,7 +367,13 @@
 				node.STAdata = (typeof jsonData.value!=="undefined") ? jsonData.value : [jsonData];
 			networkNodes.update(node);
 			if (jsonData.value && node.STAExpectedLength && node.STAdata.length<node.STAExpectedLength && jsonData["@iot.nextLink"])
-				LoadJSONData(node, jsonData["@iot.nextLink"]);
+				LoadJSONData(node, callback, jsonData["@iot.nextLink"]);
+			else
+			{
+				UpdateChildenLoadJSONCallback(node);
+				if (callback)
+					callback(node);  //The callback function is never used yet.
+			}
 		}
 
 		var savedFile = null;
@@ -410,7 +416,7 @@
 
 			if (currentNode.STAURL == document.getElementById("DialogSTAURLInput").value)
 				return;
-
+			var previousSTAURL = currentNode.STAURL;
 			currentNode.STAURL = document.getElementById("DialogSTAURLInput").value; // Have to send the select box value here.
 			if (currentNode.STAURL.charAt(currentNode.STAURL.length - 1) == '/')
 				currentNode.STAURL = currentNode.STAURL.slice(0, -1);  //remove last character
@@ -418,7 +424,7 @@
 			LoadJSONData(currentNode);
 
 			//if childen nodes have also STAURL
-			UpdateChildenSTAURL(currentNode);
+			UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
 		}
 
 		function GetSelectColumns(event) {
@@ -575,22 +581,28 @@
 			return -1;
 		}
 
-		function UpdateChildenSTAURL(parentNode) {
+		function UpdateChildenSTAURL(parentNode, currentSTAURLroot, previousSTAURLroot) {
 			var nodeIds = network.getConnectedNodes(parentNode.id, 'to');
 			for (var i = 0; i < nodeIds.length; i++) {
 				var node = networkNodes.get(nodeIds[i])
-				if (node.STAURL) {
-					if (IdOfSTAEntity(node) != -1) {
-						node.STAURL = parentNode.STAURL + "/" + STAEntitiesArray[IdOfSTAEntity(node)];  //·$· Segurament només s'ha de canviar el node arrel i assumir que tot el demés està bé.
-						if (node.STASelectedExpands) 
-							node.STASelectedExpands=null;
-						node.STAExpectedLength = parentNode.STAExpectedLength;
-
+				if (node.STAURL && currentSTAURLroot && previousSTAURLroot) {
+					if (node.STAURL.substring(0, previousSTAURLroot.length)==previousSTAURLroot)
+						node.STAURL=currentSTAURLroot + node.STAURL.substring(previousSTAURLroot.length);
+					if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || node.image == "SelectColumns.png" || node.image == "SelectRows.png") {
 						networkNodes.update(node);
 						LoadJSONData(node);
 					}
 				}
 				UpdateChildenSTAURL(node);
+			}
+		}
+
+		function UpdateChildenLoadJSONCallback(parentNode) {
+			var nodeIds = network.getConnectedNodes(parentNode.id, 'to');
+			for (var i = 0; i < nodeIds.length; i++) {
+				var node = networkNodes.get(nodeIds[i])
+				if (node.image == "SeparateColumns.png")
+					SeparateColumns(node, parentNode);
 			}
 		}
 
@@ -1254,8 +1266,8 @@
 			}*/
 		}
 
-		function ShowTableSelectColumnsDialog(nodeParentId,nodeId) {
-			var data = networkNodes.get(nodeParentId).STAdata, 
+		function ShowTableSelectColumnsDialog(parentNodeId,nodeId) {
+			var data = networkNodes.get(parentNodeId).STAdata, 
 					selectedColumns=networkNodes.get(nodeId).STASelectedColumns;
 
 			if (!data || !data.length) {
@@ -1352,7 +1364,7 @@
 
 		function SeparatePropertyIfNeeded(record, property, baseName)
 		{
-			if (typeof property === "object")  //"arrays" are also objects.
+			if (typeof property === "object" && property!==null)  //"arrays" and 'null' are also objects. 
 			{
 				if (Array.isArray(property))
 				{
@@ -1389,10 +1401,10 @@
 				record[baseName]=property;
 		}
 
-		function SeparateColumns(node, nodeParent) {
-			var data=nodeParent.STAdata, record, recordParent;
-			node.STAURL=nodeParent.STAURL;
-			node.STAExpectedLength = nodeParent.STAExpectedLength;
+		function SeparateColumns(node, parentNode) {
+			var data=parentNode.STAdata, record, recordParent;
+			node.STAURL=parentNode.STAURL;
+			node.STAExpectedLength = parentNode.STAExpectedLength;
 			node.STAdata=[];
 			for (var i = 0; i < data.length; i++) {
 				record=node.STAdata[i]={};
@@ -1401,6 +1413,7 @@
 				for (var k = 0; k < keys.length; k++)
 					SeparatePropertyIfNeeded(record, recordParent[keys[k]], keys[k]);
 			}
+			networkNodes.update(node);
 		}
 
 		function StartCircularImage(nodeTo, nodeFrom, calUnir)
@@ -1437,7 +1450,6 @@
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
 				SeparateColumns(nodeTo, nodeFrom);
-				networkNodes.update(nodeTo);
 				return true;
 			}
 			return false;
