@@ -26,21 +26,21 @@
 			border-spacing: 0px;
 		}
 
-		.th_compact {
+		.tablesmall th {
 			padding-top: 1px;
 			padding-bottom: 1px;
 		}
 
-		.td_compact {
+		.tablesmall td {
 			padding-top: 1px;
 			padding-bottom: 1px;
 		}
 
-		.tr_compact:nth-child(even) {
+		.tablesmall tr:nth-child(even) {
 			background-color: #DCDCCA;
 		}
 
-		.tr_compact:nth-child(odd) {
+		.tablesmall tr:nth-child(odd) {
 			background-color: #EEEEEB;
 		}
 
@@ -55,7 +55,7 @@
 </head>
 
 <body onLoad="StartSTAPage();">
-	<table border="0"><tr><td><img src="logo.png" height="70"></td><td><div style="font-size: 30px; font-weight: bold;">TAPIS</div><div style="font-size: 20px; font-weight: bold;">Tables from OGC APIs for Sensors</div><div style="font-size: 10px; font-weight: normal;"> or a Sensor Things API aplus Explorer</div></td></tr></table>
+	<table border="0"><tr><td><img src="logo.png" height="70"></td><td><div style="font-size: 30px; font-weight: bold;">TAPIS</div><div style="font-size: 20px; font-weight: bold;">Tables from OGC APIs for Sensors</div><div style="font-size: 10px; font-weight: normal;"> or a Sensor Things API plus Explorer</div></td></tr></table>
 
 	<button onclick='addCircularImage(null, null, "STAplus", "ogc.png");'><img src="ogc.png" height="20"
 		valign="middle"> Add a STA service</button><br>
@@ -625,38 +625,45 @@
 		}
 
 		function GetHTMLTable(data, rowNumbers, rowChecks) {
-			var dataAttributes = getDataAttributes(data);
+			var dataAttributes = getDataAttributes(data), cdns=[], needhref=[], record, cell;
 
-			var s = "<table class='tablesmall'><tr>";
+			cdns.push("<table class='tablesmall'><tr>");
 			if (rowNumbers)
-				s += "<th class='th_compact'></th>";
+				cdns.push("<th></th>");
 			if (rowChecks)
-				s += "<th class='th_compact'></th>";
-			for (var a = 0; a < dataAttributes.length; a++)
-				s += "<th class='th_compact'>" + dataAttributes[a] + "</th>";
-			s += "</tr>";
-			for (var i = 0; i < data.length; i++) {
-				s += "<tr class='tr_compact'>";
-				if (rowNumbers)
-					s += "<td class='td_compact'>" + (i + 1) + "</td>";
-				if (rowChecks)
-					s += "<td class='td_compact'><input type='radio' name='SelectRowRadio' id='SelectRow_" + (data[i]["@iot.id"] ? data[i]["@iot.id"] : i) + "' " + (i == 0 ? "checked='checked'" : "") + "/></td>";
-				for (var a = 0; a < dataAttributes.length; a++) {
-					s += "<td class='td_compact'>"
-					if (typeof data[i][dataAttributes[a]] !== "undefined") {
-						if ((dataAttributes[a] == "url" || dataAttributes[a] == "definition" ||
-							dataAttributes[a].endsWith("@iot.selfLink") ||
-							dataAttributes[a].endsWith("@iot.navigationLink")) && data[i][dataAttributes[a]].length)
-							s += "<a href='" + data[i][dataAttributes[a]] + "' target='_blank'>" + data[i][dataAttributes[a]] + "</a>";
-						else
-							s += JSON.stringify(data[i][dataAttributes[a]]);
-					}
-					s += "</td>"
-				}
-				s += "</tr>"
+				cdns.push("<th></th>");
+			for (var a = 0; a < dataAttributes.length; a++) {
+				cdns.push("<th>", dataAttributes[a], "</th>");
+				needhref[a]=dataAttributes[a] == "url" || dataAttributes[a] == "definition" ||
+						dataAttributes[a].endsWith("@iot.selfLink") ||
+						dataAttributes[a].endsWith("@iot.navigationLink");
 			}
-			s += "</table>";
-			return s;
+
+			cdns.push("</tr>");
+			for (var i = 0; i < data.length; i++) {
+				record=data[i];
+				cdns.push("<tr>");
+				if (rowNumbers)
+					cdns.push("<td>", i + 1, "</td>");
+				if (rowChecks)
+					cdns.push("<td><input type='radio' name='SelectRowRadio' id='SelectRow_", record["@iot.id"] ? record["@iot.id"] : i, "' ", i == 0 ? "checked='checked'" : "", "/></td>");
+				for (var a = 0; a < dataAttributes.length; a++) {
+					cell=record[dataAttributes[a]];
+					cdns.push("<td>");
+					if (typeof cell !== "undefined") {
+						if (needhref[a] && cell.length)
+							cdns.push("<a href='", cell, "' target='_blank'>", cell, "</a>");
+						else if (typeof cell === "object")
+							cdns.push(JSON.stringify(cell));
+						else
+							cdns.push(cell);
+					}
+					cdns.push("</td>");
+				}
+				cdns.push("</tr>");
+			}
+			cdns.push("</table>");
+			return cdns.join("");
 		}
 
 		function ShowTableDialog(nodeId) {
