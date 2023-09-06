@@ -163,7 +163,8 @@
 			<!--span id="DialogSaveTableOptions"></span--><br>
 			</span>
 			<div class="center">
-				<button value="default" onClick="SaveTable(event)">Save</button>
+				<button value="default" onClick="SaveTable(event)">Save CSV</button>
+				<button value="csvw" onClick="SaveCSVW(event)">Save CSVW</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
@@ -218,7 +219,7 @@
 						<label>Definition:
 							<span id="DialogSaveLayerVariableUoMDefinition"></span>
 						</label>
-					<fieldset>
+					</fieldset>
 					<br>	
 				</span>
 				<label>Value:
@@ -452,10 +453,10 @@
 				currentNode.STAURL=AddKVPToURL(currentNode.STAURL, "$select=");
 				for (var a = 0; a < dataAttributes.length; a++) {
 					if (document.getElementById("SelectColumn_" + a).checked) {
-						if (dataAttributes[a].startsWith("@iot."))
-							s = dataAttributes[a].substring(5);
+						if (dataAttributes[a].name.startsWith("@iot."))
+							s = dataAttributes[a].name.substring(5);
 						else
-							s = dataAttributes[a].replace("@iot.", "/");  //Changes Datastreams@iot.navigationLink to Datastreams/navigationLink
+							s = dataAttributes[a].name.replace("@iot.", "/");  //Changes Datastreams@iot.navigationLink to Datastreams/navigationLink
 						currentNode.STAURL += s + ",";
 						currentNode.STASelectedColumns[a]=true;
 					}
@@ -607,21 +608,79 @@
 			}
 		}
 
+		function getCSVWTypeFromAttributeType(t)
+		{
+			if (t=="array" || t=="null" || t=="object" || t=="undefined")
+				return "json";
+			return t;
+		}
+
+		function getJSONSchemaTypeFromAttributeType(t)
+		{
+			if (t=="anyURI")
+				return "string";
+			return t;
+		}
+
+		function getJSONType(a) {
+			if (typeof a === "string")
+				return "string";
+			if (typeof a === "boolean")
+				return "boolean";
+			if (Array.isArray(a))
+				return "array";
+			if (a===null)
+				return "null";
+			if (typeof a === "object")
+				return "object";
+			if (typeof a === "undefined")
+				return "undefined";
+			if (Number.isInteger(a))
+				return "integer";
+			if (parseFloat(a))
+				return "number"
+			else 
+				return "string";
+		}
+
 		function getDataAttributes(data) {
-			var dataAttributes = [], s;
+			var dataAttributes = [], type;
 
 			for (var i = 0; i < data.length; i++) {
 				var keys = Object.keys(data[i]);
 				for (var k = 0; k < keys.length; k++) {
 					for (var a = 0; a < dataAttributes.length; a++) {
-						if (dataAttributes[a] == keys[k])
+						if (dataAttributes[a].name == keys[k])
+						{
+							if (!isAttributeAnyURI(dataAttributes[a].name))
+							{
+								type=getJSONType(data[i][keys[k]]);
+								if (dataAttributes[a].type=="null" || dataAttributes[a].type=="undefined")
+									dataAttributes[a].type=type;
+								if (type!="null" && type!="undefined")
+								{
+									if ( (dataAttributes[a].type=="boolean" && type!="boolean") ||
+									    ((dataAttributes[a].type=="integer" || dataAttributes[a].type=="number") && (type=="object" || type=="array" || type=="string")) ||
+									    (dataAttributes[a].type=="string" && (type=="object" || type=="array")) ||
+									    (dataAttributes[a].type=="array" && type=="object") )
+										dataAttributes[a].type=type;
+									else if (dataAttributes[a].type=="integer" && type=="number")
+										dataAttributes[a].type="number";
+								}
+							}
 							break;
+						}
 					}
 					if (a == dataAttributes.length)
-						dataAttributes.push(keys[k]);
+						dataAttributes.push({name: keys[k], 
+								type: isAttributeAnyURI(keys[k]) ? "anyURI" : getJSONType(data[i][keys[k]])});
 				}
 			}
 			return dataAttributes;
+		}
+		
+		function isAttributeAnyURI(s){
+			return (s == "url" || s == "definition" || s.endsWith("@iot.selfLink") || s.endsWith("@iot.navigationLink"));
 		}
 
 		function GetHTMLTable(data, rowNumbers, rowChecks) {
@@ -633,10 +692,8 @@
 			if (rowChecks)
 				cdns.push("<th></th>");
 			for (var a = 0; a < dataAttributes.length; a++) {
-				cdns.push("<th>", dataAttributes[a], "</th>");
-				needhref[a]=dataAttributes[a] == "url" || dataAttributes[a] == "definition" ||
-						dataAttributes[a].endsWith("@iot.selfLink") ||
-						dataAttributes[a].endsWith("@iot.navigationLink");
+				cdns.push("<th>", dataAttributes[a].name, "</th>");
+				needhref[a]=isAttributeAnyURI(dataAttributes[a].name);
 			}
 
 			cdns.push("</tr>");
@@ -648,7 +705,7 @@
 				if (rowChecks)
 					cdns.push("<td><input type='radio' name='SelectRowRadio' id='SelectRow_", record["@iot.id"] ? record["@iot.id"] : i, "' ", i == 0 ? "checked='checked'" : "", "/></td>");
 				for (var a = 0; a < dataAttributes.length; a++) {
-					cell=record[dataAttributes[a]];
+					cell=record[dataAttributes[a].name];
 					cdns.push("<td>");
 					if (typeof cell !== "undefined") {
 						if (needhref[a] && cell.length)
@@ -686,10 +743,10 @@
 				jsonTable[i]={};
 				for (var a = 0; a < dataAttributes.length; a++)
 					{
-					if (typeof data[i][dataAttributes[a]] === "object")  //"arrays" are also objects.
-						jsonTable[i][dataAttributes[a]]=JSON.stringify(data[i][dataAttributes[a]]);
+					if (typeof data[i][dataAttributes[a].name] === "object")  //"arrays" are also objects.
+						jsonTable[i][dataAttributes[a].name]=JSON.stringify(data[i][dataAttributes[a].name]);
 					else
-						jsonTable[i][dataAttributes[a]]=data[i][dataAttributes[a]];
+						jsonTable[i][dataAttributes[a].name]=data[i][dataAttributes[a].name];
 				}
 			}
 			return jsonTable;
@@ -1098,7 +1155,7 @@
 		{
 			var s="<select id=\""+id+"Select"+"\">";
 			for (var a=0; a<dataAttributes.length; a++)
-				s+="<option value=\""+dataAttributes[a]+"\""+ (dataAttributes[a]==selectedOption ? "selected=\"selected\"" : "") +">"+dataAttributes[a]+"</option>";
+				s+="<option value=\""+dataAttributes[a].name+"\""+ (dataAttributes[a].name==selectedOption ? "selected=\"selected\"" : "") +">"+dataAttributes[a].name+"</option>";
 			s+="</select>";
 			document.getElementById(id).innerHTML=s;
 		}
@@ -1171,6 +1228,41 @@
 						(IdOfSTAEntity(networkNodes.get(nodeids[0])) == -1) ?  "table" : STAEntitiesArray[IdOfSTAEntity(networkNodes.get(nodeids[0]))], ".csv", "application/vnd.ms-excel");   //https://stackoverflow.com/questions/7076042/what-mime-type-should-i-use-for-csv
 			}
 		}
+
+		//https://csvw.org/
+		//https://w3c.github.io/csvw/metadata/#dialect-descriptions
+		function CreateCSVW(data, delimiter) {
+			var dataAttributes = getDataAttributes(data);
+			var csvw={ tableSchema: {
+				 "columns": []
+				},
+				"dialect": {
+					"header": true,
+					"delimiter": delimiter
+				}
+			};
+			for (var a = 0; a < dataAttributes.length; a++) {
+				csvw.tableSchema.columns.push({
+					"name": dataAttributes[a].name,
+					"datatype": getCSVWTypeFromAttributeType(dataAttributes[a].type),
+				});
+			}
+			return csvw;
+		}
+
+
+		function SaveCSVW(event) {
+			event.preventDefault(); // We don't want to submit this form
+			var delimiter=document.getElementById("DialogSaveTableDelimiter").value;
+			document.getElementById("DialogSaveTable").close();
+			var nodeids = network.getConnectedNodes(currentNode.id, "from");
+			if (nodeids && nodeids.length) {
+				if (networkNodes.get(nodeids[0]))
+					SaveLocalDataFile(JSON.stringify(CreateCSVW(networkNodes.get(nodeids[0]).STAdata, delimiter ? delimiter : ";"), null, "\t"), 
+						(IdOfSTAEntity(networkNodes.get(nodeids[0])) == -1 ?  "table" : STAEntitiesArray[IdOfSTAEntity(networkNodes.get(nodeids[0]))]) + "_csvw", ".json", "application/json");   //https://stackoverflow.com/questions/7076042/what-mime-type-should-i-use-for-csv
+			}
+		}
+
 
 		function SaveLayer(event) {
 			event.preventDefault(); // We don't want to submit this form
@@ -1285,7 +1377,7 @@
 
 			var s = "<table>";
 			for (var a = 0; a < dataAttributes.length; a++)
-				s += "<tr><td><label><input type='checkbox'" + ((!selectedColumns || a>=selectedColumns.length || selectedColumns[a]) ? "checked='checked'" : "") + " id='SelectColumn_" + a + "' /> " + dataAttributes[a] + "</label></td></tr>";
+				s += "<tr><td><label><input type='checkbox'" + ((!selectedColumns || a>=selectedColumns.length || selectedColumns[a]) ? "checked='checked'" : "") + " id='SelectColumn_" + a + "' /> " + dataAttributes[a].name + "</label></td></tr>";
 			s += "</table>";
 			document.getElementById("DialogSelectColumnsHTML").innerHTML = s;
 		}
@@ -1308,9 +1400,9 @@
 				var s = "<table>";
 				for (var a = 0; a < dataAttributes.length; a++)
 				{
-					if (dataAttributes[a].endsWith("@iot.navigationLink"))
+					if (dataAttributes[a].name.endsWith("@iot.navigationLink"))
 					{
-						var da=dataAttributes[a].substring(0, dataAttributes[a].length-"@iot.navigationLink".length);
+						var da=dataAttributes[a].name.substring(0, dataAttributes[a].name.length-"@iot.navigationLink".length);
 						for (var e=0; e < entities.length; e++)
 						{
 							if (entities[e]==da)
