@@ -7,6 +7,8 @@
 	<link rel="icon" type="image/x-icon" href="favicon.ico">
 	<script type="text/javascript" src="vis.min.js"></script>
 	<script type="text/javascript" src="papaparse.min.js"></script>
+	<script type="text/javascript" src="hello.all.min.js"></script>
+	<script type="text/javascript" src="authenix.js"></script>
 	<script type="text/javascript" src="mmn_postmessage.js"></script>
 
 	<link rel="stylesheet" href="tapis.css">
@@ -19,7 +21,14 @@
 		<tr>
 			<td><table>
 				<tr><td><img src="logo.png" height="70"></td><td><div style="font-size: 30px; font-weight: bold;">TAPIS</div><div style="font-size: 20px; font-weight: bold;">Tables from OGC APIs for Sensors</div><div style="font-size: 10px; font-weight: normal;"> or a Sensor Things API plus Explorer</div></td></tr></table></td>
-			<td align="right" valign="top"><button onclick='alert("login TBD");'><img src="login.png" height="20" valign="middle"> Login</button> <button onclick='OpenConfiguration(event);'><img src="config.png" height="20" valign="middle"> Configuration</button></td>
+			<td align="right" valign="top">
+				<button id="buttonOpenLogin" onclick='OpenLogin(event);'><img src="login.png" height="20" valign="middle"> Login</button>
+				<button id="buttonOpenLogout" onclick='OpenLogout(event);' style="display: none");'><img src="login.png" height="20" valign="middle"> Logout</button>
+				<button onclick='OpenConfiguration(event);'><img src="config.png" height="20" valign="middle">Configuration</button><br>
+				<span style="font-size: 10px;"><a href="TermsOfUse.htm">Terms of Use</a><br>
+				<a href="PrivacyStatement.htm">Privacy Statement</a><br>
+				<a href="AccessPolicy.htm">Access Policy</a><br></span>
+			</td>
 		</tr>
 	</table>
 
@@ -134,6 +143,30 @@
 		</form>
 	</dialog>
 
+	<dialog id="DialogImportCSV">
+		<form>
+			Import CSV file table.
+			<br>
+			<label>CSV delimiter:
+				<input type="text" id="DialogImportCSVDelimiter" size="2" maxlength="1" value=";"></input>
+			</label>
+			<br>
+			<label><input type="checkbox" id="DialogImportCSVHeader"></input>First line contains names of the fields</label>
+			<br>
+			<label>Choose a CSVW:
+				<input type="file" accept=".csvw,.json" onChange="ReadFileImportCSVW(event)"></input>
+			</label>
+			<br>
+			<label>Choose a CSV:
+				<input type="file" accept=".csv,*.txt" onChange="ReadFileImportCSV(event)"></input>
+			</label>
+			<div class="center">
+				<button value="ok" formmethod="dialog">Done</button>
+			</div>
+			<input type="hidden" id="DialogImportCSVdataAttributes" value=""></input>
+		</form>
+	</dialog>
+
 	<dialog id="DialogSaveTable">
 		<form>
 			Save the table as CSV.
@@ -142,7 +175,6 @@
 				<input type="text" id="DialogSaveTableDelimiter" size="2" maxlength="1" value=";"></input>
 			</label>
 			<!--span id="DialogSaveTableOptions"></span--><br>
-			</span>
 			<div class="center">
 				<button value="default" onClick="SaveTable(event)">Save CSV</button>
 				<button value="csvw" onClick="SaveCSVW(event)">Save CSVW</button>
@@ -221,6 +253,51 @@
 	<script type="text/javascript">
 		"use strict"
 
+/* 
+    This file is part of TAPIS. TAPIS is a web page and a Javascript code 
+    that builds queries and explore the STAplus content, saves it as CSV or 
+    GeoJSON and connects with the MiraMon Map Browser. While the project is 
+    completely independent from the Orange data mining software, it has been 
+    inspired by its GUI. The general idea of the application is to be able 
+    to work with STA data as tables.
+  
+    The TAPIS client is free software under the terms of the MIT License
+
+    Copyright (c) 2023 Joan Masó
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+    
+    The TAPIS can be updated from https://github.com/joanma747/tapis.
+
+    Aquest codi JavaScript ha estat idea de Joan Masó Pau (joan maso at uab cat) 
+    dins del grup del MiraMon. MiraMon és un projecte del 
+    CREAF que elabora programari de Sistema d'Informació Geogràfica 
+    i de Teledetecció per a la visualització, consulta, edició i anàlisi 
+    de mapes ràsters i vectorials. Aquest progamari programari inclou
+    aplicacions d'escriptori i també servidors i clients per Internet.
+    No tots aquests productes són gratuïts o de codi obert. 
+    
+    En particular, el TAPIS es distribueix sota els termes de la llicència MIT.
+    
+    El TAPIS es pot actualitzar des de https://github.com/joanma747/tapis.
+*/
+
 		//var STAurl = "https://citiobs.demo.secure-dimensions.de/inaturalist/v1.1";
 		var STAurl="https://citiobs.demo.secure-dimensions.de/staplus/v1.1";
 		var MMNpath="../osm";
@@ -242,7 +319,8 @@
 		const STAEntitiesArray = Object.keys(STAEntities);
 		const STASpecialQueries = {ObsLayer: {description: "Observations Layer", query: "Observations?$orderby=phenomenonTime%20desc&$expand=Datastream($select=unitOfMeasurement),Datastream/ObservedProperty($select=name,description,definition),FeatureOfInterest($select=description,feature)&$select=phenomenonTime,result"}}
 		const STASpecialQueriesArray = Object.keys(STASpecialQueries);
-		const TableOperations = {Table: {description: "View Table"}, 
+		const TableOperations = {ImportCSV: {description: "Import CSV file"},
+					Table: {description: "View Table"}, 
 					SelectColumns: {description: "Select Columns"},
 					SelectRows: {description: "Select Rows"},
 					SeparateColumns: {description: "Separate Columns"},
@@ -274,11 +352,26 @@
 			}
 		}
 
+		//Returns the protocol of a URL without the double slash
+		function getProtocol(s){
+			var pos_barrabarra;
+			if (-1!=(pos_barrabarra=s.indexOf("://")))
+				return s.substring(0, pos_barrabarra+1);
+			return "";
+		}
+
 		var currentNode = null, connectionInProcess = false, startingNodeContextId = null;
 
 		function StartSTAPage() {
-			var s = "";
 
+			var s_protocol=getProtocol(location.href);
+	
+			if (s_protocol && s_protocol.toLowerCase()!="https:")
+				location.replace("https:" + location.href.substring(s_protocol.length));
+
+			hello.init({"authenix": "b35e6df5-eb6c-433c-95ed-59b25e037624"}, {redirect_uri: ((location.pathname.charAt(location.pathname.length-1)=='/') ? location.pathname.substring(0, location.pathname.length-1) : location.pathname)});
+
+			var s = "";
 			for (var i = 0; i < STAEntitiesArray.length; i++)
 				s += "<button onclick='addCircularImage(null, null, \"" + STAEntitiesArray[i] + "\", \"" + STAEntitiesArray[i] + ".png\");'><img src='" + STAEntitiesArray[i] + ".png' height='20' valign='middle'> " + STAEntitiesArray[i] + "</button> ";
 			s += "<br>";
@@ -318,7 +411,14 @@
 				else
 					url_fetch=AddKVPToURL(node.STAURL, "$top="+node.STAExpectedLength);
 					
-				response = await fetch(url_fetch);
+				if (hello("authenix").getAuthResponse() && 
+				    hello("authenix").getAuthResponse().access_token)
+					response = await fetch(url_fetch, {headers: {
+								'Authorization': 'Bearer ' + hello("authenix").getAuthResponse().access_token
+							}}
+					);
+				else
+					response = await fetch(url_fetch);
 			}
 			catch (error) {
 				document.getElementById("clarification").innerHTML = 'Error getting ' + node.STAURL + ": " + error.message;
@@ -387,6 +487,60 @@
 			return savedFile;
 		}
 
+		function ReadFileImportCSVW(event) {
+			var input = event.target;
+
+			var reader = new FileReader();
+			reader.onload = function() {
+				//Transform the JSON text in something in memory
+				try
+				{
+					var data_csvw=JSON.parse(reader.result);
+					//document.getElementById("DialogImportCSVdataAttributes").value=JSON.stringify(getDataAttributesCSVW(data_csvw));
+					currentNode.STAdataAttributes=getDataAttributesCSVW(data_csvw);
+					networkNodes.update(currentNode);
+					var csvReadParams = getCSVReadParams(data_csvw);
+					if (csvReadParams.delimiter)
+						document.getElementById("DialogImportCSVDelimiter").value=csvReadParams.delimiter;
+					if (csvReadParams.header)
+						document.getElementById("DialogImportCSVHeader").checked=csvReadParams.header;
+				}	
+				catch (e) 
+				{
+					document.getElementById("clarification").innerHTML="JSON message parse error: " + e + " The file content is:\n" + reader.result;
+					currentNode.STAdata=null;
+					networkNodes.update(currentNode);
+					return;
+				}
+			};
+			reader.readAsText(input.files[0]);
+		}
+
+		function ReadFileImportCSV(event) {
+			var input = event.target;
+
+			var reader = new FileReader();
+			reader.onload = function() {
+				//Transform the JSON text in something in memory
+				try
+				{
+					var result = Papa.parse(reader.result, {delimiter: document.getElementById("DialogImportCSVDelimiter").value,
+							header: document.getElementById("DialogImportCSVHeader").checked});
+					//if (document.getElementById("DialogImportCSVHeader").checked)
+					currentNode.STAdata=result.data;
+					networkNodes.update(currentNode);
+				}	
+				catch (e) 
+				{
+					document.getElementById("clarification").innerHTML="JSON message parse error: " + e + " The file content is:\n" + reader.result;
+					currentNode.STAdata=null;
+					networkNodes.update(currentNode);
+					return;
+				}
+			};
+			reader.readAsText(input.files[0]);
+		}
+
 		function SaveLocalDataFile(data, fileName, extension, mediatype)   //Saves a memory data structure to a local file
 		{
 		const link = document.createElement('a');
@@ -408,6 +562,30 @@
 
 		function OpenConfiguration(event) {
 			document.getElementById("DialogConfiguration").showModal();
+		}
+
+		function OpenLogin(event) {
+			hello("authenix").login({redirect_uri: location.pathname, scope: "openid", display: "popup"}).then(
+				function(success) {
+					document.getElementById("buttonOpenLogin").style.display="none";
+					document.getElementById("buttonOpenLogout").style.display="block";
+				},
+				function(e) 
+				{
+					alert("Signin error: " + e.error.message);
+				}
+			);
+		}
+
+		function OpenLogout(event) {
+			hello("authenix").logout({force:true}).then(
+				function(success) {
+					document.getElementById("buttonOpenLogin").style.display="block";
+					document.getElementById("buttonOpenLogout").style.display="none";
+					alert("Signed out from"+ " " + "authenix" + ". ");
+				}, function(e) {
+					alert("Signed out error: "  + e.error.message);
+				});
 		}
 
 		function ChangeConfiguration(event) {
@@ -619,6 +797,14 @@
 				return "json";
 			return t;
 		}
+
+		function getAttributeTypeFromCSVWType(t)
+		{
+			if (t=="json")
+				return "object";
+			return t;
+		}
+
 
 		function getJSONSchemaTypeFromAttributeType(t)
 		{
@@ -1152,9 +1338,9 @@
 			return datetimes;
 		} 
 
-		function ShowSaveTableDialog(nodeId) {
+		/*function ShowSaveTableDialog(nodeId) {
 			;   //Nothing to do
-		}
+		}*/
 
 		function PopulateSelectSaveLayerDialog(id, dataAttributes, selectedOption)
 		{
@@ -1268,6 +1454,20 @@
 			}
 		}
 
+		function getDataAttributesCSVW(csvw){
+			var dataAttributes = [];
+			for (var a = 0; a < csvw.tableSchema.columns.length; a++) {
+				dataAttributes.push({
+					"name": csvw.tableSchema.columns[a].name,
+					"type": getAttributeTypeFromCSVWType(csvw.tableSchema.columns[a].datatype)
+				});
+			}
+			return dataAttributes;
+		}
+
+		function getCSVReadParams(csvw){
+			return csvw.dialect;
+		}
 
 		function SaveLayer(event) {
 			event.preventDefault(); // We don't want to submit this form
@@ -1614,6 +1814,10 @@
 					document.getElementById("DialogSTAURLInput").readOnly = true;
 					document.getElementById("DialogSTAURL").showModal();
 				}
+				else if (currentNode.image == "ImportCSV.png") {
+					//ShowImportCSVDialog(currentNode.id);
+					document.getElementById("DialogImportCSV").showModal();
+				}
 				else if (currentNode.image == "Table.png") {
 					///Determining the parent node.
 					var nodeids = network.getConnectedNodes(currentNode.id, "from");
@@ -1630,7 +1834,7 @@
 					}
 				}
 				else if (currentNode.image == "SaveTable.png") {
-					ShowSaveTableDialog(currentNode.id);
+					//ShowSaveTableDialog(currentNode.id);
 					document.getElementById("DialogSaveTable").showModal();
 				}
 				else if (currentNode.image == "SaveLayer.png") {
