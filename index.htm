@@ -33,7 +33,7 @@
 	</table>
 
 	<button onclick='addCircularImage(null, null, "STAplus", "ogc.png");'><img src="ogc.png" height="20"
-		valign="middle"> Add a STA service</button><br>
+		valign="middle"> Add STA service</button><br>
 	<span id="ButtonsSTAEntities"></span>
 	<button onclick="addEdge();">Connect two nodes</button><br>
 
@@ -121,7 +121,7 @@
 		<form>
 			<p>
 				<button onclick='addCircularImage(event, "DialogContextMenu" "STAplus", "ogc.png");'><img src="ogc.png"
-						height="20" valign="middle"> Add a STA service</button><br>
+						height="20" valign="middle"> Add STA service</button><br>
 				<span id="ButtonsContextMenuObjects"></span>
 				<button onclick='removeCircularImage(event, "DialogContextMenu")'>Remove</button><br>
 			</p>
@@ -247,6 +247,23 @@
 		</form>
 	</dialog>
 
+	<dialog id="UploadObservations">
+		<form>
+			Upload table as STA observations
+			<br>
+			<label><input type="radio" name="UploadObservationsRadio" id="UploadObservationsObsPropsInARow" checked="checked"></input>Each row represents a feature of interest with several observed properties</label>
+			<br>
+			<label><input type="radio" name="UploadObservationsRadio" id="UploadObservationsObsPropsInAColumn"></input>Several observed properties of the same feature as multiple rows</label>
+			<br>
+			<label>STA service URL:
+				<input type="text" id="DialogSTAUploadURLInput" size="100"></input>
+			</label>
+			<div class="center">
+				<button value="ok" formmethod="dialog">Upload</button>
+			</div>
+		</form>
+	</dialog>
+
 	<!--h2 id="eventSpanHeading"></h2>
 	<pre id="eventSpanContent"></pre-->
 
@@ -321,10 +338,13 @@
 		const STASpecialQueriesArray = Object.keys(STASpecialQueries);
 		const TableOperations = {ImportCSV: {description: "Import CSV file"},
 					Table: {description: "View Table"}, 
-					SelectColumns: {description: "Select Columns"},
-					SelectRows: {description: "Select Rows"},
+					SelectColumnsSTA: {description: "Select Columns"},
+					SelectRowsSTA: {description: "Select Rows"},
+					ViewQuerySTA: {description: "View Query"},
+					/*SelectColumnsTable: {description: "Select Columns"},
+					SelectRowsTable: {description: "Select Rows"},*/
 					SeparateColumns: {description: "Separate Columns"},
-					ViewQuery: {description: "View Query"},
+					UploadObservations: {description: "Upload in STA"},
 					SaveTable: {description: "Save Table"},
 					SaveLayer: {description: "Save Layer"},
 					OpenMap: {description: "Open Map"}};
@@ -626,20 +646,21 @@
 			}
 			currentNode.STASelectedColumns=[];
 			var dataAttributes = getDataAttributes(currentNode.STAdata);
-			for (var a = 0; a < dataAttributes.length; a++) {
+			const dataAttributesArray = Object.keys(dataAttributes);
+			for (var a = 0; a < dataAttributesArray.length; a++) {
 				if (!document.getElementById("SelectColumn_" + a).checked)
 					break;
 			}
-			if (a < dataAttributes.length) //A checked attribute has been found ("for" breaks before ending).
+			if (a < dataAttributesArray.length) //A checked attribute has been found ("for" breaks before ending).
 			{
 				var s;
 				currentNode.STAURL=AddKVPToURL(currentNode.STAURL, "$select=");
-				for (var a = 0; a < dataAttributes.length; a++) {
+				for (var a = 0; a < dataAttributesArray.length; a++) {
 					if (document.getElementById("SelectColumn_" + a).checked) {
-						if (dataAttributes[a].name.startsWith("@iot."))
-							s = dataAttributes[a].name.substring(5);
+						if (dataAttributesArray[a].startsWith("@iot."))
+							s = dataAttributesArray[a].substring(5);
 						else
-							s = dataAttributes[a].name.replace("@iot.", "/");  //Changes Datastreams@iot.navigationLink to Datastreams/navigationLink
+							s = dataAttributesArray[a].replace("@iot.", "/");  //Changes Datastreams@iot.navigationLink to Datastreams/navigationLink
 						currentNode.STAURL += s + ",";
 						currentNode.STASelectedColumns[a]=true;
 					}
@@ -654,7 +675,7 @@
 			}
 			else   //If no selected collumn has been found, no filter is done and all collumns are selected
 			{
-				for (var a = 0; a < dataAttributes.length; a++) {
+				for (var a = 0; a < dataAttributesArray.length; a++) {
 					currentNode.STASelectedColumns[a]=true;
 				}
 			}
@@ -666,26 +687,27 @@
 			
 			var dataAttributes = getDataAttributes(currentNode.STAdata);
 			if (!currentNode.STASelectedExpands)
-				currentNode.STASelectedExpands={STAURLUnexpanded: currentNode.STAURL, dataAttributesUnexpanded: dataAttributes.slice(), selected: []};
+				currentNode.STASelectedExpands={STAURLUnexpanded: currentNode.STAURL, dataAttributesUnexpanded: JSON.parse(JSON.stringify(dataAttributes)), selected: []};
 			else
 				currentNode.STAURL = currentNode.STASelectedExpands.STAURLUnexpanded;
 			
 			if (document.getElementById("DialogSelectExpandsHTML").style.display != "none")
 			{
 				var dataAttr=currentNode.STASelectedExpands.dataAttributesUnexpanded;
-				for (var a = 0; a < dataAttr.length; a++) {
+				var dataAttrArray=Array.keys(dataAttr)
+				for (var a = 0; a < dataAttrArray.length; a++) {
 					if (document.getElementById("SelectExpand_" + a) && document.getElementById("SelectExpand_" + a).checked)
 						break;
 				}
-				if (a < dataAttr.length) //A checked attribute has been found ("for" breaks before ending).
+				if (a < dataAttrArray.length) //A checked attribute has been found ("for" breaks before ending).
 				{
 					var s;
 					currentNode.STAURL = AddKVPToURL(currentNode.STAURL, "$expand=");
-					for (var a = 0; a < dataAttr.length; a++) {
+					for (var a = 0; a < dataAttrArray.length; a++) {
 						if (document.getElementById("SelectExpand_" + a) && 
 							document.getElementById("SelectExpand_" + a).checked && 
-							dataAttr[a].endsWith("@iot.navigationLink")){
-							s = dataAttr[a].substring(0, dataAttr[a].length-"@iot.navigationLink".length);
+							dataAttrArray[a].endsWith("@iot.navigationLink")){
+							s = dataAttrArray[a].substring(0, dataAttrArray[a].length-"@iot.navigationLink".length);
 							currentNode.STAURL += s + ",";
 							currentNode.STASelectedExpands.selected[a]=true;
 						}
@@ -773,7 +795,7 @@
 				if (node.STAURL && currentSTAURLroot && previousSTAURLroot) {
 					if (node.STAURL.substring(0, previousSTAURLroot.length)==previousSTAURLroot)
 						node.STAURL=currentSTAURLroot + node.STAURL.substring(previousSTAURLroot.length);
-					if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || node.image == "SelectColumns.png" || node.image == "SelectRows.png") {
+					if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || node.image == "SelectColumnsSTA.png" || node.image == "SelectRowsSTA.png") {
 						networkNodes.update(node);
 						LoadJSONData(node);
 					}
@@ -835,36 +857,35 @@
 		}
 
 		function getDataAttributes(data) {
-			var dataAttributes = [], type;
+			var dataAttributes = {}, dataAttribute, type;
 
 			for (var i = 0; i < data.length; i++) {
 				var keys = Object.keys(data[i]);
 				for (var k = 0; k < keys.length; k++) {
-					for (var a = 0; a < dataAttributes.length; a++) {
-						if (dataAttributes[a].name == keys[k])
+					if (dataAttributes[keys[k]])
+					{
+						dataAttribute=dataAttributes[keys[k]];
+						if (!isAttributeAnyURI(dataAttribute))
 						{
-							if (!isAttributeAnyURI(dataAttributes[a].name))
+							type=getJSONType(data[i][keys[k]]);
+							if (dataAttribute.type=="null" || dataAttribute.type=="undefined")
+								dataAttribute.type=type;
+							if (type!="null" && type!="undefined")
 							{
-								type=getJSONType(data[i][keys[k]]);
-								if (dataAttributes[a].type=="null" || dataAttributes[a].type=="undefined")
-									dataAttributes[a].type=type;
-								if (type!="null" && type!="undefined")
-								{
-									if ( (dataAttributes[a].type=="boolean" && type!="boolean") ||
-									    ((dataAttributes[a].type=="integer" || dataAttributes[a].type=="number") && (type=="object" || type=="array" || type=="string")) ||
-									    (dataAttributes[a].type=="string" && (type=="object" || type=="array")) ||
-									    (dataAttributes[a].type=="array" && type=="object") )
-										dataAttributes[a].type=type;
-									else if (dataAttributes[a].type=="integer" && type=="number")
-										dataAttributes[a].type="number";
-								}
+								if ( (dataAttributetype=="boolean" && type!="boolean") ||
+								    ((dataAttributetype=="integer" || dataAttributetype=="number") && (type=="object" || type=="array" || type=="string")) ||
+								    (dataAttributetype=="string" && (type=="object" || type=="array")) ||
+								    (dataAttributetype=="array" && type=="object") )
+									dataAttributetype=type;
+								else if (dataAttributetype=="integer" && type=="number")
+									dataAttributetype="number";
 							}
-							break;
 						}
 					}
-					if (a == dataAttributes.length)
-						dataAttributes.push({name: keys[k], 
-								type: isAttributeAnyURI(keys[k]) ? "anyURI" : getJSONType(data[i][keys[k]])});
+					else
+						dataAttributes[keys[k]]={
+								type: isAttributeAnyURI(keys[k]) ? "anyURI" : getJSONType(data[i][keys[k]])
+						};
 				}
 			}
 			return dataAttributes;
@@ -876,15 +897,16 @@
 
 		function GetHTMLTable(data, rowNumbers, rowChecks) {
 			var dataAttributes = getDataAttributes(data), cdns=[], needhref=[], record, cell;
+			var dataAttributesArray = Object.keys(dataAttributes);
 
 			cdns.push("<table class='tablesmall'><tr>");
 			if (rowNumbers)
 				cdns.push("<th></th>");
 			if (rowChecks)
 				cdns.push("<th></th>");
-			for (var a = 0; a < dataAttributes.length; a++) {
-				cdns.push("<th>", dataAttributes[a].name, "</th>");
-				needhref[a]=isAttributeAnyURI(dataAttributes[a].name);
+			for (var a = 0; a < dataAttributesArray.length; a++) {
+				cdns.push("<th>", dataAttributesArray[a], "</th>");
+				needhref[a]=isAttributeAnyURI(dataAttributesArray[a]);
 			}
 
 			cdns.push("</tr>");
@@ -895,8 +917,8 @@
 					cdns.push("<td>", i + 1, "</td>");
 				if (rowChecks)
 					cdns.push("<td><input type='radio' name='SelectRowRadio' id='SelectRow_", record["@iot.id"] ? record["@iot.id"] : i, "' ", i == 0 ? "checked='checked'" : "", "/></td>");
-				for (var a = 0; a < dataAttributes.length; a++) {
-					cell=record[dataAttributes[a].name];
+				for (var a = 0; a < dataAttributesArray.length; a++) {
+					cell=record[dataAttributesArray[a]];
 					cdns.push("<td>");
 					if (typeof cell !== "undefined") {
 						if (needhref[a] && cell.length)
@@ -929,15 +951,16 @@
 
 		function StringifyObjectElements(data) {
 			var dataAttributes = getDataAttributes(data), jsonTable=[];
+			var dataAttributesArray = Object.keys(dataAttributes);
 
 			for (var i = 0; i < data.length; i++) {
 				jsonTable[i]={};
-				for (var a = 0; a < dataAttributes.length; a++)
+				for (var a = 0; a < dataAttributesArray.length; a++)
 					{
-					if (typeof data[i][dataAttributes[a].name] === "object")  //"arrays" are also objects.
-						jsonTable[i][dataAttributes[a].name]=JSON.stringify(data[i][dataAttributes[a].name]);
+					if (typeof data[i][dataAttributesArray[a]] === "object")  //"arrays" are also objects.
+						jsonTable[i][dataAttributesArray[a]]=JSON.stringify(data[i][dataAttributesArray[a]]);
 					else
-						jsonTable[i][dataAttributes[a].name]=data[i][dataAttributes[a].name];
+						jsonTable[i][dataAttributesArray[a]]=data[i][dataAttributesArray[a]];
 				}
 			}
 			return jsonTable;
@@ -1344,9 +1367,11 @@
 
 		function PopulateSelectSaveLayerDialog(id, dataAttributes, selectedOption)
 		{
+			var dataAttributesArray = Object.keys(dataAttributes);
+	
 			var s="<select id=\""+id+"Select"+"\">";
-			for (var a=0; a<dataAttributes.length; a++)
-				s+="<option value=\""+dataAttributes[a].name+"\""+ (dataAttributes[a].name==selectedOption ? "selected=\"selected\"" : "") +">"+dataAttributes[a].name+"</option>";
+			for (var a=0; a<dataAttributesArray.length; a++)
+				s+="<option value=\""+dataAttributesArray[a]+"\""+ (dataAttributesArray[a]==selectedOption ? "selected=\"selected\"" : "") +">"+dataAttributesArray[a]+"</option>";
 			s+="</select>";
 			document.getElementById(id).innerHTML=s;
 		}
@@ -1424,6 +1449,8 @@
 		//https://w3c.github.io/csvw/metadata/#dialect-descriptions
 		function CreateCSVW(data, delimiter) {
 			var dataAttributes = getDataAttributes(data);
+			var dataAttributesArray = Object.keys(dataAttributes);
+
 			var csvw={ tableSchema: {
 				 "columns": []
 				},
@@ -1432,10 +1459,10 @@
 					"delimiter": delimiter
 				}
 			};
-			for (var a = 0; a < dataAttributes.length; a++) {
+			for (var a = 0; a < dataAttributesArray.length; a++) {
 				csvw.tableSchema.columns.push({
-					"name": dataAttributes[a].name,
-					"datatype": getCSVWTypeFromAttributeType(dataAttributes[a].type),
+					"name": dataAttributesArray[a],
+					"datatype": getCSVWTypeFromAttributeType(dataAttributes[dataAttributesArray[a]].type),
 				});
 			}
 			return csvw;
@@ -1455,12 +1482,17 @@
 		}
 
 		function getDataAttributesCSVW(csvw){
-			var dataAttributes = [];
+			var dataAttributes = {}, c;
 			for (var a = 0; a < csvw.tableSchema.columns.length; a++) {
-				dataAttributes.push({
-					"name": csvw.tableSchema.columns[a].name,
-					"type": getAttributeTypeFromCSVWType(csvw.tableSchema.columns[a].datatype)
-				});
+				c=csvw.tableSchema.columns[a];
+				dataAttributes[c.name]={
+					"type": getAttributeTypeFromCSVWType(c.datatype),
+					"description": (c.titles && Array.isArray(c.titles)) ? c.titles[0] : c.titles,
+					"definition": c.propertyUrl,
+					"UoM": c.unitMeasureTitles && Array.isArray(c.unitMeasureTitles) ? c.unitMeasureTitles[0] : c.unitMeasureTitles,
+					"UoMSymbol": c.unitMeasureSymbol,
+					"UoMDefinition": c.unitMeasureUrl
+				};
 			}
 			return dataAttributes;
 		}
@@ -1579,10 +1611,11 @@
 				return;
 			}
 			var dataAttributes = getDataAttributes(data);
+			const dataAttributesArray = Object.keys(dataAttributes);
 
 			var s = "<table>";
-			for (var a = 0; a < dataAttributes.length; a++)
-				s += "<tr><td><label><input type='checkbox'" + ((!selectedColumns || a>=selectedColumns.length || selectedColumns[a]) ? "checked='checked'" : "") + " id='SelectColumn_" + a + "' /> " + dataAttributes[a].name + "</label></td></tr>";
+			for (var a = 0; a < dataAttributesArray.length; a++)
+				s += "<tr><td><label><input type='checkbox'" + ((!selectedColumns || a>=selectedColumns.length || selectedColumns[a]) ? "checked='checked'" : "") + " id='SelectColumn_" + a + "' /> " + dataAttributesArray[a] + "</label></td></tr>";
 			s += "</table>";
 			document.getElementById("DialogSelectColumnsHTML").innerHTML = s;
 		}
@@ -1601,13 +1634,14 @@
 				}
 	
 				var dataAttributes = selectedExpands ? selectedExpands.dataAttributesUnexpanded : getDataAttributes(data);
+				const dataAttributesArray = Object.keys(dataAttributes);
 	
 				var s = "<table>";
-				for (var a = 0; a < dataAttributes.length; a++)
+				for (var a = 0; a < dataAttributesArray.length; a++)
 				{
-					if (dataAttributes[a].name.endsWith("@iot.navigationLink"))
+					if (dataAttributesArray[a].endsWith("@iot.navigationLink"))
 					{
-						var da=dataAttributes[a].name.substring(0, dataAttributes[a].name.length-"@iot.navigationLink".length);
+						var da=dataAttributesArray[a].substring(0, dataAttributesArray[a].length-"@iot.navigationLink".length);
 						for (var e=0; e < entities.length; e++)
 						{
 							if (entities[e]==da)
@@ -1741,7 +1775,7 @@
 				LoadJSONData(nodeTo);
 				return true;
 			}
-			if (nodeFrom.STAURL && (nodeTo.image == "SelectColumns.png" || nodeTo.image == "SelectRows.png")) {
+			if (nodeFrom.STAURL && (nodeTo.image == "SelectColumnsSTA.png" || nodeTo.image == "SelectRowsSTA.png")) {
 				nodeTo.STAURL = nodeFrom.STAURL;
 				nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
 				networkNodes.update(nodeTo);
@@ -1833,6 +1867,9 @@
 						document.getElementById("DialogOK").showModal();
 					}
 				}
+				else if (currentNode.image == "UploadObservations.png") {
+					document.getElementById("UploadObservations").showModal();
+				}
 				else if (currentNode.image == "SaveTable.png") {
 					//ShowSaveTableDialog(currentNode.id);
 					document.getElementById("DialogSaveTable").showModal();
@@ -1845,7 +1882,7 @@
 					ShowOpenMapDialog(currentNode.id);
 					document.getElementById("DialogSaveLayer").showModal();
 				}
-				else if (currentNode.image == "SelectColumns.png") {
+				else if (currentNode.image == "SelectColumnsSTA.png") {
 					//Determining the parent node.
 					var nodeids = network.getConnectedNodes(currentNode.id, "from");
 					if (nodeids && nodeids.length) {
@@ -1855,7 +1892,7 @@
 						document.getElementById("DialogSelectColumns").showModal();
 					}
 				}
-				else if (currentNode.image == "SelectRows.png") {
+				else if (currentNode.image == "SelectRowsSTA.png") {
 					//Determining the parent node.
 					var nodeids = network.getConnectedNodes(currentNode.id, "from");
 					if (nodeids && nodeids.length) {
