@@ -248,7 +248,15 @@
 	</dialog>
 
 	<dialog id="UploadObservations">
+		<div id="UploadObservationsLoginFirst"style="display: none;">
 		<form>
+			To upload data in a STA server, you should Login first.<br>
+			<div class="center">
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+		</form>
+		</div>
+		<form id="UploadObservationsForm">
 			Upload table as STA observations
 			<br>
 			<label><input type="radio" name="UploadObservationsRadio" id="UploadObservationsObsPropsInARow" checked="checked"></input>Each row represents a feature of interest with several observed properties</label>
@@ -406,7 +414,7 @@
 			if (s_protocol && s_protocol.toLowerCase()!="https:")
 				location.replace("https:" + location.href.substring(s_protocol.length));
 
-			hello.init({"authenix": "b35e6df5-eb6c-433c-95ed-59b25e037624"}, {redirect_uri: ((location.pathname.charAt(location.pathname.length-1)=='/') ? location.pathname.substring(0, location.pathname.length-1) : location.pathname)});
+			hello.init({"authenix": "62df9d18-fc59-4626-98f0-989cdf170936"}, {redirect_uri: ((location.pathname.charAt(location.pathname.length-1)=='/') ? location.pathname.substring(0, location.pathname.length-1) : location.pathname)});
 
 			var s = "";
 			for (var i = 0; i < STAEntitiesArray.length; i++)
@@ -436,8 +444,70 @@
 			document.getElementById("ButtonsContextMenuObjects").innerHTML = s;
 		}
 
+		function eliminarParamContentType(contentType) {
+			var i=contentType.indexOf(';')
+			if (i<0)
+				return contentType;
+			else
+				return contentType.substring(0, i);
+		}
+
 		//https://web.dev/fetch-api-error-handling/
-		async function LoadJSONData(node, callback, url) {
+		async function HTTPJSONData(url, headersToGet, method, obj) {
+			var response, jsonData, options={};
+			try {
+				if (method)
+					options.method=method;
+				options.headers={'Accept': 'application/json, */*;q=0.8'};
+				if (hello("authenix").getAuthResponse() && 
+				    hello("authenix").getAuthResponse().access_token)
+					options.headers['Authorization']='Bearer ' + hello("authenix").getAuthResponse().access_token;
+				if (obj)
+				{
+      					options.headers['Content-Type']='application/json';
+					options.body=JSON.stringify(obj);
+				}
+				response = await fetch(url, options);
+			}
+			catch (error) {
+				document.getElementById("clarification").innerHTML = 'There was an error with ' + url + ": " + error.message;
+				console.log('There was an error', error);
+				return;
+			}
+			// Uses the 'optional chaining' operator
+			if (!(response?.ok)) {
+				document.getElementById("clarification").innerHTML = "HTTP Response Code: " + response?.status + " reading <small>" + url + "</small>: " + response?.statusText;
+				console.log("HTTP Response Code: " + response?.status + ": " + response?.statusText);
+				return;
+			}
+			try {
+				var headersObj={};
+				if (headersToGet)
+				{
+					for (var i=0; i<headersToGet.length; i++)
+						headersObj[headersToGet[i]]=response.headers.get(headersToGet[i]);
+					//Enumetates all headers: for(let entry of response.headers.entries()) console.log(entry) })
+				}
+				if (eliminarParamContentType(response.headers.get('Content-Type'))=="application/json" && 
+					(response.headers.get('Content-Length')==null || parseInt(response.headers.get('Content-Length'))>0))
+					return {obj: await response.json(), responseHeaders: headersObj};
+				else
+					return {obj: null, text: await response.text(), responseHeaders: headersObj};
+			} catch (error) {
+				if (error instanceof SyntaxError) {
+					document.getElementById("clarification").innerHTML = 'Syntax error reading ' + url + ": " + error.message;
+					console.log('There was a SyntaxError', error);
+					return;
+				}
+				else {
+					document.getElementById("clarification").innerHTML = 'Error interpreting ' + url + ": " + error.message;
+					console.log('There was an error', error);
+					return;
+				}
+			}
+		}
+
+		async function LoadJSONNodeSTAData(node, callback, url) {
 			var response, jsonData;
 			try {
 				var url_fetch;
@@ -458,7 +528,7 @@
 					response = await fetch(url_fetch);
 			}
 			catch (error) {
-				e + node.STAURL + ": " + error.message;
+				document.getElementById("clarification").innerHTML = 'There was an error with ' + node.STAURL + ": " + error.message;
 				console.log('There was an error', error);
 				node.STAdata = null;
 				networkNodes.update(node);
@@ -500,7 +570,7 @@
 				node.STAdata = (typeof jsonData.value!=="undefined") ? jsonData.value : [jsonData];
 			networkNodes.update(node);
 			if (jsonData.value && node.STAExpectedLength && node.STAdata.length<node.STAExpectedLength && jsonData["@iot.nextLink"])
-				LoadJSONData(node, callback, jsonData["@iot.nextLink"]);
+				LoadJSONNodeSTAData(node, callback, jsonData["@iot.nextLink"]);
 			else
 			{
 				UpdateChildenLoadJSONCallback(node);
@@ -602,11 +672,21 @@
 			document.getElementById("DialogConfiguration").showModal();
 		}
 
+		// Helper function to parse the JWT token
+		function parseJwt(token) {
+			var payload = token.split(".")[1];
+			var base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+			return JSON.parse(atob(base64));
+		};
+
+		var CriptoName="";
+
 		function OpenLogin(event) {
-			hello("authenix").login({redirect_uri: location.pathname, scope: "openid", display: "popup"}).then(
+			hello("authenix").login({redirect_uri: location.pathname, scope: "openid citiobs.secd.eu%23read citiobs.secd.eu%23create citiobs.secd.eu%23update citiobs.secd.eu%23delete", display: "popup"}).then(
 				function(success) {
 					document.getElementById("buttonOpenLogin").style.display="none";
-					document.getElementById("buttonOpenLogout").style.display="block";
+					document.getElementById("buttonOpenLogout").style.display="inline-block";
+					CriptoName=parseJwt(success.authResponse.id_token).sub;
 				},
 				function(e) 
 				{
@@ -618,7 +698,7 @@
 		function OpenLogout(event) {
 			hello("authenix").logout({force:true}).then(
 				function(success) {
-					document.getElementById("buttonOpenLogin").style.display="block";
+					document.getElementById("buttonOpenLogin").style.display="inline-block";
 					document.getElementById("buttonOpenLogout").style.display="none";
 					alert("Signed out from"+ " " + "authenix" + ". ");
 				}, function(e) {
@@ -644,15 +724,27 @@
 			if (currentNode.STAURL.charAt(currentNode.STAURL.length - 1) == '/')
 				currentNode.STAURL = currentNode.STAURL.slice(0, -1);  //remove last character
 			networkNodes.update(currentNode);	//https://visjs.github.io/vis-data/data/dataset.html#Data_Manipulation
-			LoadJSONData(currentNode);
+			LoadJSONNodeSTAData(currentNode);
 
 			//if childen nodes have also STAURL
 			UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
 		}
 
 		function ShowUploadObservationsDialog(nodeId) {
-			document.getElementById("DialogSTAUploadURLInput").value = nodeId.STAURL ? nodeId.STAURL : STAurl;
-			ShowUploadObservationsSelects(nodeId)
+			if (hello("authenix").getAuthResponse() && 
+			    hello("authenix").getAuthResponse().access_token &&
+				CriptoName)
+			{
+				document.getElementById("UploadObservationsLoginFirst").style.display="none";
+				document.getElementById("UploadObservationsForm").style.display="inline-block";
+				document.getElementById("DialogSTAUploadURLInput").value = nodeId.STAURL ? nodeId.STAURL : STAurl;
+				ShowUploadObservationsSelects(nodeId);
+			}
+			else
+			{
+				document.getElementById("UploadObservationsLoginFirst").style.display="inline-block";
+				document.getElementById("UploadObservationsForm").style.display="none";
+			}
 		}
 
 		function ShowUploadObservationsSelects(nodeId) {
@@ -660,7 +752,7 @@
 			if (nodeids && nodeids.length && networkNodes.get(nodeids[0])) {
 				var data = networkNodes.get(nodeids[0]).STAdata;
 				var dataAttributes = networkNodes.get(nodeids[0]).STAdataAttributes ? networkNodes.get(nodeids[0]).STAdataAttributes : getDataAttributes(data);
-				PopulateSelectSaveLayerDialog("DialogUploadObservationsPlace", dataAttributes, "plac");
+				PopulateSelectSaveLayerDialog("DialogUploadObservationsPlace", dataAttributes, "place");
 				PopulateSelectSaveLayerDialog("DialogUploadObservationsLongitude", dataAttributes, "long");
 				PopulateSelectSaveLayerDialog("DialogUploadObservationsLatitude", dataAttributes, "lat");
 				PopulateSelectSaveLayerDialog("DialogUploadObservationsTime", dataAttributes, "phenomenonTime");
@@ -672,7 +764,7 @@
 			selectedOptions.place=document.getElementById("DialogUploadObservationsPlaceSelect").value;
 			selectedOptions.longitude=document.getElementById("DialogUploadObservationsLongitudeSelect").value;
 			selectedOptions.latitude=document.getElementById("DialogUploadObservationsLatitudeSelect").value;
-			selectedOptions.time=document.getElementById("DialogUploadObservationsSelect").value;
+			selectedOptions.time=document.getElementById("DialogUploadObservationsTimeSelect").value;
 
 			/*selectedOptions.variable=document.getElementById("DialogSaveLayerVariableSelect").value;
 			if (descripUoM){
@@ -686,37 +778,177 @@
 			return selectedOptions;
 		}
 
-		async function GetObservedPropertyId(name, description, definition) {
-			return;
-		}
-		
-		async function GetDatastreamId(obsPropId, UoM, UoMSymbol, UoMDefinition) {
-			return;
-		}
-		
-		async function GetFeatureOfInterestId(place, longitude, latitude) {
-			return;
-		}
-		
-		async function GetObservationId(datastreamId, time, result) {
-			return;
+		//From iNat2STA
+		function ExtractIdFromURL(url)
+		{
+			var id;
+			if (!url && url!==0)
+				return;
+			if (-1!=url.indexOf("('") && -1!=url.indexOf("')", url.indexOf("('")+2))
+			{
+				id=url.substring(url.indexOf("('")+2,url.indexOf("')",url.indexOf("('")+2));
+				if (id==+id)  //Is it a numerical id?  /inspired in https://stackoverflow.com/questions/20169217/how-to-write-isnumber-in-javascript
+					return +id;  //returns a number
+				return id;  //returns a string
+			}
+			if (-1!=url.indexOf("(") && -1!=url.indexOf(")", url.indexOf("(")+1))
+			{
+				id=url.substring(url.indexOf("(")+1,url.indexOf(")",url.indexOf("(")+1));
+				return +id;  //returns a number
+			}
+			else
+				return url;
 		}
 
-		async function UploadObservationsSTA(data, dataAttributes, selectedOptions) {
-			var record, obsPropId, datastreamIds=[];
+		function AddKeysToFilter(url, obj, prefix) {
+			var objArray=Object.keys(obj);
+			for (var i=0; i<objArray.length; i++)
+			{
+				if (typeof obj[objArray[i]]==="object")
+				{
+					if (objArray[i]=="feature")
+						url+=(url=="" ? "" : " and ") + "st_equals(feature, geography'POINT (" + obj[objArray[i]].geometry.coordinates[0] + " " + obj[objArray[i]].geometry.coordinates[1] + ")')";
+					else
+						url=AddKeysToFilter(url, obj[objArray[i]], prefix ? prefix + "/" + objArray[i] : objArray[i]);						
+				}
+				else if (objArray[i]=="encodingType")
+					continue;  //I'm ignoring this element in the queries.
+				else
+				{
+					url+=(url=="" ? "" : " and ") + (prefix ? prefix + "/" : "")+ objArray[i] + " eq ";
+					if (typeof obj[objArray[i]]==="number" || objArray[i]=="resultTime" || objArray[i]=="phenomenonTime")
+						url+=obj[objArray[i]];
+					else
+						url+="'" + obj[objArray[i]] + "'";
+				}					
+			}
+			return url;
+		}
+
+		async function GetObjectId(url, objsName, obj){
+			var urlObj=url+"/"+objsName+ "?$filter=" + AddKeysToFilter("", obj);
+			var response=await HTTPJSONData(urlObj.replaceAll('%', '%25'));
+			var data=(response && response.obj) ? response.obj : null;
+			if (data && data.value && data.value.length)
+				return data.value[0]["@iot.id"];
+			else
+			{
+				//Not found. I'm creating it.
+				var response=await HTTPJSONData(url+"/"+objsName, ['Location'], 'POST', obj);
+				return ExtractIdFromURL(response.responseHeaders['Location']);
+			}
+		}
+
+		async function GetPartyId(url, authId) {
+			return GetObjectId(url, "Parties", {
+				"authId": authId,  
+				//"displayName": authId,  //It might change soon to "description"
+				//"description": null,
+				role: "individual"
+			});
+		}
+
+		async function GetObservedPropertyId(url, name, description, definition) {
+			return GetObjectId(url, "ObservedProperties", {
+				"name": name,
+				"description": description,
+				"definition": definition
+			});
+		}
+		async function GetSensorId(url, name, description, metadata) {
+			return GetObjectId(url, "Sensors", {
+				"name": "Sensor for measuring " + name.charAt(0).toLowerCase() + name.substring(1),
+				"description": "Sensor for measuring " + description.charAt(0).toLowerCase() + description.substring(1),
+				"encodingType": "text/html",
+				"metadata": metadata
+			});
+		}
+
+		async function GetThingId(url, partyId, name, description) {
+			return GetObjectId(url, "Things", {
+				"name": "Platform that measures " + name.charAt(0).toLowerCase() + name.substring(1),
+				"description": "Platform that measures " + description.charAt(0).toLowerCase() + description.substring(1),
+				"Party": { "@iot.id":  partyId }
+			});
+		}
+
+		
+		async function GetDatastreamId(url, partyId, obsPropId, sensorId, thingId, name, description, UoM, UoMSymbol, UoMDefinition) {
+			return GetObjectId(url, "Datastreams", {
+				"unitOfMeasurement":{
+					"name": UoM,
+					"symbol": UoMSymbol,
+					"definition": UoMDefinition
+				},
+				"observationType": "http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement",
+				"name": name,
+				"description": description,
+				"ObservedProperty": { "@iot.id": obsPropId },
+				"Sensor": { "@iot.id":  sensorId },
+    				"Thing": { "@iot.id": thingId },
+				"Party": { "@iot.id":  partyId }
+			});
+		}
+		
+		async function GetFeatureOfInterestId(url, place, longitude, latitude) {
+			return GetObjectId(url, "FeaturesOfInterest", {
+				"name": place,
+				"description": place,
+				"encodingType": "application/geo+json",
+				"feature": {
+					"type": "Feature",
+					"geometry": {
+        					"type": "Point",
+						"coordinates": [longitude, latitude]
+					}
+				}
+			});
+		}
+		
+		async function GetObservationId(url, datastreamId, FoIId, time, result) {
+			return GetObjectId(url, "Observations", {
+				"result": result,
+				"resultTime": time, 
+				"phenomenonTime": time,
+				"FeatureOfInterest": { "@iot.id": FoIId },
+				"Datastream": { "@iot.id": datastreamId }
+			});
+		}
+
+		async function UploadObservationsSTA(url, data, dataAttributes, selectedOptions) {
+			var record, obsPropId, sensorId, partyId, thingId, datastreamIds=[];
 			var dataAttributesArray = Object.keys(dataAttributes);
+
+			partyId=await GetPartyId(url, CriptoName);
+			if (!partyId && partyId!==0)
+				return;
+
 			for (var i = 0; i < dataAttributesArray.length; i++) {
 				if (dataAttributesArray[i]==selectedOptions.place || 
 					dataAttributesArray[i]==selectedOptions.longitude ||
 					dataAttributesArray[i]==selectedOptions.latitude ||
 					dataAttributesArray[i]==selectedOptions.time)
 					continue;
-				obsPropId=await GetObservedPropertyId(dataAttributesArray[i], dataAttributes[keys[k]].description, dataAttributes[keys[k]].definition);
-				datastreamIds[i]=await GetDatastreamId(obsPropId, dataAttributes[keys[k]].UoM, dataAttributes[keys[k]].UoMSymbol, dataAttributes[keys[k]].UoMDefinition);
+				obsPropId=await GetObservedPropertyId(url, dataAttributesArray[i], dataAttributes[dataAttributesArray[i]].description, dataAttributes[dataAttributesArray[i]].definition);
+				if (!obsPropId && obsPropId!==0)
+					return;
+				sensorId=await GetSensorId(url, dataAttributesArray[i], dataAttributes[dataAttributesArray[i]].description, dataAttributes[dataAttributesArray[i]].definition);
+				if (!sensorId && sensorId!==0)
+					return;
+
+				thingId=await GetThingId(url, partyId, dataAttributesArray[i], dataAttributes[dataAttributesArray[i]].description);
+				if (!thingId && thingId!==0)
+					return;
+
+				datastreamIds[i]=await GetDatastreamId(url, partyId, obsPropId, sensorId, thingId, dataAttributesArray[i], dataAttributes[dataAttributesArray[i]].description, dataAttributes[dataAttributesArray[i]].UoM, dataAttributes[dataAttributesArray[i]].UoMSymbol, dataAttributes[dataAttributesArray[i]].UoMDefinition);
+				if (!datastreamIds[i] && datastreamIds[i]!==0)
+					return;
 			}
 			for (var i = 0; i < data.length; i++) {
 				record=data[i];
-				var FoIId=await GetFeatureOfInterestId(record[selectedOptions.place], record[selectedOptions.longitude], record[selectedOptions.latitude]);				
+				var FoIId=await GetFeatureOfInterestId(url, record[selectedOptions.place], record[selectedOptions.longitude], record[selectedOptions.latitude]);
+				if (!FoIId && FoIId!==0)
+					return;
 				var keys = Object.keys(data[i]);
 				for (var k = 0; k < keys.length; k++) {
 					if (keys[k]==selectedOptions.place || 
@@ -724,8 +956,10 @@
 						keys[k]==selectedOptions.latitude ||
 						keys[k]==selectedOptions.time)
 						continue;
-					/*var Observation_id=*/
-					await GetObservationId(datastreamIds[k], FoIId, record[selectedOptions.time], record[keys[k]]);
+					
+					var observationId=await GetObservationId(url, datastreamIds[k], FoIId, record[selectedOptions.time], record[keys[k]]);
+					if (!observationId && observationId!==0)
+						return;
 				}
 			}
 			return;  //value	
@@ -733,15 +967,19 @@
 
 		function UploadObservationsSTAURL(event) {
 			event.preventDefault(); // We don't want to submit this form
-			document.getElementById("DialogSTAUploadURLInput").close();
+			document.getElementById("UploadObservations").close();
 			var nodeids = network.getConnectedNodes(currentNode.id, "from");
 			if (nodeids && nodeids.length && networkNodes.get(nodeids[0])) {
-				var data = networkNodes.get(nodeids[0]).STAdata;
-				var dataAttributes = networkNodes.get(nodeids[0]).STAdataAttributes ? networkNodes.get(nodeids[0]).STAdataAttributes : getDataAttributes(data);
-				var selectedOptions = GetSelectedOptionsUploadObservations();
-				UploadObservationsSTA(data, dataAttributes, selectedOptions).then(
+				var url=document.getElementById("DialogSTAUploadURLInput").value; 
+				if (url.charAt(url.length - 1) == '/')
+					url = url.slice(0, -1);  //remove last character
+				UploadObservationsSTA(url,
+					networkNodes.get(nodeids[0]).STAdata, 
+					networkNodes.get(nodeids[0]).STAdataAttributes ? networkNodes.get(nodeids[0]).STAdataAttributes : getDataAttributes(networkNodes.get(nodeids[0]).STAdata), 
+					GetSelectedOptionsUploadObservations()).then(
 					function(value) { document.getElementById("clarification").innerHTML = 'STA Upload observations completed.' },
-  					function(error) { document.getElementById("clarification").innerHTML = 'Error uploadoing Observations to STA.'}
+  					function(error) { document.getElementById("clarification").innerHTML = 'Error uploadoing Observations to STA.';
+							console.log(error) ;}
 				);
 			}
 		}
@@ -784,7 +1022,7 @@
 				currentNode.STAURL = currentNode.STAURL.slice(0, -1); //remove the last coma.
 				currentNode.STAExpectedLength = node.STAExpectedLength;
 				networkNodes.update(currentNode);
-				LoadJSONData(currentNode);
+				LoadJSONNodeSTAData(currentNode);
 				UpdateChildenSTAURL(currentNode);
 			}
 			else   //If no selected collumn has been found, no filter is done and all collumns are selected
@@ -836,7 +1074,7 @@
 			if (!isNaN(parseInt(document.getElementById("SelectExpandsNumberOfRecords").value)))
 				currentNode.STAExpectedLength = parseInt(document.getElementById("SelectExpandsNumberOfRecords").value);
 			networkNodes.update(currentNode);
-			LoadJSONData(currentNode);
+			LoadJSONNodeSTAData(currentNode);
 			UpdateChildenSTAURL(currentNode);
 		}
 
@@ -881,7 +1119,7 @@
 			}
 			currentNode.STAExpectedLength = node.STAExpectedLength;
 			networkNodes.update(currentNode);
-			LoadJSONData(currentNode);
+			LoadJSONNodeSTAData(currentNode);
 			UpdateChildenSTAURL(currentNode);
 		}
 
@@ -911,7 +1149,7 @@
 						node.STAURL=currentSTAURLroot + node.STAURL.substring(previousSTAURLroot.length);
 					if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || node.image == "SelectColumnsSTA.png" || node.image == "SelectRowsSTA.png") {
 						networkNodes.update(node);
-						LoadJSONData(node);
+						LoadJSONNodeSTAData(node);
 					}
 				}
 				UpdateChildenSTAURL(node);
@@ -1521,7 +1759,7 @@
 				PopulateSelectSaveLayerDialog("DialogSaveLayerTime", dataAttributes, "PhenomenonTime");
 				PopulateSelectSaveLayerDialog("DialogSaveLayerVariable", dataAttributes, "Datastream/ObservedProperty/name");
 				if (descripUoM){
-					document.getElementById("DialogSaveLayerVariableDescriptionUoM").style.display="block";
+					document.getElementById("DialogSaveLayerVariableDescriptionUoM").style.display="inline-block";
 					PopulateSelectSaveLayerDialog("DialogSaveLayerVariableDescription", dataAttributes, "Datastream/ObservedProperty/description");
 					PopulateSelectSaveLayerDialog("DialogSaveLayerVariableDefinition", dataAttributes, "Datastream/ObservedProperty/definition");
 					PopulateSelectSaveLayerDialog("DialogSaveLayerVariableUoM", dataAttributes, "Datastream/unitOfMeasurement/name");
@@ -1788,7 +2026,7 @@
 				}
 				s += "</table>";
 				document.getElementById("DialogSelectExpandsCheckBoxes").innerHTML = s;
-				document.getElementById("DialogSelectExpandsHTML").style.display = "block";
+				document.getElementById("DialogSelectExpandsHTML").style.display = "inline-block";
 			}
 			else
 				document.getElementById("DialogSelectExpandsHTML").style.display = "none";
@@ -1897,7 +2135,7 @@
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
-				LoadJSONData(nodeTo);
+				LoadJSONNodeSTAData(nodeTo);
 				return true;
 			}
 			if (nodeFrom.STAURL && IdOfSTASpecialQueries(nodeTo) != -1) {
@@ -1906,7 +2144,7 @@
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
-				LoadJSONData(nodeTo);
+				LoadJSONNodeSTAData(nodeTo);
 				return true;
 			}
 			if (nodeFrom.STAURL && (nodeTo.image == "SelectColumnsSTA.png" || nodeTo.image == "SelectRowsSTA.png")) {
@@ -1915,7 +2153,7 @@
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
-				LoadJSONData(nodeTo);
+				LoadJSONNodeSTAData(nodeTo);
 				return true;
 			}
 			if (nodeFrom.STAURL && (nodeTo.image == "SeparateColumns.png")) {
@@ -2146,7 +2384,7 @@
 				node.STAURL = STAurl;
 				node.STAExpectedLength = 100;
 				networkNodes.add(node);
-				LoadJSONData(node);
+				LoadJSONNodeSTAData(node);
 			}
 			else if (!startingNodeContextId || !StartCircularImage(node, networkNodes.get(startingNodeContextId), true))
 			{
