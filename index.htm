@@ -972,7 +972,7 @@
 					var observationId=await GetObservationId(url, datastreamIds[k], FoIId, record[selectedOptions.time], record[keys[k]]);
 					if (!observationId && observationId!==0)
 						return;
-					showInfoMessage("Observation <a href='" + getUrlToId(url, "Observations", observationId) + "' target='_blank'>" + observationId + "</a> available in STA");
+					showInfoMessage("Observation <a href='" + getUrlToId(url, "Observations", observationId) + "' target='_blank'>" + observationId + "</a> available in STA under Datastream <a href='" + getUrlToId(url, "Datastreams", datastreamIds[k]) + "' target='_blank'>" + datastreamIds[k] + "</a>");
 				}
 			}
 			return;  //value	
@@ -986,7 +986,7 @@
 				var url=document.getElementById("DialogSTAUploadURLInput").value; 
 				if (url.charAt(url.length - 1) == '/')
 					url = url.slice(0, -1);  //remove last character
-				showInfoMessage('Upload observations in STA started...'); },
+				showInfoMessage('Upload observations in STA started...');
 				UploadObservationsSTA(url,
 					networkNodes.get(nodeids[0]).STAdata, 
 					networkNodes.get(nodeids[0]).STAdataAttributes ? networkNodes.get(nodeids[0]).STAdataAttributes : getDataAttributes(networkNodes.get(nodeids[0]).STAdata), 
