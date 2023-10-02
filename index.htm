@@ -91,6 +91,7 @@
 				<span id="DialogSelectExpandsCheckBoxes">
 				</span>
 			</fieldset>
+			<br>
 			<label>Number records to request:
 				<input type="text" id="SelectExpandsNumberOfRecords" size="6" maxlength="6" value="100"></input>
 			</label>
@@ -368,10 +369,10 @@
 					SelectColumnsSTA: {description: "Select Columns"},
 					SelectRowsSTA: {description: "Select Rows"},
 					ViewQuerySTA: {description: "View Query"},
-					/*SelectColumnsTable: {description: "Select Columns"},
-					SelectRowsTable: {description: "Select Rows"},*/
-					SeparateColumns: {description: "Separate Columns"},
 					UploadObservations: {description: "Upload in STA"},
+					SelectColumnsTable: {description: "Select Columns"},
+					/*SelectRowsTable: {description: "Select Rows"},*/
+					SeparateColumns: {description: "Separate Columns"},
 					SaveTable: {description: "Save Table"},
 					SaveLayer: {description: "Save Layer"},
 					OpenMap: {description: "Open Map"}};
@@ -581,6 +582,7 @@
 				LoadJSONNodeSTAData(node, callback, jsonData["@iot.nextLink"]);
 			else
 			{
+				showInfoMessage("Completed.");
 				UpdateChildenLoadJSONCallback(node);
 				if (callback)
 					callback(node);  //The callback function is never used yet.
@@ -732,6 +734,7 @@
 			if (currentNode.STAURL.charAt(currentNode.STAURL.length - 1) == '/')
 				currentNode.STAURL = currentNode.STAURL.slice(0, -1);  //remove last character
 			networkNodes.update(currentNode);	//https://visjs.github.io/vis-data/data/dataset.html#Data_Manipulation
+			showInfoMessage("Getting STA home page...");
 			LoadJSONNodeSTAData(currentNode);
 
 			//if childen nodes have also STAURL
@@ -1019,24 +1022,53 @@
 			}
 			if (a < dataAttributesArray.length) //A checked attribute has been found ("for" breaks before ending).
 			{
-				var s;
-				currentNode.STAURL=AddKVPToURL(currentNode.STAURL, "$select=");
-				for (var a = 0; a < dataAttributesArray.length; a++) {
-					if (document.getElementById("SelectColumn_" + a).checked) {
-						if (dataAttributesArray[a].startsWith("@iot."))
-							s = dataAttributesArray[a].substring(5);
+				if (node.STAURL)
+				{
+					var s;
+					currentNode.STAURL=AddKVPToURL(currentNode.STAURL, "$select=");
+					for (var a = 0; a < dataAttributesArray.length; a++) {
+						if (document.getElementById("SelectColumn_" + a).checked) {
+							if (dataAttributesArray[a]=="@iot.selfLink")
+								s = dataAttributesArray[a];
+							else if (dataAttributesArray[a].startsWith("@iot."))
+								s = dataAttributesArray[a].substring(5);
+							else
+								s = dataAttributesArray[a].replace("@iot.", "/");  //Changes Datastreams@iot.navigationLink to Datastreams/navigationLink
+							
+							currentNode.STAURL += s + ",";
+							currentNode.STASelectedColumns[a]=true;
+						}
 						else
-							s = dataAttributesArray[a].replace("@iot.", "/");  //Changes Datastreams@iot.navigationLink to Datastreams/navigationLink
-						currentNode.STAURL += s + ",";
-						currentNode.STASelectedColumns[a]=true;
+							currentNode.STASelectedColumns[a]=false;
 					}
-					else
-						currentNode.STASelectedColumns[a]=false;
+					currentNode.STAURL = currentNode.STAURL.slice(0, -1); //remove the last coma.
+					currentNode.STAExpectedLength = node.STAExpectedLength;
+					networkNodes.update(currentNode);
+					showInfoMessage("Selecting STA columns...");
+					LoadJSONNodeSTAData(currentNode);
 				}
-				currentNode.STAURL = currentNode.STAURL.slice(0, -1); //remove the last coma.
-				currentNode.STAExpectedLength = node.STAExpectedLength;
-				networkNodes.update(currentNode);
-				LoadJSONNodeSTAData(currentNode);
+				else
+				{
+					//If there is no STA to query, the selection is done manually (table mode).
+					currentNode.STAdata = JSON.parse(JSON.stringify(currentNode.STAdata));
+					for (var a = 0; a < dataAttributesArray.length; a++) {
+						if (document.getElementById("SelectColumn_" + a).checked)
+							currentNode.STASelectedColumns[a]=true;
+						else
+							currentNode.STASelectedColumns[a]=false;
+					}
+
+					var data=currentNode.STAdata, record;
+					for (var i = 0; i < data.length; i++) {
+						record=data[i];
+						for (var a = 0; a < dataAttributesArray.length; a++) {
+							if (!currentNode.STASelectedColumns[a]) {
+								delete record[dataAttributesArray[a]];
+							}
+						}
+					}
+					networkNodes.update(currentNode);
+				}
 				UpdateChildenSTAURL(currentNode);
 			}
 			else   //If no selected collumn has been found, no filter is done and all collumns are selected
@@ -1088,6 +1120,7 @@
 			if (!isNaN(parseInt(document.getElementById("SelectExpandsNumberOfRecords").value)))
 				currentNode.STAExpectedLength = parseInt(document.getElementById("SelectExpandsNumberOfRecords").value);
 			networkNodes.update(currentNode);
+			showInfoMessage("Expanding STA columns...");
 			LoadJSONNodeSTAData(currentNode);
 			UpdateChildenSTAURL(currentNode);
 		}
@@ -1133,6 +1166,7 @@
 			}
 			currentNode.STAExpectedLength = node.STAExpectedLength;
 			networkNodes.update(currentNode);
+			showInfoMessage("Selecting STA rows...");
 			LoadJSONNodeSTAData(currentNode);
 			UpdateChildenSTAURL(currentNode);
 		}
@@ -1163,6 +1197,7 @@
 						node.STAURL=currentSTAURLroot + node.STAURL.substring(previousSTAURLroot.length);
 					if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || node.image == "SelectColumnsSTA.png" || node.image == "SelectRowsSTA.png") {
 						networkNodes.update(node);
+						showInfoMessage("Updating STA child node...");
 						LoadJSONNodeSTAData(node);
 					}
 				}
@@ -2149,6 +2184,7 @@
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
+				showInfoMessage("Requesting " + STAEntitiesArray[IdOfSTAEntity(nodeTo)] + " to STA...");
 				LoadJSONNodeSTAData(nodeTo);
 				return true;
 			}
@@ -2158,6 +2194,7 @@
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
+				showInfoMessage("Requesting " + STASpecialQueriesArray[IdOfSTASpecialQueries(nodeTo)] + " to STA...");
 				LoadJSONNodeSTAData(nodeTo);
 				return true;
 			}
@@ -2167,6 +2204,7 @@
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
+				showInfoMessage("Selecting " + (nodeTo.image == "SelectColumnsSTA.png" ? "columns" : "rows") + " to STA...");
 				LoadJSONNodeSTAData(nodeTo);
 				return true;
 			}
@@ -2196,9 +2234,10 @@
 					addEdge: function (data, callback) {
 						console.log('add edge', data);
 						if (data.from == data.to)
-							alert("Connection to the same node is not allowed");
+							showInfoMessage("Connection to the same node is not allowed.");
 						else {
 							networkEdges.add([{ from: data.from, to: data.to }]);
+							showInfoMessage("Connected.");
 							StartCircularImage(networkNodes.get(data.to), networkNodes.get(data.from), false);
 						}
 						connectionInProcess = false;
@@ -2268,11 +2307,11 @@
 					ShowOpenMapDialog(currentNode.id);
 					document.getElementById("DialogSaveLayer").showModal();
 				}
-				else if (currentNode.image == "SelectColumnsSTA.png") {
+				else if (currentNode.image == "SelectColumnsSTA.png" || currentNode.image == "SelectColumnsTable.png") {
 					//Determining the parent node.
 					var nodeids = network.getConnectedNodes(currentNode.id, "from");
 					if (nodeids && nodeids.length) {
-						if (networkNodes.get(nodeids[0]) && networkNodes.get(nodeids[0]).STAURL)
+						if (networkNodes.get(nodeids[0]))
 							ShowTableSelectColumnsDialog(nodeids[0], currentNode.id);
 
 						document.getElementById("DialogSelectColumns").showModal();
@@ -2397,6 +2436,7 @@
 				node.STAURL = STAurl;
 				node.STAExpectedLength = 100;
 				networkNodes.add(node);
+				showInfoMessage("Requesting STA landing page");
 				LoadJSONNodeSTAData(node);
 			}
 			else if (!startingNodeContextId || !StartCircularImage(node, networkNodes.get(startingNodeContextId), true))
