@@ -49,6 +49,8 @@
 				<label>Table font size ratio:
 					<input type="text" id="DialogConfigurationFontSize" size="3" value="50"></input>%
 				</label>
+				<br>
+				<label><input type="checkbox" id="DialogConfigurationAddGeolocationHeader"></input>Add geolocation header</label>
 			</p>
 			<div class="center">
 				<button value="default" onClick="ChangeConfiguration(event)">OK</button>
@@ -414,6 +416,58 @@
 			return "";
 		}
 
+		var IdGPSPosition=0;
+		function InitGPSPosition() {
+			if (navigator.geolocation)
+				IdGPSPosition=navigator.geolocation.watchPosition(UpdateGPSPosition, ErrorGPSPosition, {enableHighAccuracy: true, maximumAge: 8000});
+			else
+			{
+				showInfoMessage("Geolocation not supported by the web browser");
+				CancelGPSPosition();
+			}
+		}
+
+		var PreviousGPSPoint=null;
+
+		function CancelGPSPosition() {
+			if (IdGPSPosition) {
+				navigator.geolocation.clearWatch(IdGPSPosition);
+				IdGPSPosition=0;
+			}
+			PreviousGPSPoint=null;
+		}
+
+		var GPSPositionReported=false;
+		function UpdateGPSPosition(position) {
+			PreviousGPSPoint={long: position.coords.longitude, lat: position.coords.latitude};
+			if (!GPSPositionReported)
+			{
+				showInfoMessage("Geolocation is long: " + PreviousGPSPoint.long + " lat: " + PreviousGPSPoint.lat);
+				GPSPositionReported=true;
+			}
+		}
+
+		function ErrorGPSPosition(error) {
+			switch(error.code) {
+				case error.PERMISSION_DENIED:
+	      				showInfoMessage("User denied request location.");
+					CancelGPSPosition();
+					break;
+				case error.POSITION_UNAVAILABLE:
+      					showInfoMessage("Location information is unavailable.");
+					CancelGPSPosition();
+      					break;
+				case error.TIMEOUT:
+					showInfoMessage("Request location timeOut.");
+					CancelGPSPosition();
+					break;
+				case error.UNKNOWN_ERROR:
+				default:
+					showInfoMessage("Unknown error obtaining Location (" + error.code + ").");
+					break;
+			}
+		}
+
 		var currentNode = null, connectionInProcess = false, startingNodeContextId = null;
 
 		function StartSTAPage() {
@@ -424,6 +478,8 @@
 				location.replace("https:" + location.href.substring(s_protocol.length));
 
 			hello.init({"authenix": "62df9d18-fc59-4626-98f0-989cdf170936"}, {redirect_uri: ((location.pathname.charAt(location.pathname.length-1)=='/') ? location.pathname.substring(0, location.pathname.length-1) : location.pathname)});
+
+			UpdateConfiguration();
 
 			var s = "";
 			for (var i = 0; i < STAEntitiesArray.length; i++)
@@ -461,6 +517,21 @@
 				return contentType.substring(0, i);
 		}
 
+		function AddHeadersIfNeeded(options) {
+			if (hello("authenix").getAuthResponse() && 
+			    hello("authenix").getAuthResponse().access_token) {
+				if (!options.headers)
+					options.headers={};
+				options.headers['Authorization']='Bearer ' + hello("authenix").getAuthResponse().access_token;
+			}
+			if (PreviousGPSPoint)
+			{
+				if (!options.headers)
+					options.headers={};
+				options.headers['Geolocation']='geo:' + PreviousGPSPoint.lat + ',' + PreviousGPSPoint.long;
+			}
+		}
+
 		//https://web.dev/fetch-api-error-handling/
 		async function HTTPJSONData(url, headersToGet, method, obj) {
 			var response, jsonData, options={};
@@ -468,9 +539,8 @@
 				if (method)
 					options.method=method;
 				options.headers={'Accept': 'application/json, */*;q=0.8'};
-				if (hello("authenix").getAuthResponse() && 
-				    hello("authenix").getAuthResponse().access_token)
-					options.headers['Authorization']='Bearer ' + hello("authenix").getAuthResponse().access_token;
+				
+				AddHeadersIfNeeded(options);
 				if (obj)
 				{
       					options.headers['Content-Type']='application/json';
@@ -517,7 +587,7 @@
 		}
 
 		async function LoadJSONNodeSTAData(node, callback, url) {
-			var response, jsonData;
+			var response, jsonData, options={};
 			try {
 				var url_fetch;
 				if (url)
@@ -526,13 +596,11 @@
 					url_fetch=AddKVPToURL(node.STAURL);
 				else
 					url_fetch=AddKVPToURL(node.STAURL, "$top="+node.STAExpectedLength);
+
+				AddHeadersIfNeeded(options);
 					
-				if (hello("authenix").getAuthResponse() && 
-				    hello("authenix").getAuthResponse().access_token)
-					response = await fetch(url_fetch, {headers: {
-								'Authorization': 'Bearer ' + hello("authenix").getAuthResponse().access_token
-							}}
-					);
+				if (options.headers)
+					response = await fetch(url_fetch, options);
 				else
 					response = await fetch(url_fetch);
 			}
@@ -716,11 +784,20 @@
 				});
 		}
 
+		function UpdateConfiguration()
+		{
+			changeCSSStyle(".tablesmall", 'font-size', document.getElementById("DialogConfigurationFontSize").value/100+"em");
+
+			if (document.getElementById("DialogConfigurationAddGeolocationHeader").checked)
+				InitGPSPosition();
+			else
+				CancelGPSPosition();
+		}
+
 		function ChangeConfiguration(event) {
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogConfiguration").close(document.getElementById("DialogConfigurationFontSize").value);
-
-			changeCSSStyle(".tablesmall", 'font-size', document.getElementById("DialogConfigurationFontSize").value/100+"em");
+			UpdateConfiguration();			
 		}
 
 		function GetSTAURL(event) {
