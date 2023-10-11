@@ -1088,7 +1088,9 @@
 				if (node.STAURL)
 					currentNode.STAURL = node.STAURL;
 				if (node.STAdata)
-					currentNode.STAdata = node.STAdata;
+					currentNode.STAdata = JSON.parse(JSON.stringify(node.STAdata));
+				if (node.STAdataAttributes)
+					currentNode.STAdataAttributes = JSON.parse(JSON.stringify(node.STAdataAttributes));
 			}
 			currentNode.STASelectedColumns=[];
 			var dataAttributes = currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(currentNode.STAdata);
@@ -1143,6 +1145,10 @@
 								delete record[dataAttributesArray[a]];
 							}
 						}
+					}
+					for (var a = 0; a < dataAttributesArray.length; a++) {
+						if (!currentNode.STASelectedColumns[a])
+							delete dataAttributes[dataAttributesArray[a]];
 					}
 					networkNodes.update(currentNode);
 				}
@@ -2100,9 +2106,11 @@
 			}*/
 		}
 
-		function ShowTableSelectColumnsDialog(parentNodeId,nodeId) {
-			var data = networkNodes.get(parentNodeId).STAdata, 
-					selectedColumns=networkNodes.get(nodeId).STASelectedColumns;
+		function ShowTableSelectColumnsDialog(parentNodeId, nodeId) {
+			var node=networkNodes.get(nodeId)
+
+			var data = networkNodes.get(parentNodeId).STAdata ? networkNodes.get(parentNodeId).STAdata : node.STAdata, 
+					selectedColumns=node.STASelectedColumns;
 
 			if (!data || !data.length) {
 				document.getElementById("DialogSelectColumnsHTML").innerHTML = "No data to show.";
@@ -2164,7 +2172,7 @@
 			var data = networkNodes.get(nodeId).STAdata;
 
 			if (!data || !data.length) {
-				document.getElementById("DialogSelectColumnsHTML").innerHTML = "No data to show.";
+				document.getElementById("DialogSelectRowsTable").innerHTML = "No data to show.";
 				return;
 			}
 
@@ -2278,11 +2286,24 @@
 			if (nodeFrom.STAURL && (nodeTo.image == "SelectColumnsSTA.png" || nodeTo.image == "SelectRowsSTA.png")) {
 				nodeTo.STAURL = nodeFrom.STAURL;
 				nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
+				if (nodeFrom.STAdata)
+					nodeTo.STAdata = JSON.parse(JSON.stringify(nodeFrom.STAdata));
+				if (nodeFrom.STAdataAttributes)
+					nodeTo.STAdataAttributes = JSON.parse(JSON.stringify(nodeFrom.STAdataAttributes));
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
-				showInfoMessage("Selecting " + (nodeTo.image == "SelectColumnsSTA.png" ? "columns" : "rows") + " to STA...");
-				LoadJSONNodeSTAData(nodeTo);
+				//showInfoMessage("Selecting " + (nodeTo.image == "SelectColumnsSTA.png" ? "columns" : "rows") + " to STA...");
+				//LoadJSONNodeSTAData(nodeTo);
+				return true;
+			}
+			if (nodeFrom.STAdata && nodeTo.image == "SelectColumnsTable.png") {
+				nodeTo.STAdata = JSON.parse(JSON.stringify(nodeFrom.STAdata));
+				if (nodeFrom.STAdataAttributes)
+					nodeTo.STAdataAttributes = JSON.parse(JSON.stringify(nodeFrom.STAdataAttributes));
+				networkNodes.update(nodeTo);
+				if (calUnir)
+					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id }]);
 				return true;
 			}
 			if (nodeFrom.STAURL && (nodeTo.image == "SeparateColumns.png")) {
