@@ -25,7 +25,7 @@
 
 				<label class=labelbotton><img src="login.png" height="20" valign="middle"> Open
 				<input type="file" id="actual-btn" hidden onchange='openNetwork(event);'/>
-				</label>
+				</label> <!-- https://dev.to/faddalibrahim/how-to-create-a-custom-file-upload-button-using-html-css-and-javascript-1c03 -->
 				<button onclick='saveNetwork(event);'><img src="login.png" height="20" valign="middle"> Save</button>
 				<button id="buttonOpenLogin" onclick='OpenLogin(event);'><img src="login.png" height="20" valign="middle"> Login</button>
 				<button id="buttonOpenLogout" onclick='OpenLogout(event);' style="display: none");'><img src="login.png" height="20" valign="middle"> Logout</button>
@@ -104,6 +104,29 @@
 			</label>
 			<div class="center">
 				<button value="default" onClick="GetSelectExpands(event)">OK</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+
+	<dialog id="DialogSelectSortBy">
+		<form>
+			<fieldset id="DialogSelectSortByHTML">
+				<legend>Select the criteria for sorting:</legend>
+				<span id="DialogSelectSortByRadioButtons">
+				</span>
+			</fieldset>
+			<br>
+			<label>
+				<input type="radio" id="SelectSortByAsc" name="SelectSortByArcDesc" checked />ascending 
+				<input type="radio" id="SelectSortByDesc" name="SelectSortByArcDesc" />descending
+			</label>
+			<br>
+			<label>Number records to request:
+				<input type="text" id="SelectSortByNumberOfRecords" size="6" maxlength="6" value="100"></input>
+			</label>
+			<div class="center">
+				<button value="default" onClick="GetSelectSortBy(event)">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
@@ -375,6 +398,7 @@
 					Table: {description: "View Table"}, 
 					SelectColumnsSTA: {description: "Select Columns"},
 					SelectRowsSTA: {description: "Select Rows"},
+					SortBySTA: {description: "Sort by"},
 					ViewQuerySTA: {description: "View Query"},
 					UploadObservations: {description: "Upload in STA"},
 					SelectColumnsTable: {description: "Select Columns"},
@@ -1193,7 +1217,7 @@
 			if (document.getElementById("DialogSelectExpandsHTML").style.display != "none")
 			{
 				var dataAttr=currentNode.STASelectedExpands.dataAttributesUnexpanded;
-				var dataAttrArray=Array.keys(dataAttr)
+				var dataAttrArray=Object.keys(dataAttr)
 				for (var a = 0; a < dataAttrArray.length; a++) {
 					if (document.getElementById("SelectExpand_" + a) && document.getElementById("SelectExpand_" + a).checked)
 						break;
@@ -1222,6 +1246,38 @@
 				currentNode.STAExpectedLength = parseInt(document.getElementById("SelectExpandsNumberOfRecords").value);
 			networkNodes.update(currentNode);
 			showInfoMessage("Expanding STA columns...");
+			LoadJSONNodeSTAData(currentNode);
+			UpdateChildenSTAURL(currentNode);
+		}
+
+		function GetSelectSortBy(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogSelectSortBy").close();
+			
+			var dataAttributes = currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(currentNode.STAdata);
+			var dataAttributesArray=Object.keys(dataAttributes)
+
+			if (document.getElementById("DialogSelectSortByHTML").style.display != "none")
+			{
+				for (var a = 0; a < dataAttributesArray.length; a++)
+				{
+					if (!dataAttributesArray[a].endsWith("@iot.navigationLink") && dataAttributesArray[a].charAt(0)!='@')
+					{
+						if (document.getElementById("SelectSortByEntity_" + a) && document.getElementById("SelectSortByEntity_" + a).checked)
+							break;
+					}
+				}
+
+				if (a < dataAttributesArray.length) //A checked attribute has been found ("for" breaks before ending).
+				{
+					var s;
+					currentNode.STAURL = AddKVPToURL(currentNode.STAURL, "$orderby="+dataAttributesArray[a]+" "+((document.getElementById("SelectSortByDesc") && document.getElementById("SelectSortByDesc").checked) ? "desc" : "asc"));
+				}
+			}
+			if (!isNaN(parseInt(document.getElementById("SelectExpandsNumberOfRecords").value)))
+				currentNode.STAExpectedLength = parseInt(document.getElementById("SelectSortByNumberOfRecords").value);
+			networkNodes.update(currentNode);
+			showInfoMessage("Sorting STA by "+ dataAttributesArray[a] + " ...");
 			LoadJSONNodeSTAData(currentNode);
 			UpdateChildenSTAURL(currentNode);
 		}
@@ -2190,6 +2246,34 @@
 			
 		}
 
+		function ShowTableSelectSortByDialog(nodeId) {
+			var node=networkNodes.get(nodeId);
+			var data = node.STAdata;
+		
+			if (!data || !data.length) {
+				document.getElementById("DialogSelectSortByRadioButtons").innerHTML = "No data to show.";
+				return;
+			}
+	
+			var dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data);
+
+			const dataAttributesArray = Object.keys(dataAttributes);
+	
+			var s = "";
+			var first=true;
+			for (var a = 0; a < dataAttributesArray.length; a++)
+			{
+				if (!dataAttributesArray[a].endsWith("@iot.navigationLink") && dataAttributesArray[a].charAt(0)!='@')
+				{
+					s += "<label><input type='radio'" + (first ? "checked='checked'" : "") + " id='SelectSortByEntity_" + a + "' name='SelectSortByEntity'/> " + dataAttributesArray[a] + "</label><br>";
+					first=false;
+				}
+			}
+			document.getElementById("DialogSelectSortByRadioButtons").innerHTML = s;
+			//document.getElementById("DialogSelectSortByHTML").style.display = "inline-block";
+			document.getElementById("SelectSortByNumberOfRecords").value=node.STAExpectedLength;
+		}
+
 		function ShowTableSelectRowsDialog(parentNodeId, nodeId) {
 			var data = networkNodes.get(parentNodeId).STAdata;
 
@@ -2318,7 +2402,7 @@
 				LoadJSONNodeSTAData(nodeTo);
 				return true;
 			}
-			if (nodeFrom.STAURL && (nodeTo.image == "SelectColumnsSTA.png" || nodeTo.image == "SelectRowsSTA.png")) {
+			if (nodeFrom.STAURL && (nodeTo.image == "SelectColumnsSTA.png" || nodeTo.image == "SelectRowsSTA.png" || nodeTo.image == "SortBySTA.png")) {
 				nodeTo.STAURL = nodeFrom.STAURL;
 				nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
 				if (nodeFrom.STAdata)
@@ -2464,14 +2548,20 @@
 						document.getElementById("DialogSelectRows").showModal();
 					}
 				}
-				else if (IdOfSTAEntity(currentNode) != -1)
-				{
+				else if (currentNode.image == "SortBySTA.png") {
+					var nodeids = network.getConnectedNodes(currentNode.id, "from");
+					if (nodeids && nodeids.length) {
+						if (networkNodes.get(nodeids[0]) && networkNodes.get(nodeids[0]).STAURL)
+							ShowTableSelectSortByDialog(nodeids[0]);
+						document.getElementById("DialogSelectSortBy").showModal();
+					}
+				}
+				else if (IdOfSTAEntity(currentNode) != -1) {
 					//Offering expand
 					ShowTableSelectExpandsDialog(currentNode.id, true);
 					document.getElementById("DialogSelectExpands").showModal();
 				}
-				else if (IdOfSTASpecialQueries(currentNode) != -1)
-				{
+				else if (IdOfSTASpecialQueries(currentNode) != -1) {
 					ShowTableSelectExpandsDialog(currentNode.id, false);
 					document.getElementById("DialogSelectExpands").showModal();
 				}
