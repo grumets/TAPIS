@@ -181,7 +181,7 @@
 			Import CSV file table.
 			<br>
 			<label>CSV delimiter:
-				<input type="text" id="DialogImportCSVDelimiter" size="2" maxlength="1" value=";"></input>
+				<label><input type="radio" name="DialogImportCSVDelimiter" id="DialogImportCSVDelimiterText" checked></input> <input type="text" id="DialogImportCSVDelimiter" size="1" maxlength="1" value=";"></input></label> <label><input type="radio" name="DialogImportCSVDelimiter" id="DialogImportCSVDelimiterTab"></input> Tab</label>
 			</label>
 			<br>
 			<label><input type="checkbox" id="DialogImportCSVHeader"></input>First line contains names of the fields</label>
@@ -311,6 +311,14 @@
 			</fieldset>
 			<label>Date and time:
 				<span id="DialogUploadObservationsTime"></span>
+			</label>
+			<br>
+			<label>Sensor instance id or name:
+				<span id="DialogUploadObservationsSensorName"></span>
+			</label>
+			<br>
+			<label>Sensor reference or type:
+				<span id="DialogUploadObservationsSensorType"></span>
 			</label>
 			<br>
 			<label>STA service URL:
@@ -751,7 +759,7 @@
 				//Transform the JSON text in something in memory
 				try
 				{
-					var result = Papa.parse(reader.result, {delimiter: document.getElementById("DialogImportCSVDelimiter").value,
+					var result = Papa.parse(reader.result, {delimiter: (document.getElementById("DialogImportCSVDelimiterText").checked ? document.getElementById("DialogImportCSVDelimiter").value : '\t'),
 							header: document.getElementById("DialogImportCSVHeader").checked,
 							skipEmptyLines: true});
 					//if (document.getElementById("DialogImportCSVHeader").checked)
@@ -886,6 +894,8 @@
 				PopulateSelectSaveLayerDialog("DialogUploadObservationsLongitude", dataAttributes, "long");
 				PopulateSelectSaveLayerDialog("DialogUploadObservationsLatitude", dataAttributes, "lat");
 				PopulateSelectSaveLayerDialog("DialogUploadObservationsTime", dataAttributes, "phenomenonTime");
+				PopulateSelectSaveLayerDialog("DialogUploadObservationsSensorName", dataAttributes, "sensor_id");
+				PopulateSelectSaveLayerDialog("DialogUploadObservationsSensorType", dataAttributes, "sensor_type");
 			}
 		}
 
@@ -895,6 +905,8 @@
 			selectedOptions.longitude=document.getElementById("DialogUploadObservationsLongitudeSelect").value;
 			selectedOptions.latitude=document.getElementById("DialogUploadObservationsLatitudeSelect").value;
 			selectedOptions.time=document.getElementById("DialogUploadObservationsTimeSelect").value;
+			selectedOptions.sensorName=document.getElementById("DialogUploadObservationsSensorNameSelect").value;
+			selectedOptions.sensorType=document.getElementById("DialogUploadObservationsSensorTypeSelect").value;
 
 			/*selectedOptions.variable=document.getElementById("DialogSaveLayerVariableSelect").value;
 			if (descripUoM){
@@ -1035,10 +1047,13 @@
 		}
 		
 		async function GetObservationId(url, datastreamId, FoIId, time, result) {
+			var d=new Date(time); 
+			var t=d.toISOString();
+
 			return GetObjectId(url, "Observations", {
 				"result": result,
-				"resultTime": time, 
-				"phenomenonTime": time,
+				"resultTime": t, 
+				"phenomenonTime": t,
 				"FeatureOfInterest": { "@iot.id": FoIId },
 				"Datastream": { "@iot.id": datastreamId }
 			});
@@ -1055,21 +1070,29 @@
 			partyId=await GetPartyId(url, CriptoName);
 			if (!partyId && partyId!==0)
 				return;
-
+			record=data[0];  //to be able to extract a constant value (the sensor name)
 			for (var i = 0; i < dataAttributesArray.length; i++) {
 				if (dataAttributesArray[i]==selectedOptions.place || 
 					dataAttributesArray[i]==selectedOptions.longitude ||
 					dataAttributesArray[i]==selectedOptions.latitude ||
-					dataAttributesArray[i]==selectedOptions.time)
+					dataAttributesArray[i]==selectedOptions.time ||
+					dataAttributesArray[i]==selectedOptions.sensorName ||
+					dataAttributesArray[i]==selectedOptions.sensorType)
 					continue;
+				if (!dataAttributes[dataAttributesArray[i]].description || 
+					!dataAttributes[dataAttributesArray[i]].definition)
+				{
+					datastreamIds[i]=null;
+					continue;
+				}
 				obsPropId=await GetObservedPropertyId(url, dataAttributesArray[i], dataAttributes[dataAttributesArray[i]].description, dataAttributes[dataAttributesArray[i]].definition);
 				if (!obsPropId && obsPropId!==0)
 					return;
-				sensorId=await GetSensorId(url, dataAttributesArray[i], dataAttributes[dataAttributesArray[i]].description, dataAttributes[dataAttributesArray[i]].definition);
+				sensorId=await GetSensorId(url, dataAttributesArray[i], (selectedOptions.sensorType && record[selectedOptions.sensorType]) ? record[selectedOptions.sensorType] : dataAttributes[dataAttributesArray[i]].description, dataAttributes[dataAttributesArray[i]].definition);
 				if (!sensorId && sensorId!==0)
 					return;
 
-				thingId=await GetThingId(url, partyId, dataAttributesArray[i], dataAttributes[dataAttributesArray[i]].description);
+				thingId=await GetThingId(url, partyId, dataAttributesArray[i], (selectedOptions.sensorName && record[selectedOptions.sensorName]) ? record[selectedOptions.sensorName] : dataAttributes[dataAttributesArray[i]].description);
 				if (!thingId && thingId!==0)
 					return;
 
@@ -1089,6 +1112,8 @@
 						keys[k]==selectedOptions.longitude ||
 						keys[k]==selectedOptions.latitude ||
 						keys[k]==selectedOptions.time)
+						continue;
+					if (!datastreamIds[k])
 						continue;
 					
 					var observationId=await GetObservationId(url, datastreamIds[k], FoIId, record[selectedOptions.time], record[keys[k]]);
@@ -1948,9 +1973,19 @@
 
 		function PopulateSelectSaveLayerDialog(id, dataAttributes, selectedOption)
 		{
+			var thereIsSelectionOption=false;
 			var dataAttributesArray = Object.keys(dataAttributes);
 	
 			var s="<select id=\""+id+"Select"+"\">";
+			for (var a=0; a<dataAttributesArray.length; a++)
+			{
+				if (dataAttributesArray[a]==selectedOption)
+				{
+					thereIsSelectionOption=true;
+					break;
+				}
+			}
+			s+="<option value=\"\""+ (!thereIsSelectionOption ? "selected=\"selected\"" : "") +"></option>";
 			for (var a=0; a<dataAttributesArray.length; a++)
 				s+="<option value=\""+dataAttributesArray[a]+"\""+ (dataAttributesArray[a]==selectedOption ? "selected=\"selected\"" : "") +">"+dataAttributesArray[a]+"</option>";
 			s+="</select>";
