@@ -48,9 +48,9 @@
 			refresh: true,
 
 			// OAuth2 standard defines SPACE as scope delimiter, hello.js defaults to ','
-			scope_delim: " ",
+			scope_delim: " "/*,
 
-			// Changed according to: https://github.com/MrSwitch/hello.js/issues/167
+			//Changed according to: https://github.com/MrSwitch/hello.js/issues/167
 			xhr: function (p) {
 				var token = p.query.access_token;
 				delete p.query.access_token;
@@ -62,7 +62,7 @@
 				}
 
 				return true;
-			}
+			}*/
 		}
 	});
 

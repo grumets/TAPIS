@@ -381,9 +381,10 @@
     El TAPIS es pot actualitzar des de https://github.com/joanma747/tapis.
 */
 
+		var config;
 		//var STAurl = "https://citiobs.demo.secure-dimensions.de/inaturalist/v1.1";
-		var STAurl="https://citiobs.demo.secure-dimensions.de/staplus/v1.1";
-		var MMNpath="../osm";
+		//var STAurl="https://citiobs.demo.secure-dimensions.de/staplus/v1.1";
+		//var MMNpath="../osm";
 
 		const STAEntities = {ObservedProperties: {singular: "ObservedProperty", entities: ["Datastreams", "MultiDatastreams"], properties: ["name", "definition", "description", "properties"]}, 
 				Observations: {singular: "Observation", entities: ["Datastream", "MultiDatastream", "FeatureOfInterest", "ObservationGroups", "Subjects", "Objects"], properties: ["phenomenonTime", "resultTime", "result", "resultQuality", "validTime", "parameters"]}, 
@@ -428,6 +429,16 @@
 
 		function deapCopy(o) {
 			return JSON.parse(JSON.stringify(o));
+		}
+
+		//from the MiraMon Map Browser DonaAdrecaAbsoluta(url)
+		function getAbsoluteURL(url)
+		{
+			if (url.length>8 && (url.substring(0, 7)=="http://" || url.substring(0, 8)=="https://"))
+				return url;
+			if (url.charAt(0)=="/")
+				return location.protocol+"//"+location.host+url;
+			return location.protocol+"//"+location.host+DonaAdreca(location.pathname)+url;
 		}
 
 		function AddKVPToURL(url, kvp) {
@@ -511,6 +522,7 @@
 
 		var currentNode = null, connectionInProcess = false, startingNodeContextId = null;
 
+
 		function StartSTAPage() {
 
 			var s_protocol=getProtocol(location.href);
@@ -521,6 +533,18 @@
 			hello.init({"authenix": "62df9d18-fc59-4626-98f0-989cdf170936"}, {redirect_uri: ((location.pathname.charAt(location.pathname.length-1)=='/') ? location.pathname.substring(0, location.pathname.length-1) : location.pathname)});
 
 			UpdateConfiguration();
+
+			InitSTAPage();  //promise
+		}
+
+		async function InitSTAPage() {
+			var response=await HTTPJSONData("config.json");
+			config=(response && response.obj) ? response.obj : null;
+			if (!config)
+			{
+				showInfoMessage("Error loading \'config.json\'");
+				return;
+			}
 
 			var s = "";
 			for (var i = 0; i < STAEntitiesArray.length; i++)
@@ -568,7 +592,8 @@
 		}
 
 		function AddHeadersIfNeeded(options) {
-			if (hello("authenix").getAuthResponse() && 
+			if (CriptoName &&
+			    hello("authenix").getAuthResponse() && 
 			    hello("authenix").getAuthResponse().access_token) {
 				if (!options.headers)
 					options.headers={};
@@ -807,18 +832,20 @@
 			return JSON.parse(atob(base64));
 		};
 
-		var CriptoName="";
-
+		var CriptoName=null;
 		function OpenLogin(event) {
 			hello("authenix").login({redirect_uri: location.pathname, scope: "openid citiobs.secd.eu%23read citiobs.secd.eu%23create citiobs.secd.eu%23update citiobs.secd.eu%23delete", display: "popup"}).then(
 				function(success) {
 					document.getElementById("buttonOpenLogin").style.display="none";
 					document.getElementById("buttonOpenLogout").style.display="inline-block";
 					CriptoName=parseJwt(success.authResponse.id_token).sub;
+					if (!CriptoName)
+						CriptoName=="Anonymous"
 				},
 				function(e) 
 				{
 					alert("Signin error: " + e.error.message);
+					CriptoName=null;
 				}
 			);
 		}
@@ -829,8 +856,10 @@
 					document.getElementById("buttonOpenLogin").style.display="inline-block";
 					document.getElementById("buttonOpenLogout").style.display="none";
 					alert("Signed out from"+ " " + "authenix" + ". ");
+					CriptoName=null;
 				}, function(e) {
 					alert("Signed out error: "  + e.error.message);
+					CriptoName=null;
 				});
 		}
 
@@ -869,13 +898,13 @@
 		}
 
 		function ShowUploadObservationsDialog(nodeId) {
-			if (hello("authenix").getAuthResponse() && 
-			    hello("authenix").getAuthResponse().access_token &&
-				CriptoName)
+			if (CriptoName &&
+			    hello("authenix").getAuthResponse() && 
+			    hello("authenix").getAuthResponse().access_token)
 			{
 				document.getElementById("UploadObservationsLoginFirst").style.display="none";
 				document.getElementById("UploadObservationsForm").style.display="inline-block";
-				document.getElementById("DialogSTAUploadURLInput").value = nodeId.STAURL ? nodeId.STAURL : STAurl;
+				document.getElementById("DialogSTAUploadURLInput").value = nodeId.STAURL ? nodeId.STAURL : config.STAurl;
 				ShowUploadObservationsSelects(nodeId);
 			}
 			else
@@ -2157,7 +2186,7 @@
 				if (networkNodes.get(nodeids[0]))
 				{
 					var selectedOptionsSaveLayer=GetSelectedOptionsSaveLayer(true);
-					OpenMapMMN(location.href.substring(0, location.href.lastIndexOf("/")) + "/"+ MMNpath + (MMNpath.indexOf('?')>0 ? "&" : "?") + "reset=1", GetGeoJSON(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONPropertiesSchema(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONStyles(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONDates(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer));
+					OpenMapMMN(getAbsoluteURL(config.MMNpath) + (config.MMNpath.indexOf('?')>0 ? "&" : "?") + "reset=1", GetGeoJSON(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONPropertiesSchema(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONStyles(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONDates(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer));
 				}
 			}
 		}
@@ -2695,7 +2724,7 @@
 
 			if (image == "ogc.png")
 			{
-				node.STAURL = STAurl;
+				node.STAURL = config.STAurl;
 				node.STAExpectedLength = 100;
 				networkNodes.add(node);
 				showInfoMessage("Requesting STA landing page");
