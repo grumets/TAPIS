@@ -47,6 +47,8 @@
 			// Refresh the access_token once expired
 			refresh: true,
 
+			locale: 'es_ES',
+
 			// OAuth2 standard defines SPACE as scope delimiter, hello.js defaults to ','
 			scope_delim: " "/*,
 
