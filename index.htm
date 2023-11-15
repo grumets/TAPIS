@@ -433,19 +433,21 @@
 		const STASpecialQueries = {ObsLayer: {description: "Observations Layer", query: "Observations?$orderby=phenomenonTime%20desc&$expand=Datastream($select=unitOfMeasurement),Datastream/ObservedProperty($select=name,description,definition),FeatureOfInterest($select=description,feature)&$select=phenomenonTime,result"}}
 		const STASpecialQueriesArray = Object.keys(STASpecialQueries);
 		const TableOperations = {ImportCSV: {description: "Import CSV file"},
-					Table: {description: "View Table"}, 
+					Table: {description: "View Table", leafNode: true}, 
 					SelectColumnsSTA: {description: "Select Columns", callSTALoad: true},
 					SelectRowsSTA: {description: "Select Rows", callSTALoad: true},
 					SortBySTA: {description: "Sort by", callSTALoad: true},
-					ViewQuerySTA: {description: "View Query"},
-					UploadObservations: {description: "Upload in STA"},
+					ViewQuerySTA: {description: "View Query", leafNode: true},
+					UploadObservations: {description: "Upload in STA", leafNode: true},
+					//UploadTimeAverages: {description: "Upload time averages", leafNode: true},
 					SelectColumnsTable: {description: "Select Columns"},
 					/*SelectRowsTable: {description: "Select Rows"},*/
 					SeparateColumns: {description: "Separate Columns"},
-					ScatterPlot: {description: "Scatter Plot"},
-					SaveTable: {description: "Save Table"},
-					SaveLayer: {description: "Save Layer"},
-					OpenMap: {description: "Open Map"}};
+					ScatterPlot: {description: "Scatter Plot", leafNode: true},
+					SaveTable: {description: "Save Table", leafNode: true},
+					SaveLayer: {description: "Save Layer", leafNode: true},
+					OpenMap: {description: "Open Map", leafNode: true}};
+
 		const TableOperationsArray = Object.keys(TableOperations);
 
 		//If the two nodes cannot connect it returns null. It transforms a plural to singular if needed.
@@ -456,7 +458,7 @@
 				if (parentEntity.entities[i]==entityName)
 					return entityName;
 				else if (parentEntity.entities[i]==STAEntities[entityName].singular)
-					return STAEntities[nextEntity].singular;
+					return STAEntities[entityName].singular;
 			}
 			return null;
 		}
@@ -519,8 +521,9 @@
 		function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
 			if (parentNode.image=="ogc.png")
 				return null;
+			if (TableOperations[removeExtension(parentNode.image)] && TableOperations[removeExtension(parentNode.image)].leafNode==true)
+				return "Parent node is a leaf node and cannot be connected with any other node";
 			var idNode=IdOfSTAEntity(node);
-			var parentLastEntity=getSTAURLLastEntity(parentNode.STAURL);
 			if (idNode<0)
 				return null;
 			var getCon=getConnectionSTAEntity(parentNode, node)
@@ -2741,11 +2744,14 @@
 			var errorText=reasonNodeDoesNotFitWithPrevious(nodeTo, nodeFrom);
 			if (errorText)
 			{
-				alert("Node incompatible. " + errorText + " It has not been added.");
+				alert("Node incompatible. " + errorText + ". It has not been added.");
 				return null;
 			}
 			if (nodeFrom.STAURL && IdOfSTAEntity(nodeTo) != -1) {
-				nodeTo.STAURL = nodeFrom.STAURL + "/" + STAEntitiesArray[IdOfSTAEntity(nodeTo)];
+				if (nodeFrom.image=="ogc.png")	
+					nodeTo.STAURL = nodeFrom.STAURL + "/" + STAEntitiesArray[IdOfSTAEntity(nodeTo)];
+				else
+					nodeTo.STAURL = nodeFrom.STAURL + "/" + getConnectionSTAEntity(nodeFrom, nodeTo).entity;
 				nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
 
 				networkNodes.update(nodeTo);
