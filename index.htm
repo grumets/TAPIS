@@ -118,10 +118,8 @@
 				</span>
 			</fieldset>
 			<br>
-			<label>
-				<input type="radio" id="SelectSortByAsc" name="SelectSortByArcDesc" checked />ascending 
-				<input type="radio" id="SelectSortByDesc" name="SelectSortByArcDesc" />descending
-			</label>
+			<label><input type="radio" id="SelectSortByAsc" name="SelectSortByArcDesc" checked />ascending</label>
+			<label><input type="radio" id="SelectSortByDesc" name="SelectSortByArcDesc" />descending</label>
 			<br>
 			<label>Number records to request:
 				<input type="text" id="SelectSortByNumberOfRecords" size="6" maxlength="6" value="100"></input>
@@ -300,7 +298,7 @@
 			<br>
 			<div class="center">
 				<button value="draw" onClick="DrawScatterPlot(event)">Draw</button>
-				<button value="ok" onClick="CloseDialogScatterPlot(event)" formmethod="dialog">Ok</button>
+				<button value="ok" onClick="CloseDialogScatterPlot(event)" formmethod="dialog">Close</button>
 			</div>
 			</form>
 		</td>
@@ -553,6 +551,15 @@
 			return s.substring(0, i);
 		}
 
+		function getURLQueryParams(s)
+		{
+			var i=s.indexOf('?')
+			if (i==-1)
+				return "";
+			return s.substring(i+1);
+		}
+
+
 		//Returns the id of the selected resource in the last part of the path. So extracts in the "entities(id)" extracts the id
 		function getSTAURLSelectingARow(url)
 		{
@@ -631,7 +638,26 @@
 			return navigator.language;
 		}
 
+		function removeExtraAmpersand(queryparams) {
+			if (!queryparams)
+				return queryparams;
+			var s;
+			if (queryparams.charAt(0)=='&') {
+				s=queryparams.substring(1);
+				if (!s)
+					return s;
+			}
+			else
+				s=queryparams;
+			if (queryparams.charAt(s.length-1)=='&')
+				return s.substring(0, queryparams.length-1);
+			return s;				
+		}
+
 		function AddKVPToURL(url, kvp) {
+			kvp=removeExtraAmpersand(kvp);
+			if (!kvp)
+				return url;
 			if (url.indexOf('?')==-1)
 				return url + "?" + kvp;
 			return url + "&" + kvp;
@@ -857,7 +883,7 @@
 				if (url)
 					url_fetch=url;
 				else if (typeof node.STAExpectedLength==="undefined")
-					url_fetch=AddKVPToURL(node.STAURL);
+					url_fetch=node.STAURL;
 				else
 					url_fetch=AddKVPToURL(node.STAURL, "$top="+node.STAExpectedLength);
 
@@ -1091,15 +1117,15 @@
 			LoadJSONNodeSTAData(currentNode);
 		}
 
-		function ShowUploadObservationsDialog(nodeId) {
+		function ShowUploadObservationsDialog(node) {
 			if (CriptoName &&
 			    hello("authenix").getAuthResponse() && 
 			    hello("authenix").getAuthResponse().access_token)
 			{
 				document.getElementById("DialogUploadObservationsLoginFirst").style.display="none";
 				document.getElementById("DialogUploadObservationsForm").style.display="inline-block";
-				document.getElementById("DialogSTAUploadURLInput").value = nodeId.STAURL ? nodeId.STAURL : config.STAurl;
-				ShowUploadObservationsSelects(nodeId);
+				document.getElementById("DialogSTAUploadURLInput").value = node.STAURL ? node.STAURL : config.STAurl;
+				ShowUploadObservationsSelects(node);
 			}
 			else
 			{
@@ -1107,12 +1133,19 @@
 				document.getElementById("DialogUploadObservationsForm").style.display="none";
 			}
 		}
+		
+		function GetFirstParentNode(node) {
+			var nodeids = network.getConnectedNodes(node.id, "from");
+			if (nodeids && nodeids.length && networkNodes.get(nodeids[0]))
+				return networkNodes.get(nodeids[0]);
+			return null;
+		}		
 
-		function ShowUploadObservationsSelects(nodeId) {
-			var nodeids = network.getConnectedNodes(nodeId, "from");
-			if (nodeids && nodeids.length && networkNodes.get(nodeids[0])) {
-				var data = networkNodes.get(nodeids[0]).STAdata;
-				var dataAttributes = networkNodes.get(nodeids[0]).STAdataAttributes ? networkNodes.get(nodeids[0]).STAdataAttributes : getDataAttributes(data);
+		function ShowUploadObservationsSelects(node) {
+			var parentNode = GetFirstParentNode(node)
+			if (parentNode) {
+				var data = parentNode.STAdata;
+				var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
 				PopulateSelectSaveLayerDialog("DialogUploadObservationsPlace", dataAttributes, "place");
 				PopulateSelectSaveLayerDialog("DialogUploadObservationsLongitude", dataAttributes, "long");
 				PopulateSelectSaveLayerDialog("DialogUploadObservationsLatitude", dataAttributes, "lat");
@@ -1143,8 +1176,8 @@
 			return selectedOptions;
 		}
 
-		function ShowScatterPlotDialog(parentNodeId, nodeId) {
-			var data = networkNodes.get(parentNodeId).STAdata;
+		function ShowScatterPlotDialog(parentNode) {
+			var data = parentNode.STAdata;
 
 			if (!data || !data.length) {
 				document.getElementById("DialogScatterPlotTitle").innerHTML = "No data to show.";
@@ -1152,7 +1185,7 @@
 			}
 			document.getElementById("DialogScatterPlotTitle").innerHTML = "Scatter Plot";
 
-			var dataAttributes = networkNodes.get(parentNodeId).STAdataAttributes ? networkNodes.get(parentNodeId).STAdataAttributes : getDataAttributes(data);
+			var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
 			PopulateSelectSaveLayerDialog("DialogScatterPlotAxisX", dataAttributes, "phenomenonTime");
 			PopulateSelectSaveLayerDialog("DialogScatterPlotAxisY", dataAttributes, "result");
 		}
@@ -1168,10 +1201,10 @@
 			selectedOptions.AxisX=document.getElementById("DialogScatterPlotAxisXSelect").value;
 			selectedOptions.AxisY=document.getElementById("DialogScatterPlotAxisYSelect").value;
 
-			var nodeids = network.getConnectedNodes(currentNode.id, "from");
-			if (nodeids && nodeids.length) {
-				if (networkNodes.get(nodeids[0]) && networkNodes.get(nodeids[0]).STAURL) {
-					var items=[], minx, maxx, miny, maxy, record, node=networkNodes.get(nodeids[0]);
+			var node=GetFirstParentNode(currentNode);
+			if (node) {
+				if (node.STAURL) {
+					var items=[], minx, maxx, miny, maxy, record;
 					var data=node.STAdata;
 					var dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data);
 
@@ -1429,15 +1462,15 @@
 		function UploadObservationsSTAURL(event) {
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogUploadObservations").close();
-			var nodeids = network.getConnectedNodes(currentNode.id, "from");
-			if (nodeids && nodeids.length && networkNodes.get(nodeids[0])) {
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
 				var url=document.getElementById("DialogSTAUploadURLInput").value; 
 				if (url.charAt(url.length - 1) == '/')
 					url = url.slice(0, -1);  //remove last character
 				showInfoMessage('Upload observations in STA started...');
 				UploadObservationsSTA(url,
-					networkNodes.get(nodeids[0]).STAdata, 
-					networkNodes.get(nodeids[0]).STAdataAttributes ? networkNodes.get(nodeids[0]).STAdataAttributes : getDataAttributes(networkNodes.get(nodeids[0]).STAdata), 
+					parentNode.STAdata, 
+					parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(parentNode.STAdata), 
 					GetSelectedOptionsUploadObservations()).then(
 					function(value) { showInfoMessage('Upload observations in STA completed.'); },
   					function(error) { showInfoMessage('Error uploading Observations to STA. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -1451,18 +1484,17 @@
 			document.getElementById("DialogSelectColumns").close();
 
 			var previousSTAURL=null;
-			var nodeids = network.getConnectedNodes(currentNode.id, "from");
-			if (nodeids && nodeids.length && networkNodes.get(nodeids[0])) {
-				var node = networkNodes.get(nodeids[0]);
-				if (node.STAURL)
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				if (parentNode.STAURL)
 				{
 					previousSTAURL=currentNode.STAURL;
-					currentNode.STAURL = node.STAURL;
+					currentNode.STAURL = parentNode.STAURL;
 				}
-				if (node.STAdata)
-					currentNode.STAdata = deapCopy(node.STAdata);
-				if (node.STAdataAttributes)
-					currentNode.STAdataAttributes = deapCopy(node.STAdataAttributes);
+				if (parentNode.STAdata)
+					currentNode.STAdata = deapCopy(parentNode.STAdata);
+				if (parentNode.STAdataAttributes)
+					currentNode.STAdataAttributes = deapCopy(parentNode.STAdataAttributes);
 			}
 			currentNode.STASelectedColumns=[];
 			var dataAttributes = currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(currentNode.STAdata);
@@ -1473,7 +1505,7 @@
 			}
 			if (a < dataAttributesArray.length) //A checked attribute has been found ("for" breaks before ending).
 			{
-				if (node.STAURL)
+				if (parentNode.STAURL)
 				{
 					var s;
 					currentNode.STAURL=AddKVPToURL(currentNode.STAURL, "$select=");
@@ -1493,7 +1525,7 @@
 							currentNode.STASelectedColumns[a]=false;
 					}
 					currentNode.STAURL = currentNode.STAURL.slice(0, -1); //remove the last coma.
-					currentNode.STAExpectedLength = node.STAExpectedLength;
+					currentNode.STAExpectedLength = parentNode.STAExpectedLength;
 					networkNodes.update(currentNode);
 					showInfoMessage("Selecting STA columns...");
 					UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
@@ -1570,8 +1602,11 @@
 					}
 					currentNode.STAURL = currentNode.STAURL.slice(0, -1); //remove the last coma.
 				}
-				/*else   //If no selected collumn has been found, no expand is needed and the previous request is fine
-					;*/
+				else   //If no selected collumn has been found, no expand is needed and the previous request is fine
+				{					
+					for (var a = 0; a < dataAttrArray.length; a++)
+						currentNode.STASelectedExpands.selected[a]=false;
+				}
 			}
 			if (!isNaN(parseInt(document.getElementById("SelectExpandsNumberOfRecords").value)))
 				currentNode.STAExpectedLength = parseInt(document.getElementById("SelectExpandsNumberOfRecords").value);
@@ -1586,8 +1621,18 @@
 			document.getElementById("DialogSelectSortBy").close();
 			
 			var previousSTAURL= currentNode.STAURL;
-			var dataAttributes = currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(currentNode.STAdata);
-			var dataAttributesArray=Object.keys(dataAttributes)
+
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				if (parentNode.STAURL)
+					currentNode.STAURL = parentNode.STAURL;
+				if (parentNode.STAdata)
+					currentNode.STAdata = parentNode.STAdata;
+				var dataAttributes = currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(currentNode.STAdata);
+				var dataAttributesArray=Object.keys(dataAttributes)
+			}
+			else
+				return;
 
 			if (document.getElementById("DialogSelectSortByHTML").style.display != "none")
 			{
@@ -1625,13 +1670,12 @@
 			document.getElementById("DialogSelectRows").close();
 			
 			var previousSTAURL=currentNode.STAURL;
-			var nodeids = network.getConnectedNodes(currentNode.id, "from");
-			if (nodeids && nodeids.length && networkNodes.get(nodeids[0])) {
-				var node = networkNodes.get(nodeids[0]);
-				if (node.STAURL)
-					currentNode.STAURL = node.STAURL;
-				if (node.STAdata)
-					currentNode.STAdata = node.STAdata;
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				if (parentNode.STAURL)
+					currentNode.STAURL = parentNode.STAURL;
+				if (parentNode.STAdata)
+					currentNode.STAdata = parentNode.STAdata;
 			}
 			else
 				return;
@@ -1645,17 +1689,15 @@
 				if (i < elems.length) {
 					const s = elems[i].id.substring("SelectRow_".length);
 					const n = Number(s);
-					if (Number.isInteger(n))
-						currentNode.STAURL += "(" + n + ")";
-					else
-						currentNode.STAURL += "('" + s + "')";
+
+					currentNode.STAURL = AddKVPToURL(getURLWithoutQueryParams(currentNode.STAURL) + (Number.isInteger(n) ? "(" + n + ")" : "('" + s + "')"), getURLQueryParams(currentNode.STAURL));
 					currentNode.STAURLIdSelected=s;
 				}
 			}
 			else {
 				alert("TBD");
 			}
-			currentNode.STAExpectedLength = node.STAExpectedLength;
+			currentNode.STAExpectedLength = parentNode.STAExpectedLength;
 			networkNodes.update(currentNode);
 			showInfoMessage("Selecting STA rows...");
 			UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
@@ -1684,16 +1726,24 @@
 			for (var i = 0; i < nodeIds.length; i++) {
 				var node = networkNodes.get(nodeIds[i])
 				if (node.STAURL && currentSTAURLroot && previousSTAURLroot) {
-					if (node.STAURL.substring(0, previousSTAURLroot.length)==previousSTAURLroot)
+					var previousSTAURLrootWithoutQuery=getURLWithoutQueryParams(previousSTAURLroot);
+					if (node.STAURL.substring(0, previousSTAURLrootWithoutQuery.length)==previousSTAURLrootWithoutQuery)
 					{
-						node.STAURL=currentSTAURLroot + node.STAURL.substring(previousSTAURLroot.length);
+						var previousQueryParams=getURLQueryParams(previousSTAURLroot)
+						var currentQueryParams=getURLQueryParams(currentSTAURLroot)
+						var queryParam=getURLQueryParams(node.STAURL);
+						if (!previousQueryParams && !currentQueryParams)
+							;
+						else if (!previousQueryParams)
+							queryParam=queryParam ? queryParam + '&' + currentQueryParams : currentQueryParams;
+						else 
+							queryParam=queryParam.replace(previousQueryParams, currentQueryParams);
+						
+						getURLQueryParams(node.STAURL).replace(previousQueryParams, getURLQueryParams(currentSTAURLroot))
+						node.STAURL=AddKVPToURL(getURLWithoutQueryParams(currentSTAURLroot)+getURLWithoutQueryParams(node.STAURL).substring(previousSTAURLrootWithoutQuery.length), 
+									queryParam);
 						networkNodes.update(node);
 					}
-					/*if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || TableOperations[node.image.substring(0, node.image.length-4)].callSTALoad) {
-						networkNodes.update(node);
-						showInfoMessage("Updating STA child node...");
-						LoadJSONNodeSTAData(node);
-					}*/
 				}
 				UpdateChildenSTAURL(node, currentSTAURLroot, previousSTAURLroot);
 			}
@@ -2314,10 +2364,10 @@
 		}
 
 		function ShowSaveLayerDialogSelects(nodeId, descripUoM) {
-			var nodeids = network.getConnectedNodes(nodeId, "from");
-			if (nodeids && nodeids.length) {
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
 				var data = networkNodes.get(nodeids[0]).STAdata;
-				var dataAttributes = networkNodes.get(nodeids[0]).STAdataAttributes ? networkNodes.get(nodeids[0]).STAdataAttributes : getDataAttributes(data);
+				var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
 				var s, elem;
 				PopulateSelectSaveLayerDialog("DialogSaveLayerPlace", dataAttributes, "FeatureOfInterest/description");
 				PopulateSelectSaveLayerDialog("DialogSaveLayerLongitude", dataAttributes, "FeatureOfInterest/feature/coordinates_0");
@@ -2375,11 +2425,10 @@
 			event.preventDefault(); // We don't want to submit this form
 			var delimiter=document.getElementById("DialogSaveTableDelimiter").value;
 			document.getElementById("DialogSaveTable").close();
-			var nodeids = network.getConnectedNodes(currentNode.id, "from");
-			if (nodeids && nodeids.length) {
-				if (networkNodes.get(nodeids[0]))
-					SaveLocalDataFile(Papa.unparse(StringifyObjectElements(networkNodes.get(nodeids[0]).STAdata, networkNodes.get(nodeids[0]).STAdataAttributes), { quotes: false, quoteChar: '"', escapeChar: '"', delimiter: (delimiter ? delimiter : ";"), header: true, newline: "\r\n", skipEmptyLines: "greedy"}), 
-						(IdOfSTAEntity(networkNodes.get(nodeids[0])) == -1) ?  "table" : STAEntitiesArray[IdOfSTAEntity(networkNodes.get(nodeids[0]))], ".csv", "application/vnd.ms-excel");   //https://stackoverflow.com/questions/7076042/what-mime-type-should-i-use-for-csv
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				SaveLocalDataFile(Papa.unparse(StringifyObjectElements(parentNode.STAdata, parentNode.STAdataAttributes), { quotes: false, quoteChar: '"', escapeChar: '"', delimiter: (delimiter ? delimiter : ";"), header: true, newline: "\r\n", skipEmptyLines: "greedy"}), 
+						(IdOfSTAEntity(parentNode) == -1) ?  "table" : STAEntitiesArray[IdOfSTAEntity(parentNode)], ".csv", "application/vnd.ms-excel");   //https://stackoverflow.com/questions/7076042/what-mime-type-should-i-use-for-csv
 			}
 		}
 
@@ -2411,11 +2460,10 @@
 			event.preventDefault(); // We don't want to submit this form
 			var delimiter=document.getElementById("DialogSaveTableDelimiter").value;
 			document.getElementById("DialogSaveTable").close();
-			var nodeids = network.getConnectedNodes(currentNode.id, "from");
-			if (nodeids && nodeids.length && networkNodes.get(nodeids[0])) {
-				if (networkNodes.get(nodeids[0]))
-					SaveLocalDataFile(JSON.stringify(CreateCSVW(networkNodes.get(nodeids[0]).STAdata, networkNodes.get(nodeids[0]).STAdataAttributes, delimiter ? delimiter : ";"), null, "\t"), 
-						(IdOfSTAEntity(networkNodes.get(nodeids[0])) == -1 ?  "table" : STAEntitiesArray[IdOfSTAEntity(networkNodes.get(nodeids[0]))]) + "_csvw", ".json", "application/json");   //https://stackoverflow.com/questions/7076042/what-mime-type-should-i-use-for-csv
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				SaveLocalDataFile(JSON.stringify(CreateCSVW(parentNode.STAdata, parentNode.STAdataAttributes, delimiter ? delimiter : ";"), null, "\t"), 
+						(IdOfSTAEntity(parentNode) == -1 ?  "table" : STAEntitiesArray[IdOfSTAEntity(parentNode)]) + "_csvw", ".json", "application/json");   //https://stackoverflow.com/questions/7076042/what-mime-type-should-i-use-for-csv
 			}
 		}
 
@@ -2442,44 +2490,34 @@
 		function SaveLayer(event) {
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogSaveLayer").close();
-			var nodeids = network.getConnectedNodes(currentNode.id, "from");
-			if (nodeids && nodeids.length) {
-				if (networkNodes.get(nodeids[0]))
-					SaveLocalDataFile(JSON.stringify(GetGeoJSON(networkNodes.get(nodeids[0]).STAdata, GetSelectedOptionsSaveLayer(false)), null, "\t"), "GeoJSON", ".geojson", "application/geo+json");   
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				SaveLocalDataFile(JSON.stringify(GetGeoJSON(parentNode.STAdata, GetSelectedOptionsSaveLayer(false)), null, "\t"), "GeoJSON", ".geojson", "application/geo+json");   
 			}
 		}
 
 		function SaveLayerSchema(event) {
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogSaveLayer").close();
-			var nodeids = network.getConnectedNodes(currentNode.id, "from");
-			if (nodeids && nodeids.length) {
-				if (networkNodes.get(nodeids[0]))
-					SaveLocalDataFile(JSON.stringify(GetGeoJSONSchema(networkNodes.get(nodeids[0]).STAdata, GetSelectedOptionsSaveLayer(true)), null, "\t"), "JSON", ".json", "application/json");   
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				SaveLocalDataFile(JSON.stringify(GetGeoJSONSchema(parentNode.STAdata, GetSelectedOptionsSaveLayer(true)), null, "\t"), "JSON", ".json", "application/json");   
 			}
 		}
 
 		function SaveLayerMetaschema(event) {
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogSaveLayer").close();
-			var nodeids = network.getConnectedNodes(currentNode.id, "from");
-			if (nodeids && nodeids.length) {
-				if (networkNodes.get(nodeids[0]))
-					SaveLocalDataFile(JSON.stringify(GetGeoJSONMetaschema(), null, "\t"), "JSON", ".json", "application/json");   
-			}
+			SaveLocalDataFile(JSON.stringify(GetGeoJSONMetaschema(), null, "\t"), "JSON", ".json", "application/json");   
 		}
-
 
 		function OpenMap(event) {
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogSaveLayer").close();
-			var nodeids = network.getConnectedNodes(currentNode.id, "from");
-			if (nodeids && nodeids.length) {
-				if (networkNodes.get(nodeids[0]))
-				{
-					var selectedOptionsSaveLayer=GetSelectedOptionsSaveLayer(true);
-					OpenMapMMN(getAbsoluteURL(config.MMNpath) + (config.MMNpath.indexOf('?')>0 ? "&" : "?") + "reset=1", GetGeoJSON(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONPropertiesSchema(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONStyles(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer), GetGeoJSONDates(networkNodes.get(nodeids[0]).STAdata, selectedOptionsSaveLayer));
-				}
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				var selectedOptionsSaveLayer=GetSelectedOptionsSaveLayer(true);
+				OpenMapMMN(getAbsoluteURL(config.MMNpath) + (config.MMNpath.indexOf('?')>0 ? "&" : "?") + "reset=1", GetGeoJSON(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONPropertiesSchema(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONStyles(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONDates(parentNode.STAdata, selectedOptionsSaveLayer));
 			}
 		}
 
@@ -2540,17 +2578,16 @@
 			}*/
 		}
 
-		function ShowTableSelectColumnsDialog(parentNodeId, nodeId) {
-			var node=networkNodes.get(nodeId)
+		function ShowTableSelectColumnsDialog(parentNode, node) {
 
-			var data = networkNodes.get(parentNodeId).STAdata ? networkNodes.get(parentNodeId).STAdata : node.STAdata, 
+			var data = parentNode.STAdata ? parentNode.STAdata : node.STAdata, 
 					selectedColumns=node.STASelectedColumns;
 
 			if (!data || !data.length) {
 				document.getElementById("DialogSelectColumnsHTML").innerHTML = "No data to show.";
 				return;
 			}
-			var dataAttributes = networkNodes.get(parentNodeId).STAdataAttributes ? networkNodes.get(parentNodeId).STAdataAttributes : getDataAttributes(data);
+			var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
 			const dataAttributesArray = Object.keys(dataAttributes);
 
 			var s = "<table>";
@@ -2602,8 +2639,7 @@
 			
 		}
 
-		function ShowTableSelectSortByDialog(nodeId) {
-			var node=networkNodes.get(nodeId);
+		function ShowTableSelectSortByDialog(node) {
 			var data = node.STAdata;
 		
 			if (!data || !data.length) {
@@ -2852,11 +2888,9 @@
 				}
 				else if (currentNode.image == "ViewQuerySTA.png") {
 					document.getElementById("DialogSTAURLInput").value="";
-					var nodeids = network.getConnectedNodes(currentNode.id, "from");
-					if (nodeids && nodeids.length) {
-						if (networkNodes.get(nodeids[0])) 
-							document.getElementById("DialogSTAURLInput").value = networkNodes.get(nodeids[0]).STAURL;
-					}
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode)
+						document.getElementById("DialogSTAURLInput").value = parentNode.STAURL;
 					document.getElementById("DialogSTAURLInput").readOnly = true;
 					document.getElementById("DialogSTAURLOk").style.display = "none";
 					document.getElementById("DialogSTAURL").showModal();
@@ -2868,20 +2902,18 @@
 				else if (currentNode.image == "Table.png") {
 					///Determining the parent node.
 					var nodeids = network.getConnectedNodes(currentNode.id, "from");
-					if (nodeids && nodeids.length) {
-						if (networkNodes.get(nodeids[0])) {
-							var data = networkNodes.get(nodeids[0]).STAdata;
-							if (data && data.length)
-								document.getElementById("DialogOKOptions").innerHTML = "<label><input type='checkbox' checked='checked' id='ShowTableRowNumberDialogOK' onChange='ShowTableDialog(\"" + nodeids[0] + "\");'/> Show row numbers</label>";
-							else
-								document.getElementById("DialogOKOptions").innerHTML = "";
-							ShowTableDialog(nodeids[0]);
-						}
+					if (nodeids && nodeids.length && networkNodes.get(nodeids[0])) {
+						var data = networkNodes.get(nodeids[0]).STAdata;
+						if (data && data.length)
+							document.getElementById("DialogOKOptions").innerHTML = "<label><input type='checkbox' checked='checked' id='ShowTableRowNumberDialogOK' onChange='ShowTableDialog(\"" + nodeids[0] + "\");'/> Show row numbers</label>";
+						else
+							document.getElementById("DialogOKOptions").innerHTML = "";
+						ShowTableDialog(nodeids[0]);
 						document.getElementById("DialogOK").showModal();
 					}
 				}
 				else if (currentNode.image == "UploadObservations.png") {
-					ShowUploadObservationsDialog(currentNode.id);
+					ShowUploadObservationsDialog(currentNode);
 					document.getElementById("DialogUploadObservations").showModal();
 				}
 				else if (currentNode.image == "UploadTimeAverages.png") {
@@ -2893,12 +2925,10 @@
 					document.getElementById("DialogSaveTable").showModal();
 				}
 				else if (currentNode.image == "ScatterPlot.png") {
-					//Determining the parent node.
-					var nodeids = network.getConnectedNodes(currentNode.id, "from");
-					if (nodeids && nodeids.length) {
-						if (networkNodes.get(nodeids[0]) && networkNodes.get(nodeids[0]).STAURL) {
-							ShowScatterPlotDialog(nodeids[0], currentNode.id);
-						}
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode) {
+						if (parentNode.STAURL)
+							ShowScatterPlotDialog(parentNode);
 						document.getElementById("DialogScatterPlot").showModal();
 					}
 				}
@@ -2911,17 +2941,13 @@
 					document.getElementById("DialogSaveLayer").showModal();
 				}
 				else if (currentNode.image == "SelectColumnsSTA.png" || currentNode.image == "SelectColumnsTable.png") {
-					//Determining the parent node.
-					var nodeids = network.getConnectedNodes(currentNode.id, "from");
-					if (nodeids && nodeids.length) {
-						if (networkNodes.get(nodeids[0]))
-							ShowTableSelectColumnsDialog(nodeids[0], currentNode.id);
-
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode) {
+						ShowTableSelectColumnsDialog(parentNode, currentNode);
 						document.getElementById("DialogSelectColumns").showModal();
 					}
 				}
 				else if (currentNode.image == "SelectRowsSTA.png") {
-					//Determining the parent node.
 					var nodeids = network.getConnectedNodes(currentNode.id, "from");
 					if (nodeids && nodeids.length) {
 						if (networkNodes.get(nodeids[0]) && networkNodes.get(nodeids[0]).STAURL) {
@@ -2933,10 +2959,10 @@
 					}
 				}
 				else if (currentNode.image == "SortBySTA.png") {
-					var nodeids = network.getConnectedNodes(currentNode.id, "from");
-					if (nodeids && nodeids.length) {
-						if (networkNodes.get(nodeids[0]) && networkNodes.get(nodeids[0]).STAURL)
-							ShowTableSelectSortByDialog(nodeids[0]);
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode) {
+						if (parentNode.STAURL)
+							ShowTableSelectSortByDialog(parentNode);
 						document.getElementById("DialogSelectSortBy").showModal();
 					}
 				}
