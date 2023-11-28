@@ -306,6 +306,29 @@
 		</tr></table>
 	</dialog>
 
+	<dialog id="DialogOneValue">
+		<span id="DialogOneValueTitle"></span>
+		<form>
+		<fieldset>
+			<label>Variable:
+				<span id="DialogOneValueVariable"></span>
+			</label>
+			<br>
+			<label>Observation time:
+				<span id="DialogOneValueTime"></span>
+			</label>
+			<br>
+			<label>Refresh time:
+				<input type="text" id="DialogOneValueRefreshPeriod" size="3" value="20"></input> seconds
+			</label>
+		</fieldset>
+		<br>
+		<div class="center">
+			<button value="ok" onClick="PrepareRefreshOneValue(event)">Ok</button>
+			<button value="cancel" onClick="CloseDialogOneValue(event)" formmethod="dialog">Cancel</button>
+		</div>
+		</form>
+	</dialog>
 
 	<dialog id="DialogUploadObservations">
 		<div id="DialogUploadObservationsLoginFirst" style="display: none;">
@@ -442,6 +465,7 @@
 					/*SelectRowsTable: {description: "Select Rows"},*/
 					SeparateColumns: {description: "Separate Columns"},
 					ScatterPlot: {description: "Scatter Plot", leafNode: true},
+					OneValue: {description: "One Value", leafNode: true},
 					SaveTable: {description: "Save Table", leafNode: true},
 					SaveLayer: {description: "Save Layer", leafNode: true},
 					OpenMap: {description: "Open Map", leafNode: true}};
@@ -927,7 +951,7 @@
 					return;
 				}
 			}
-			if (url && typeof node.STAExpectedLength)  //node.STAExpectedLength
+			if (url && typeof node.STAExpectedLength!=="undefined")  
 			{
 				node.STAdata = node.STAdata.concat(jsonData.value);
 				if (node.STAdata.length>node.STAExpectedLength)  //too much data. Trucating
@@ -1251,6 +1275,88 @@
 		function CloseDialogScatterPlot(event) {
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogScatterPlot").close();
+		}
+
+
+		function ShowOneValueDialog(currentNode) {
+			var parentNode=GetFirstParentNode(currentNode);
+			if (!parentNode) 
+				return;
+			var data = parentNode.STAdata;
+
+			if (!data || !data.length) {
+				document.getElementById("DialogOneValueTitle").innerHTML = "No data to show.";
+				return;
+			}
+			document.getElementById("DialogOneValueTitle").innerHTML = "Select value to see the last value";
+
+			startingNodeContextId=currentNode.id;
+			var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
+			PopulateSelectSaveLayerDialog("DialogOneValueTime", dataAttributes, "phenomenonTime");
+			PopulateSelectSaveLayerDialog("DialogOneValueVariable", dataAttributes, "result");
+		}
+
+		function PrepareRefreshOneValue(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogOneValue").close();
+
+			var node=networkNodes.get(startingNodeContextId);
+			startingNodeContextId = null;
+			RequestLastObservationAndRefreshOneValue(node, document.getElementById("DialogOneValueVariableSelect").value, 
+							document.getElementById("DialogOneValueTimeSelect").value, 
+							document.getElementById("DialogOneValueRefreshPeriod").value);
+		}
+
+		function getTimeISOTime(isodatetime) {
+			/*var d=ISOdatetime;
+			if (ISOdatetime.charAt(d.length-1)=='Z')
+				d=d.substring(0,ISOdatetime.length-1);
+			if (-1!=d.indexOf('T'))
+				d=d.substring(d.indexOf('T')+1);
+			return d;*/
+			var d=new Date(isodatetime);
+			return d.getHours()+":"+(d.getMinutes()<10 ? " " : "")+d.getMinutes()+":"+(d.getSeconds()<10 ? " " : "")+d.getSeconds(); 
+		}
+
+		async function RequestLastObservationAndRefreshOneValue(currentNode, variable, timeVariable, period) {
+			var parentNode=GetFirstParentNode(currentNode);
+			if (!parentNode)
+				return;
+			//var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(parentNode.STAdata);
+			currentNode.STAURL = AddKVPToURL(parentNode.STAURL, "$orderby="+timeVariable+" desc");
+			if (removeExtension(parentNode.image)=="Observations")
+				currentNode.STAURL = AddKVPToURL(currentNode.STAURL, "$expand=Datastream")
+			currentNode.STAExpectedLength = 1;
+			networkNodes.update(currentNode);
+			showInfoMessage("Getting the last observation...");
+			await LoadJSONNodeSTAData(currentNode);
+
+			//Redraw the label
+
+			var data=currentNode.STAdata;
+			if (data.length<1)
+				return;
+
+			if (typeof data[0][variable] === "number")
+				currentNode.label=data[0][variable].toString();
+			else if (typeof data[0][variable] === "object")
+				currentNode.label=JSON.stringify(data[0][variable]);
+			else
+				currentNode.label=data[0][variable];
+			if (data[0]["Datastream"] && data[0]["Datastream"]?.unitOfMeasurement?.symbol)
+				currentNode.label+=data[0]["Datastream"].unitOfMeasurement.symbol;
+
+			currentNode.label+=" (" + getTimeISOTime(data[0][timeVariable]) + ")";
+			networkNodes.update(currentNode);
+
+			//Redraw
+			showInfoMessage(currentNode.label + ". Waiting " + period + " seconds ...");
+			setTimeout(RequestLastObservationAndRefreshOneValue, period*1000, currentNode, variable, timeVariable, period);
+		}
+
+		function CloseDialogOneValue(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogOneValue").close();
 		}
 
 
@@ -2878,6 +2984,7 @@
 			/*params.event = "[original event]";
 			document.getElementById("eventSpanHeading").innerText = "doubleClick event:";
 			document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);*/
+
 			if (params.nodes && params.nodes.length && !connectionInProcess) {
 				currentNode = networkNodes.get(params.nodes[0])
 				if (currentNode.image == "ogc.png") {
@@ -2931,6 +3038,10 @@
 							ShowScatterPlotDialog(parentNode);
 						document.getElementById("DialogScatterPlot").showModal();
 					}
+				}
+				else if (currentNode.image == "OneValue.png") {
+					ShowOneValueDialog(currentNode);
+					document.getElementById("DialogOneValue").showModal();
 				}
 				else if (currentNode.image == "SaveLayer.png") {
 					ShowSaveLayerDialog(currentNode.id);
