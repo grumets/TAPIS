@@ -23,7 +23,7 @@
 				<tr><td><img src="logo.png" height="70"></td><td><div style="font-size: 30px; font-weight: bold;">TAPIS</div><div style="font-size: 20px; font-weight: bold;">Tables from OGC APIs for Sensors</div><div style="font-size: 10px; font-weight: normal;"> or a Sensor Things API plus Explorer</div></td></tr></table></td>
 			<td align="right" valign="top">
 				<span id="UserInfoText"></span>
-				<button id="buttonReloadSTA" onclick='reloadSTA(event);'><img src="login.png" height="20" valign="middle"> Refresh</button>
+				<button id="buttonReloadSTA" onclick='reloadSTA(event);'><img src="reload.png" height="20" valign="middle"> Refresh</button>
 				<label class=labelbotton><img src="OpenNetwork.png" height="20" valign="middle"> Open
 				<input type="file" id="openNetworkFileName" hidden onchange='openNetwork(event);'/>
 				</label> <!-- https://dev.to/faddalibrahim/how-to-create-a-custom-file-upload-button-using-html-css-and-javascript-1c03 -->
@@ -325,7 +325,8 @@
 		<br>
 		<div class="center">
 			<button value="ok" onClick="PrepareRefreshOneValue(event)">Ok</button>
-			<button value="cancel" onClick="CloseDialogOneValue(event)" formmethod="dialog">Cancel</button>
+			<button value="ok" onClick="StopRefreshOneValue(event)">Stop refresh</button>
+			<button value="cancel" onClick="CloseDialogOneValue(event)" formmethod="dialog">Close</button>
 		</div>
 		</form>
 	</dialog>
@@ -1292,8 +1293,10 @@
 
 			startingNodeContextId=currentNode.id;
 			var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
-			PopulateSelectSaveLayerDialog("DialogOneValueTime", dataAttributes, "phenomenonTime");
-			PopulateSelectSaveLayerDialog("DialogOneValueVariable", dataAttributes, "result");
+			PopulateSelectSaveLayerDialog("DialogOneValueVariable", dataAttributes, currentNode.STAvariable ? currentNode.STAvariable : "result");
+			PopulateSelectSaveLayerDialog("DialogOneValueTime", dataAttributes, currentNode.STAtimeVariable ? currentNode.STAtimeVariable : "phenomenonTime");
+			if (currentNode.STAredrawPeriod)
+				document.getElementById("DialogOneValueRefreshPeriod").value=currentNode.STAredrawPeriod;
 		}
 
 		function PrepareRefreshOneValue(event) {
@@ -1301,21 +1304,39 @@
 			document.getElementById("DialogOneValue").close();
 
 			var node=networkNodes.get(startingNodeContextId);
+			if (!node)
+				return;
 			startingNodeContextId = null;
-			RequestLastObservationAndRefreshOneValue(node, document.getElementById("DialogOneValueVariableSelect").value, 
-							document.getElementById("DialogOneValueTimeSelect").value, 
-							document.getElementById("DialogOneValueRefreshPeriod").value);
+			if (node.STAtimeOut) {
+				clearTimeout(node.STAtimeOut);
+				node.STAtimeOut=null;
+			}
+			node.STAvariable=document.getElementById("DialogOneValueVariableSelect").value; 
+			node.STAtimeVariable=document.getElementById("DialogOneValueTimeSelect").value; 
+			node.STAredrawPeriod=document.getElementById("DialogOneValueRefreshPeriod").value;
+			networkNodes.update(currentNode);
+
+			RequestLastObservationAndRefreshOneValue(node, node.STAvariable, node.STAtimeVariable, node.STAredrawPeriod);
 		}
 
+		function StopRefreshOneValue(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogOneValue").close();
+
+			var node=networkNodes.get(startingNodeContextId);
+			if (!node)
+				return;
+			if (node.STAtimeOut)
+			{
+				clearTimeout(node.STAtimeOut);
+				showInfoMessage("Refresh cancelled.");
+			}
+		}
+
+
 		function getTimeISOTime(isodatetime) {
-			/*var d=ISOdatetime;
-			if (ISOdatetime.charAt(d.length-1)=='Z')
-				d=d.substring(0,ISOdatetime.length-1);
-			if (-1!=d.indexOf('T'))
-				d=d.substring(d.indexOf('T')+1);
-			return d;*/
 			var d=new Date(isodatetime);
-			return d.getHours()+":"+(d.getMinutes()<10 ? " " : "")+d.getMinutes()+":"+(d.getSeconds()<10 ? " " : "")+d.getSeconds(); 
+			return d.getHours()+":"+(d.getMinutes()<10 ? "0" : "")+d.getMinutes()+":"+(d.getSeconds()<10 ? "0" : "")+d.getSeconds(); 
 		}
 
 		async function RequestLastObservationAndRefreshOneValue(currentNode, variable, timeVariable, period) {
@@ -1347,11 +1368,11 @@
 				currentNode.label+=data[0]["Datastream"].unitOfMeasurement.symbol;
 
 			currentNode.label+=" (" + getTimeISOTime(data[0][timeVariable]) + ")";
-			networkNodes.update(currentNode);
 
 			//Redraw
 			showInfoMessage(currentNode.label + ". Waiting " + period + " seconds ...");
-			setTimeout(RequestLastObservationAndRefreshOneValue, period*1000, currentNode, variable, timeVariable, period);
+			currentNode.STAtimeOut=setTimeout(RequestLastObservationAndRefreshOneValue, period*1000, currentNode, variable, timeVariable, period);
+			networkNodes.update(currentNode);
 		}
 
 		function CloseDialogOneValue(event) {
@@ -1870,6 +1891,14 @@
 				{
 					showInfoMessage("Updating "+ removeExtension(node.image) + " ...");
 					await LoadJSONNodeSTAData(node);
+				}
+				else if (node.image == "OneValue.png")
+				{
+					if (node.STAtimeOut) {
+						clearTimeout(node.STAtimeOut);
+						node.STAtimeOut=null;
+					}
+					await RequestLastObservationAndRefreshOneValue(node, node.STAvariable, node.STAtimeVariable, node.STAredrawPeriod);
 				}
 			}
 		}
