@@ -310,6 +310,17 @@
 				</label>
 			</fieldset>
 			<br>
+			<fieldset id="DialogScatterPlotVariableUoM">
+    				<legend>Title:</legend>
+				<label>Variable name:
+					<span id="DialogScatterPlotVariable"></span>
+				</label>
+				<br>
+				<label>Units of measure:
+					<span id="DialogScatterPlotUoM"></span>
+				</label>
+			</fieldset>
+			<br>
 			<div class="center">
 				<button value="draw" onClick="DrawScatterPlot(event)">Draw</button>
 				<button value="ok" onClick="CloseDialogScatterPlot(event)" formmethod="dialog">Close</button>
@@ -1195,6 +1206,18 @@
 			if (nodeids && nodeids.length && networkNodes.get(nodeids[0]))
 				return networkNodes.get(nodeids[0]);
 			return null;
+		}
+
+		function GetParentNodes(node) {
+			var nodeids = network.getConnectedNodes(node.id, "from");
+			if (nodeids && nodeids.length)
+			{
+				var nodes=[];
+				for (var i=0; i<nodeids.length; i++)
+					nodes[i]=networkNodes.get(nodeids[i]);
+				return nodes;
+			}
+			return null;
 		}		
 
 		function ShowUploadObservationsSelects(node) {
@@ -1232,18 +1255,34 @@
 			return selectedOptions;
 		}
 
-		function ShowScatterPlotDialog(parentNode) {
-			var data = parentNode.STAdata;
-
+		function ShowScatterPlotDialog(parentNodes) {
+			var data = parentNodes[0].STAdata;
 			if (!data || !data.length) {
 				document.getElementById("DialogScatterPlotTitle").innerHTML = "No data to show.";
 				return;
 			}
 			document.getElementById("DialogScatterPlotTitle").innerHTML = "Scatter Plot";
 
-			var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
+			var dataAttributes = parentNodes[0].STAdataAttributes ? parentNodes[0].STAdataAttributes : getDataAttributes(data);
 			PopulateSelectSaveLayerDialog("DialogScatterPlotAxisX", dataAttributes, "phenomenonTime");
 			PopulateSelectSaveLayerDialog("DialogScatterPlotAxisY", dataAttributes, "result");
+
+			if (parentNodes.length<2)
+			{
+				document.getElementById("DialogScatterPlotVariableUoM").style.display = "none";
+				return;
+ 			}
+			document.getElementById("DialogScatterPlotVariableUoM").style.display = "inline-block"
+
+			data = parentNodes[1].STAdata;
+			if (!data || data.length!=1) {
+				document.getElementById("DialogScatterPlotTitle").innerHTML = "Second connection should only have only item. Continuing without title.";
+				document.getElementById("DialogScatterPlotVariableUoM").style.display = "none";
+				return;
+			}
+			var dataAttributes = parentNodes[1].STAdataAttributes ? parentNodes[1].STAdataAttributes : getDataAttributes(data);
+			PopulateSelectSaveLayerDialog("DialogScatterPlotVariable", dataAttributes, "name");
+			PopulateSelectSaveLayerDialog("DialogScatterPlotUoM", dataAttributes, "unitOfMeasurement/symbol");
 		}
 
 		function AdaptValueAxisY(value) {	
@@ -1256,13 +1295,20 @@
 			var selectedOptions={};
 			selectedOptions.AxisX=document.getElementById("DialogScatterPlotAxisXSelect").value;
 			selectedOptions.AxisY=document.getElementById("DialogScatterPlotAxisYSelect").value;
+			if (document.getElementById("DialogScatterPlotVariableUoM").style.display!="none")
+			{
+				selectedOptions.Variable=document.getElementById("DialogScatterPlotVariableSelect").value;
+				selectedOptions.UoM=document.getElementById("DialogScatterPlotUoMSelect").value;
+			}
 
-			var node=GetFirstParentNode(currentNode);
-			if (node) {
+			var nodes=GetParentNodes(currentNode);
+			if (nodes && nodes.length) {
+				var node=nodes[0];
+				var data, dataAttributes, record;
 				if (node.STAURL) {
-					var items=[], minx, maxx, miny, maxy, record;
-					var data=node.STAdata;
-					var dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data);
+					var items=[], minx, maxx, miny, maxy;
+					data=node.STAdata;
+					dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data);
 
 					if (ScatterPlotGraph2d)
 						ScatterPlotGraph2d.destroy();
@@ -1285,20 +1331,32 @@
 					}
 					var dataset = new vis.DataSet(items);
 					var groups = new vis.DataSet();
+					var options = {
+						dataAxis: {left: {range: {min:miny-(maxy-miny)*0.025, max:maxy+(maxy-miny)*0.025}, title: {text: "Values"}, format: AdaptValueAxisY}},
+						drawPoints: {size: 1}, 
+						legend: {left:{position:"bottom-left"}},
+						start: minx,
+						end: maxx
+					};		
+					var title="Results";
+					
+					if (nodes.length>1 && nodes[1].STAURL) {
+						node=nodes[1];
+						data=node.STAdata;
+						if (data.length)
+							record=data[0];
+						if (record[selectedOptions.Variable])
+							title=record[selectedOptions.Variable];
+						if (record[selectedOptions.UoM])
+							title+=" (" + record[selectedOptions.UoM] + ")";
+					}
     					groups.add({
-        					id: 0,
-        					content: "Results",
+       						id: 0,
+       						content: title,
 						interpolation: {
 							parametrization: 'chordal'
 						}
 					});
-					var options = {
-						dataAxis: {left: {range: {min:miny, max:maxy}, title: {text: "Values"}, format: AdaptValueAxisY}},
-						drawPoints: {size: 1}, /*
-						legend: {left:{position:"bottom-left"}},*/
-						start: minx,
-						end: maxx
-					};		
 					ScatterPlotGraph2d = new vis.Graph2d(document.getElementById('DialogScatterPlotVisualization'), dataset, groups, options);
 				}
 			}
@@ -3110,10 +3168,10 @@
 					document.getElementById("DialogSaveTable").showModal();
 				}
 				else if (currentNode.image == "ScatterPlot.png") {
-					var parentNode=GetFirstParentNode(currentNode);
-					if (parentNode) {
-						if (parentNode.STAURL)
-							ShowScatterPlotDialog(parentNode);
+					var parentNodes=GetParentNodes(currentNode);
+					if (parentNodes && parentNodes[0]) {
+						if (parentNodes[0].STAURL)
+							ShowScatterPlotDialog(parentNodes);
 						document.getElementById("DialogScatterPlot").showModal();
 					}
 				}
