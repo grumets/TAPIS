@@ -569,8 +569,8 @@
 		function getConnectionSTAEntity(parentNode, node) {
 			var parentPlural, parentEntity;
 			var idNode=IdOfSTAEntity(node);
-			if (idNode==-1)
-				return {error: "Parent node is not a STA entity"};
+			if (idNode<0)
+				return {error: "Node is not a STA entity"};
 			var parentLastEntity=getSTAURLLastEntity(parentNode.STAURL);
 			if (STAEntities[parentLastEntity]){
 				parentPlural=true;
@@ -626,6 +626,8 @@
 				return null;
 			if (TableOperations[removeExtension(parentNode.image)] && TableOperations[removeExtension(parentNode.image)].leafNode==true)
 				return "Parent node is a leaf node and cannot be connected with any other node";
+			if (node.image=="OneValue.png" && parentNode.image!="Observations.png")
+				return "'One value' node is designed be connected to an 'observations' node only.";
 			var idNode=IdOfSTAEntity(node);
 			if (idNode<0)
 				return null;
@@ -642,10 +644,6 @@
 			var elem=document.getElementById("clarification");
 			elem.innerHTML += (msg + "<br>");
 			elem.scrollTop=elem.scrollHeight;  //https://stackoverflow.com/questions/11715646/scroll-automatically-to-the-bottom-of-the-page
-		}
-
-		function deapCopy(o) {
-			return JSON.parse(JSON.stringify(o));
 		}
 
 		function getURLWithoutQueryParams(s)
@@ -1564,6 +1562,14 @@
 			return d.getHours()+":"+(d.getMinutes()<10 ? "0" : "")+d.getMinutes()+":"+(d.getSeconds()<10 ? "0" : "")+d.getSeconds(); 
 		}
 
+		function GetObservationResultAsString(v) {
+			if (typeof v === "number")
+				return v.toString();
+			if (typeof v === "object")
+				return JSON.stringify(v);
+			return v;
+		}
+		
 		async function RequestLastObservationAndRefreshOneValue(currentNode, variable, timeVariable, period) {
 			var parentNode=GetFirstParentNode(currentNode);
 			if (!parentNode)
@@ -1571,7 +1577,7 @@
 			//var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(parentNode.STAdata);
 			currentNode.STAURL = AddKVPToURL(parentNode.STAURL, "$orderby="+timeVariable+" desc");
 			if (removeExtension(parentNode.image)=="Observations")
-				currentNode.STAURL = AddKVPToURL(currentNode.STAURL, "$expand=Datastream")
+				currentNode.STAURL = AddKVPToURL(currentNode.STAURL, "$expand=Datastream,MultiDatastream")
 			currentNode.STAExpectedLength = 1;
 			networkNodes.update(currentNode);
 			showInfoMessage("Getting the last observation...");
@@ -1583,15 +1589,21 @@
 			if (!data || data.length<1)
 				return;
 
-			if (typeof data[0][variable] === "number")
-				currentNode.label=data[0][variable].toString();
-			else if (typeof data[0][variable] === "object")
-				currentNode.label=JSON.stringify(data[0][variable]);
-			else
-				currentNode.label=data[0][variable];
-			if (data[0]["Datastream"] && data[0]["Datastream"]?.unitOfMeasurement?.symbol)
-				currentNode.label+=data[0]["Datastream"].unitOfMeasurement.symbol;
-
+			if (data[0]["MultiDatastream"]) {
+				currentNode.label="";
+				for (var i=0; i<data[0][variable].length; i++)
+				{
+					currentNode.label+=GetObservationResultAsString(data[0][variable][i]);
+					if (data[0]["MultiDatastream"]?.unitOfMeasurements[i]?.symbol)
+						currentNode.label+=data[0]["MultiDatastream"]?.unitOfMeasurements[i]?.symbol;
+					if (i+1!=data[0][variable].length)
+						currentNode.label+=", ";
+				}
+			} else {
+				currentNode.label=GetObservationResultAsString(data[0][variable]);
+				if (data[0]["Datastream"] && data[0]["Datastream"]?.unitOfMeasurement?.symbol)
+					currentNode.label+=data[0]["Datastream"].unitOfMeasurement.symbol;
+			}
 			currentNode.label+=" (" + getTimeISOTime(data[0][timeVariable]) + ")";
 
 			//Redraw
@@ -2210,68 +2222,6 @@
 			return (s == "url" || s == "definition" || s.endsWith("@iot.selfLink") || s.endsWith("@iot.navigationLink"));
 		}
 
-		function GetHTMLTable(data, dataAttributesInput, rowNumbers, selectedEntityId) {
-			var dataAttributes = dataAttributesInput ? dataAttributesInput : getDataAttributes(data); 
-			var cdns=[], needhref=[], record, cell, dataAttribute;
-			var dataAttributesArray = Object.keys(dataAttributes);
-
-			cdns.push("<table class='tablesmall'><tr>");
-			if (rowNumbers)
-				cdns.push("<th></th>");
-			if (selectedEntityId!==null && typeof selectedEntityId!=="undefined")
-				cdns.push("<th></th>");
-			for (var a = 0; a < dataAttributesArray.length; a++) {
-				cdns.push("<th>");
-				dataAttribute=dataAttributes[dataAttributesArray[a]];
-				if (dataAttribute.definition)
-					cdns.push("<a href='", dataAttribute.definition, "' target='_blank'>");
-				cdns.push(dataAttributesArray[a]);
-				if (dataAttribute.definition)
-					cdns.push("</a>");
-				if (dataAttribute.UoM || dataAttribute.UoMSymbol)
-				{
-					cdns.push(" (");
-					if (dataAttribute.UoMDefinition)
-						cdns.push("<a href='", dataAttribute.UoMDefinition, "' target='_blank'>");
-					cdns.push(dataAttribute.UoMSymbol ? dataAttribute.UoMSymbol : dataAttribute.UoM);
-					if (dataAttribute.UoMDefinition)
-						cdns.push("</a>");
-					cdns.push(")");
-				}
-				cdns.push("</th>");
-				needhref[a]=isAttributeAnyURI(dataAttributesArray[a]);
-			}
-
-			cdns.push("</tr>");
-			for (var i = 0; i < data.length; i++) {
-				record=data[i];
-				cdns.push("<tr>");
-				if (rowNumbers)
-					cdns.push("<td align='right'>", i + 1, "</td>");
-				if (selectedEntityId!==null && typeof selectedEntityId!=="undefined")
-				{
-					var s=record["@iot.id"] ? record["@iot.id"] : i;
-					cdns.push("<td><input type='radio' name='SelectRowRadio' id='SelectRow_", s, "' ", s == selectedEntityId ? "checked='checked'" : "", "/></td>");
-				}
-				for (var a = 0; a < dataAttributesArray.length; a++) {
-					cell=record[dataAttributesArray[a]];
-					cdns.push((dataAttributes[dataAttributesArray[a]].type=="number" || dataAttributes[dataAttributesArray[a]].type=="integer") ? "<td align='right'>" :  "<td>");
-					if (typeof cell !== "undefined") {
-						if (needhref[a] && cell.length)
-							cdns.push("<a href='", cell, "' target='_blank'>", cell, "</a>");
-						else if (typeof cell === "object")
-							cdns.push(JSON.stringify(cell));
-						else
-							cdns.push(cell);
-					}
-					cdns.push("</td>");
-				}
-				cdns.push("</tr>");
-			}
-			cdns.push("</table>");
-			return cdns.join("");
-		}
-
 		function ShowTableDialog(nodeId) {
 			var data = networkNodes.get(nodeId).STAdata;
 
@@ -2280,9 +2230,10 @@
 				return;
 			}
 
-			document.getElementById("DialogOKHTML").innerHTML = GetHTMLTable(data, networkNodes.get(nodeId).STAdataAttributes,
+			document.getElementById("DialogOKHTML").innerHTML = GetHTMLTable(data, networkNodes.get(nodeId).STAdataAttributes ? networkNodes.get(nodeId).STAdataAttributes : getDataAttributes(data),
+				"SelectRow_", 
 				document.getElementById("ShowTableRowNumberDialogOK").checked ? true : false,
-				null);
+				null, "", isAttributeAnyURI);
 		}
 
 		function StringifyObjectElements(data, dataAttributesInput) {
@@ -3040,7 +2991,7 @@
 			}
 
 			document.getElementById("DialogSelectRowsTableRadio").checked = true;			
-			document.getElementById("DialogSelectRowsTable").innerHTML = GetHTMLTable(data, networkNodes.get(parentNodeId).STAdataAttributes, false, networkNodes.get(nodeId).STAURLIdSelected ? networkNodes.get(nodeId).STAURLIdSelected : 0);
+			document.getElementById("DialogSelectRowsTable").innerHTML = GetHTMLTable(data, networkNodes.get(parentNodeId).STAdataAttributes ? networkNodes.get(parentNodeId).STAdataAttributes : getDataAttributes(data), false, "SelectRow_", networkNodes.get(nodeId).STAURLIdSelected ? networkNodes.get(nodeId).STAURLIdSelected : 0, null, "", isAttributeAnyURI);
 
 			document.getElementById("DialogSelectRowsFilterRadio").checked = false;
 			document.getElementById("DialogSelectRowsFilter").innerHTML = "";
@@ -3145,7 +3096,7 @@
 			var errorText=reasonNodeDoesNotFitWithPrevious(nodeTo, nodeFrom);
 			if (errorText)
 			{
-				alert("Node incompatible. " + errorText + ". It has not been added.");
+				alert("Incompatible node. " + errorText + ". It has not been added.");
 				return null;
 			}
 			if (nodeFrom.STAURL && IdOfSTAEntity(nodeTo) != -1) {
@@ -3398,6 +3349,7 @@
 			document.getElementById("eventSpanContent").innerText = JSON.stringify(params, null, 4);*/
 		}
 		network.on("oncontext", networkContext);
+
 		/*network.on("dragStart", function (params) {
 			// There's no point in displaying this event on screen, it gets immediately overwritten
 			params.event = "[original event]";
