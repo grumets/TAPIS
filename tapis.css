@@ -56,3 +56,185 @@
     			border-color: buttonborder;
     			border-image: initial;
 		}
+		
+/*RowFilter*/
+#divSelectorRowsFilter {
+    min-width: 1750px;
+    height: 300px;
+    border: black 1px solid;
+
+}
+
+#selectorRowsContainer {
+    min-width: 1500px;
+    min-height: 400px;
+}
+
+.hidden {
+    display: none;
+}
+
+.objectInSelect {
+    background-color: rgba(255, 153, 0, 0.87);
+}
+
+#imageIsAnObject {
+    display: block;
+    /* height:400; */
+    position: absolute;
+    /* left:20; */
+}
+
+
+
+#divSelectorRowsFilter {
+    margin-top: 20px;
+    height: fit-content;
+    min-width: 800px;
+    border: black 1px solid;
+}
+
+#divResult {
+    margin-top: 20px;
+    width: 55%;
+    height: 300px;
+    float: left;
+    border: black 1px solid;
+}
+
+
+/* Row Filter */
+
+#divTitleSelectRows {
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 35px;
+    font-weight: bold;
+    width: 100%;
+
+}
+
+#fullFilterDiv {
+    height: 200px;
+    border: black 1px solid;
+    width: 100%;
+    margin-top: 20px;
+}
+
+#fullFilterDiv {
+    min-height: 100px;
+    border: black 1px solid;
+    width: 100%;
+    margin-top: 20px;
+    position: relative;
+}
+
+.filterGroup {
+    min-height: 100px;
+    border: black 1px solid;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.filterConditionDiv {
+    height: 30px;
+
+    width: 85%;
+    border: black 1px solid;
+    margin-top: 10px;
+    margin-left: 10px;
+    display: inline-block;
+
+}
+
+.filterConditionGroup {
+    height: auto;
+    border: black 1px solid;
+    width: 70%;
+    margin-top: 20px;
+    margin-left: 10px;
+    display: inline-block;
+}
+
+.divCondition {
+    height: 50px;
+    border: black 1px solid;
+    width: 15%;
+    margin-top: 20px;
+    margin-left: 10px;
+    display: inline-block;
+}
+
+.divLineaCondition {
+    width: 10px;
+    height: 50px;
+    border-left: black 5px solid;
+    margin-left: 10px;
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+
+.buttonAddCondition {
+    margin-left: 30px;
+    display: block;
+
+}
+
+.buttonImage {
+    width: 12px;
+}
+
+.buttonAddFilterGroup {
+    margin-left: 30px;
+    display: block;
+}
+
+
+.tdBoxName {
+    position: relative;
+
+}
+
+.buttonsInFilterRow {
+    display: inline-block;
+    margin-left: 5px;
+}
+
+.optionsRow {
+    display: inline-block;
+}
+
+ .trLineBoxName td { /*Line with selects and buttons */
+    height: 35px;
+    border: 2px solid #34383aef;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.trBoxName  {
+    border-radius: 20px;
+    border: 1px solid #34383aef;
+    padding: 15px;
+}
+
+.topButtonsFilterRow {
+    height: 30px;
+}
+
+.tdSelectAndOrNot {
+    height: 30px;
+}
+
+.topPartSelectAndOrNot {
+    height: 30px;
+
+}
+
+.bottomPartSelectAndOrNot {
+    height: auto;
+    border-left: 2px solid #34383aef;
+    display: flex;
+    align-items: center;
+    padding-left: 5px;
+}
