@@ -74,8 +74,12 @@
 	<dialog id="DialogSTAURL">
 		<form>
 			<p>
-				<label>STA service URL:
+				<label>STA landing page URL:
 					<input type="text" id="DialogSTAURLInput" size="100"></input>
+				</label>
+				<br>
+				<label>Suggested STA services:
+					<select id="DialogSTAURLSelect" onChange="PopulateSTAURLInput(event)"></select>
 				</label>
 			</p>
 			<div class="center">
@@ -84,6 +88,20 @@
 			</div>
 		</form>
 	</dialog>
+
+	<dialog id="DialogSTAViewQuery">
+		<form>
+			<p>
+				<label>STA landing page URL:
+					<input type="text" id="DialogSTAViewQueryInput" size="100"></input>
+				</label>
+			</p>
+			<div class="center">
+				<button value="cancel" formmethod="dialog">Close</button>
+			</div>
+		</form>
+	</dialog>
+
 
 	<dialog id="DialogSelectColumns">
 		<form>
@@ -100,7 +118,7 @@
 	<dialog id="DialogSelectExpands">
 		<form>
 			<fieldset id="DialogSelectExpandsHTML">
-				<legend>Select what do you want to expand:</legend>
+				<legend>Choose subclasses you want details (expand) and attributes to select</legend>
 				<span id="DialogSelectExpandsCheckBoxes">
 				</span>
 			</fieldset>
@@ -110,6 +128,18 @@
 			</label>
 			<div class="center">
 				<button value="default" onClick="GetSelectExpands(event)">OK</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+
+	<dialog id="DialogSelectNRecords">
+		<form>
+			<label>Number records to request:
+				<input type="text" id="SelectExpandsNumberOfRecords" size="6" maxlength="6" value="100"></input>
+			</label>
+			<div class="center">
+				<button value="default" onClick="GetSelectNRecords(event)">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
@@ -476,7 +506,7 @@
   
     The TAPIS client is free software under the terms of the MIT License
 
-    Copyright (c) 2023 Joan Masó
+    Copyright (c) 2024 Joan Masó
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -517,7 +547,7 @@
 		//var MMNpath="../osm";
 
 		const STAEntities = {ObservedProperties: {singular: "ObservedProperty", entities: ["Datastreams", "MultiDatastreams"], properties: ["name", "definition", "description", "properties"]}, 
-				Observations: {singular: "Observation", entities: ["Datastream", "MultiDatastream", "FeatureOfInterest", "ObservationGroups", "Subjects", "Objects"], properties: ["phenomenonTime", "resultTime", "result", "resultQuality", "validTime", "parameters"]}, 
+				Observations: {singular: "Observation", entities: ["Datastream", "MultiDatastream", "FeatureOfInterest", "ObservationGroups", "Subjects", "Objects"], properties: ["phenomenonTime", "resultTime", "result", "resultQuality", "validTime", "parameters"], entityLinks: ["Object", "Subject"]}, 
       				FeaturesOfInterest: {singular: "FeatureOfInterest", entities: ["Observations"], properties: ["name", "description", "encodingType", "feature", "properties"]}, 
 				Sensors: {singular: "Sensor", entities: ["Datastreams", "MultiDatastreams"], properties: ["name", "description", "encodingType", "metadata", "properties"]}, 
 				Things: {singular: "Thing", entities: ["Datastreams", "MultiDatastreams", "Party", "Locations", "HistoricalLocations"], properties: ["name", "description", "properties"]},     
@@ -529,13 +559,14 @@
 				Campaigns: {singular: "Campaign", entities: ["Datastreams", "MultiDatastreams", "Party", "License"], properties: ["name", "description", "classification", "termsOfUse", "privacyPolicy", "creationTime", "startTime", "endTime", "url", "properties"]}, 
 				Licenses: {singular: "License", entities: ["Datastreams", "MultiDatastreams", "Campaigns", "ObservationGroups"], properties: ["name", "description", "definition", "logo", "attributionText"]}, 
 				ObservationGroups: {singular: "ObservationGroup", entities: ["Party", "Campaigns", "License", "Observations", "Relations"], properties: ["name", "description", "purpose", "creationTime", "endTime", "termsOfUsed", "privacyPolicy", "properties", "dataQuality"]}, 
-				Relations: {singular: "Relation", entities: ["Object", "Subject", "ObservationGroups"], properties: ["role", "description", "externalObject", "properties"]}};
+				Relations: {singular: "Relation", entities: ["Object", "Subject", "ObservationGroups"], properties: ["role", "description", "externalObject", "properties"], entityLinks: ["Objects", "Subjects"]}};
 		const STAEntitiesArray = Object.keys(STAEntities);
 		const STASpecialQueries = {ObsLayer: {description: "Observations Layer", query: "Observations?$orderby=phenomenonTime%20desc&$expand=Datastream($select=unitOfMeasurement),Datastream/ObservedProperty($select=name,description,definition),FeatureOfInterest($select=description,feature)&$select=phenomenonTime,result"}}
 		const STASpecialQueriesArray = Object.keys(STASpecialQueries);
 		const TableOperations = {ImportCSV: {description: "Import CSV file"},
 					Table: {description: "View Table", leafNode: true}, 
 					SelectColumnsSTA: {description: "Select Columns", callSTALoad: true},
+					ExpandColumnsSTA: {description: "Expand Columns", callSTALoad: true},
 					SelectRowsSTA: {description: "Select Rows", callSTALoad: true},
 					SortBySTA: {description: "Sort by", callSTALoad: true},
 					ViewQuerySTA: {description: "View Query", leafNode: true},
@@ -564,6 +595,24 @@
 					return STAEntities[entityName].singular;
 			}
 			return null;
+		}
+
+		function getSTAEntityPlural(entityName, considerEntityLinks) {
+			for (var i=0; i<STAEntitiesArray.length; i++) {
+				if (STAEntities[STAEntitiesArray[i]].singular==entityName)
+					return STAEntitiesArray[i];
+			}
+			if (considerEntityLinks) {
+				for (var i=0; i<STAEntitiesArray.length; i++) {
+					if ( STAEntities[STAEntitiesArray[i]].entityLinks) {
+						for (var j=0; j<STAEntities[STAEntitiesArray[i]].entityLinks.length; j++) {
+							if (STAEntities[STAEntitiesArray[i]].entityLinks[j]==entityName)
+								return STAEntitiesArray[i];
+						}
+					}
+				}
+			}
+			return entityName;
 		}
 
 		function getConnectionSTAEntity(parentNode, node) {
@@ -1236,6 +1285,22 @@
 			LoadJSONNodeSTAData(currentNode);
 		}
 
+		function PopulateSTAURLInput(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogSTAURLInput").value=document.getElementById("DialogSTAURLSelect").value
+		}
+
+		function GetOptionsDialogSTAURLSelect() {
+			var cdns=[], stas;
+			for (var g=0; g<config.suggestedSTAurls.length; g++) {
+				cdns.push('<optgroup label="', config.suggestedSTAurls[g].group, '">');
+				stas=config.suggestedSTAurls[g].STAs;
+				for (var i=0; i<stas.length; i++)
+					cdns.push('<option value="', stas[i].url, '">', stas[i].desc, '</option>');
+			}
+			return cdns.join("");  
+		}
+
 		function ShowUploadObservationsDialog(node) {
 			if (CriptoName &&
 			    hello("authenix").getAuthResponse() && 
@@ -1270,7 +1335,7 @@
 				return nodes;
 			}
 			return null;
-		}		
+		}
 
 		function ShowUploadObservationsSelects(node) {
 			var parentNode = GetFirstParentNode(node)
@@ -1930,13 +1995,43 @@
 			}
 		}
 
+		function GetKVPSelectedSelectExpands(selectedExpands, first) {
+			var s, cdns=[];
+			if (!selectedExpands)
+				return "";
+			var selectedArray=Object.keys(selectedExpands.selected);
+			if (selectedArray.length) {
+				cdns.push("$select=");
+				for (var i=0; i<selectedArray.length; i++) {
+					cdns.push(selectedArray[i]);
+					if (i+1<selectedArray.length.length)
+						cdns.push(",");
+				}
+			}
+			var expandedArray=Object.keys(selectedExpands.expanded)
+			if (expandedArray.length){
+				if (selectedArray.length)
+					cdns.push(first ? "&" : ";");
+				cdns.push("$expand=");
+				for (var i=0; i<expandedArray.length; i++) {
+					cdns.push(expandedArray[i]);
+					s=GetKVPSelectedSelectExpands(selectedExpands.expanded[expandedArray[i]], false);
+					if (s)
+						cdns.push("(", s, ")");	
+					if (i+1<expandedArray.length)
+						cdns.push(",");
+				}
+			}
+			return cdns.join("");
+		}
+
 		function GetSelectExpands(event) {
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogSelectExpands").close();
 			
 			var previousSTAURL = currentNode.STAURL;
 			var dataAttributes = currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(currentNode.STAdata);
-			if (!currentNode.STASelectedExpands)
+			/*if (!currentNode.STASelectedExpands)
 				currentNode.STASelectedExpands={STAURLUnexpanded: currentNode.STAURL, dataAttributesUnexpanded: deapCopy(dataAttributes), selected: []};
 			else
 				currentNode.STAURL = currentNode.STASelectedExpands.STAURLUnexpanded;
@@ -1971,11 +2066,29 @@
 					for (var a = 0; a < dataAttrArray.length; a++)
 						currentNode.STASelectedExpands.selected[a]=false;
 				}
+			}*/
+			if (document.getElementById("DialogSelectExpandsHTML").style.display != "none") {
+				GetSelectedSelectExpandsDialog(currentNode);
+				var s=GetKVPSelectedSelectExpands(currentNode.STASelectedExpands, true);
+				if (s)
+					currentNode.STAURL = AddKVPToURL(currentNode.STAURL, s);
 			}
 			if (!isNaN(parseInt(document.getElementById("SelectExpandsNumberOfRecords").value)))
 				currentNode.STAExpectedLength = parseInt(document.getElementById("SelectExpandsNumberOfRecords").value);
 			networkNodes.update(currentNode);
-			showInfoMessage("Expanding STA columns...");
+			showInfoMessage("Selecting and Expanding STA columns...");
+			UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
+			LoadJSONNodeSTAData(currentNode);
+		}
+
+		function GetSelectNRecords(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogSelectNRecords").close();
+			
+			if (!isNaN(parseInt(document.getElementById("SelectExpandsNumberOfRecords").value)))
+				currentNode.STAExpectedLength = parseInt(document.getElementById("SelectExpandsNumberOfRecords").value);
+			networkNodes.update(currentNode);
+			showInfoMessage("Loading STA columns...");
 			UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
 			LoadJSONNodeSTAData(currentNode);
 		}
@@ -2114,6 +2227,12 @@
 					var previousSTAURLrootWithoutQuery=getURLWithoutQueryParams(previousSTAURLroot);
 					if (node.STAURL.substring(0, previousSTAURLrootWithoutQuery.length)==previousSTAURLrootWithoutQuery)
 					{
+						/*if (node.STAURL.charAt(previousSTAURLroot.length)=='?' || node.STAURL.charAt(previousSTAURLroot.length)=='&')
+							node.STAURL=AddKVPToURL(currentSTAURLroot, node.STAURL.substring(previousSTAURLroot.length+1));
+						else
+							node.STAURL=currentSTAURLroot + node.STAURL.substring(previousSTAURLroot.length);*/
+						//·$·$·
+						//var lastPart=node.STAURL.substring(previousSTAURLrootWithoutQuery.length);
 						var previousQueryParams=getURLQueryParams(previousSTAURLroot)
 						var currentQueryParams=getURLQueryParams(currentSTAURLroot)
 						var queryParam=getURLQueryParams(node.STAURL);
@@ -2129,6 +2248,11 @@
 									queryParam);
 						networkNodes.update(node);
 					}
+					/*if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || TableOperations[node.image.substring(0, node.image.length-4)].callSTALoad) {
+						networkNodes.update(node);
+						showInfoMessage("Updating STA child node...");
+						LoadJSONNodeSTAData(node);
+					}*/
 				}
 				UpdateChildenSTAURL(node, currentSTAURLroot, previousSTAURLroot);
 			}
@@ -2913,23 +3037,50 @@
 			document.getElementById("DialogSelectColumnsHTML").innerHTML = s;
 		}
 
-		function ShowTableSelectExpandsDialog(nodeId, expandCheckboxes) {
-			var node=networkNodes.get(nodeId);
-			if (expandCheckboxes)
-			{
-				var data = node.STAdata, 
-						entities=STAEntities[STAEntitiesArray[IdOfSTAEntity(node)]].entities,
-						selectedExpands=node.STASelectedExpands;
-		
-				if (!data || !data.length) {
-					document.getElementById("DialogSelectExpandsCheckBoxes").innerHTML = "No data to show.";
-					return;
+		function GetSelectedSelectExpandsDialog(node)
+		{
+			var data = node.STAdata; 
+				
+			if (!node.STASelectedExpands)
+				node.STASelectedExpands={selected: [], expanded: []};
+			else {
+				node.STASelectedExpands.selected=[];
+				node.STASelectedExpands.expanded=[];
+			}
+
+			var dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data);
+			const dataAttributesArray = Object.keys(dataAttributes);
+			
+			GetSelectedLevelSelectExpandsDialog(dataAttributesArray, node.STASelectedExpands, STAEntitiesArray[IdOfSTAEntity(GetFirstParentNode(node))], "");
+			networkNodes.update(node);
+		}
+
+		function GetSelectedLevelSelectExpandsDialog(dataAttributesArray, selectedExpands, staEntityName, prefix)
+		{
+			var entities=STAEntities[getSTAEntityPlural(staEntityName, true)].entities;
+			var properties=STAEntities[getSTAEntityPlural(staEntityName, true)].properties;
+
+			if (dataAttributesArray) {
+				for (var a = 0; a < dataAttributesArray.length; a++)
+				{
+					var da=dataAttributesArray[a]
+					for (var e=0; e < properties.length; e++)
+					{
+						if (properties[e]==da)
+						{
+							if (document.getElementById("SelectExpand_select_" + prefix + "_" + da)?.checked)
+								selectedExpands.selected[da]=true;
+						}
+					}
 				}
-	
-				var dataAttributes = selectedExpands ? selectedExpands.dataAttributesUnexpanded : (node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data));
-				const dataAttributesArray = Object.keys(dataAttributes);
-	
-				var s = "<table>";
+			} else {
+				for (var e=0; e < properties.length; e++) {
+					if (document.getElementById("SelectExpand_select_" + prefix + "_" + properties[e])?.checked)
+						selectedExpands.selected[properties[e]]=true;
+				}
+			}
+
+			if (dataAttributesArray) {
 				for (var a = 0; a < dataAttributesArray.length; a++)
 				{
 					if (dataAttributesArray[a].endsWith("@iot.navigationLink"))
@@ -2939,20 +3090,116 @@
 						{
 							if (entities[e]==da)
 							{
-								s += "<tr><td><label><input type='checkbox'" + ((selectedExpands && a<selectedExpands.selected.length && selectedExpands.selected[a]) ? "checked='checked'" : "") + " id='SelectExpand_" + a + "' /> " + da + "</label></td></tr>";
+								if (document.getElementById("SelectExpand_expand_" + prefix + "_" + da)?.checked) {
+									selectedExpands.expanded[da]={selected: [], expanded: []};
+									GetSelectedLevelSelectExpandsDialog(null, selectedExpands.expanded[da], da, prefix+da);
+								}
 								break;
 							}
 						}
 					}
 				}
-				s += "</table>";
-				document.getElementById("DialogSelectExpandsCheckBoxes").innerHTML = s;
+			} else {
+				for (var e=0; e < entities.length; e++) {
+					if (document.getElementById("SelectExpand_expand_" + prefix + "_" + entities[e])?.checked) {
+						selectedExpands.expanded[entities[e]]={selected: [], expanded: []};
+						GetSelectedLevelSelectExpandsDialog(null, selectedExpands.expanded[entities[e]], entities[e], prefix+entities[e]);
+					}
+				}
+			}
+		}
+
+		function RedrawTableSelectExpandsNodeId(nodeId)
+		{	
+			var node = networkNodes.get(nodeId);
+			GetSelectedSelectExpandsDialog(node);
+			ShowTableSelectExpandsDialog(GetFirstParentNode(node), node, true);
+		}
+
+		function GetHTMLLevelSelectExpandsDialog(dataAttributesArray, selectedExpands, node, staEntityName, staEntityParentName, prefix, spaces)
+		{
+			var cdns=[];
+			var entities=STAEntities[getSTAEntityPlural(staEntityName, true)].entities;
+			var properties=STAEntities[getSTAEntityPlural(staEntityName, true)].properties;
+
+			cdns.push(spaces, "Properties (to select):<br>");
+			if (dataAttributesArray) {
+				for (var a = 0; a < dataAttributesArray.length; a++)
+				{
+					var da=dataAttributesArray[a]
+					for (var e=0; e < properties.length; e++)
+					{
+						if (properties[e]==da)
+						{
+							cdns.push(spaces, "<label><input type='checkbox'", ((selectedExpands && selectedExpands.selected[da]) ? "checked='checked'" : ""), " id='SelectExpand_select_", prefix, "_", da, "'/> ", da, "</label><br>");
+							break;
+						}
+					}
+				}
+			} else {
+				for (var e=0; e < properties.length; e++)
+					cdns.push(spaces, "<label><input type='checkbox'", ((selectedExpands && selectedExpands.selected[properties[e]]) ? "checked='checked'" : ""), " id='SelectExpand_select_", prefix, "_", properties[e], "' /> ", properties[e], "</label><br>");
+			}
+
+			var staEntityParentNamePlural=getSTAEntityPlural(staEntityParentName, true)
+			cdns.push(spaces, "Entities (to expand):<br>");
+			if (dataAttributesArray) {
+				for (var a = 0; a < dataAttributesArray.length; a++)
+				{
+					if (dataAttributesArray[a].endsWith("@iot.navigationLink"))
+					{
+						var da=dataAttributesArray[a].substring(0, dataAttributesArray[a].length-"@iot.navigationLink".length);
+						for (var e=0; e < entities.length; e++)
+						{
+							if (entities[e]==da && staEntityParentNamePlural!=da)
+							{
+								cdns.push(spaces, "<label><input type='checkbox'", ((selectedExpands && selectedExpands.expanded[da]) ? "checked='checked'" : ""), " id='SelectExpand_expand_", prefix, "_", da, "' onClick='RedrawTableSelectExpandsNodeId(\"", node.id, "\")' /> ", da, "</label><br>");
+								if (selectedExpands && selectedExpands.expanded[da])
+									cdns.push(GetHTMLLevelSelectExpandsDialog(null, selectedExpands.expanded[da], node, da, staEntityName, prefix+da, spaces+"&emsp;"));
+								break;
+							}
+						}
+					}
+				}
+			} else {
+				for (var e=0; e < entities.length; e++)
+				{
+					if (staEntityParentNamePlural!=entities[e]) {  //Evito que ofereixi l'objecte anterior (i vaig endarrera) 
+						cdns.push(spaces, "<label><input type='checkbox'", ((selectedExpands&& selectedExpands.expanded[entities[e]]) ? "checked='checked'" : ""), " id='SelectExpand_expand_", prefix, "_", entities[e], "' onClick='RedrawTableSelectExpandsNodeId(\"", node.id, "\")' /> ", entities[e], "</label><br>");
+						if (selectedExpands && selectedExpands.expanded[entities[e]])
+							cdns.push(GetHTMLLevelSelectExpandsDialog(null, selectedExpands.expanded[entities[e]], node, entities[e], staEntityName, prefix+entities[e], spaces+"&emsp;"))
+					}
+				}
+			}
+			return cdns.join("");
+		}
+
+		function ShowTableSelectExpandsDialog(parentNode, node, expandCheckboxes) 
+		{
+			var cdns=[];
+			if (expandCheckboxes)
+			{
+				if (parentNode.STAdata)
+					node.STAdata = deapCopy(parentNode.STAdata);
+				if (parentNode.STAdataAttributes)
+					node.STAdataAttributes = deapCopy(parentNode.STAdataAttributes);
+				networkNodes.update(node);
+				var data = node.STAdata, selectedExpands=node.STASelectedExpands;
+		
+				if (!data || !data.length) {
+					document.getElementById("DialogSelectExpandsCheckBoxes").innerHTML = "No data to show.";
+					return;
+				}
+	
+				var dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data);
+				const dataAttributesArray = Object.keys(dataAttributes);
+				cdns.push(GetHTMLLevelSelectExpandsDialog(dataAttributesArray, selectedExpands, node, STAEntitiesArray[IdOfSTAEntity(parentNode)], null, "", ""));
+				document.getElementById("DialogSelectExpandsCheckBoxes").innerHTML = cdns.join("");
 				document.getElementById("DialogSelectExpandsHTML").style.display = "inline-block";
 			}
 			else
 				document.getElementById("DialogSelectExpandsHTML").style.display = "none";
-			document.getElementById("SelectExpandsNumberOfRecords").value=node.STAExpectedLength;
-			
+			document.getElementById("SelectExpandsNumberOfRecords").value=node.STAExpectedLength;	
 		}
 
 		function ShowTableSelectSortByDialog(node) {
@@ -3123,7 +3370,7 @@
 				LoadJSONNodeSTAData(nodeTo);
 				return true;
 			}
-			if (nodeFrom.STAURL && (nodeTo.image == "SelectColumnsSTA.png" || nodeTo.image == "SelectRowsSTA.png" || nodeTo.image == "SortBySTA.png")) {
+			if (nodeFrom.STAURL && (nodeTo.image == "SelectColumnsSTA.png" || nodeTo.image == "ExpandColumnsSTA.png" || nodeTo.image == "SelectRowsSTA.png" || nodeTo.image == "SortBySTA.png")) {
 				nodeTo.STAURL = nodeFrom.STAURL;
 				nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
 				if (nodeFrom.STAdata)
@@ -3223,18 +3470,19 @@
 				currentNode = networkNodes.get(params.nodes[0])
 				if (currentNode.image == "ogc.png") {
 					document.getElementById("DialogSTAURLInput").value = currentNode.STAURL;
-					document.getElementById("DialogSTAURLInput").readOnly = false;
-					document.getElementById("DialogSTAURLOk").style.display = "inline-block";
+					document.getElementById("DialogSTAURLSelect").innerHTML = GetOptionsDialogSTAURLSelect();
+					//document.getElementById("DialogSTAURLInput").readOnly = false;
+					//document.getElementById("DialogSTAURLOk").style.display = "inline-block";
 					document.getElementById("DialogSTAURL").showModal();
 				}
 				else if (currentNode.image == "ViewQuerySTA.png") {
-					document.getElementById("DialogSTAURLInput").value="";
+					document.getElementById("DialogSTAViewQueryInput").value="";
 					var parentNode=GetFirstParentNode(currentNode);
 					if (parentNode)
-						document.getElementById("DialogSTAURLInput").value = parentNode.STAURL;
-					document.getElementById("DialogSTAURLInput").readOnly = true;
-					document.getElementById("DialogSTAURLOk").style.display = "none";
-					document.getElementById("DialogSTAURL").showModal();
+						document.getElementById("DialogSTAViewQueryInput").value = parentNode.STAURL;
+					//document.getElementById("DialogSTAURLInput").readOnly = true;
+					//document.getElementById("DialogSTAURLOk").style.display = "none";
+					document.getElementById("DialogSTAViewQuery").showModal();
 				}
 				else if (currentNode.image == "ImportCSV.png") {
 					//ShowImportCSVDialog(currentNode.id);
@@ -3292,6 +3540,13 @@
 						document.getElementById("DialogSelectColumns").showModal();
 					}
 				}
+				else if (currentNode.image == "ExpandColumnsSTA.png") {
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode) {
+						ShowTableSelectExpandsDialog(parentNode, currentNode, true);
+						document.getElementById("DialogSelectExpands").showModal();
+					}
+				}
 				else if (currentNode.image == "JoinTables.png") {
 					var parentNodes=GetParentNodes(currentNode);
 					if (parentNodes && parentNodes.length>1) {
@@ -3320,12 +3575,12 @@
 				}
 				else if (IdOfSTAEntity(currentNode) != -1) {
 					//Offering expand
-					ShowTableSelectExpandsDialog(currentNode.id, true);
-					document.getElementById("DialogSelectExpands").showModal();
+					//ShowTableSelectExpandsDialog(currentNode.id, true);
+					document.getElementById("DialogSelectNRecords").showModal();
 				}
 				else if (IdOfSTASpecialQueries(currentNode) != -1) {
-					ShowTableSelectExpandsDialog(currentNode.id, false);
-					document.getElementById("DialogSelectExpands").showModal();
+					//ShowTableSelectExpandsDialog(currentNode.id, false);
+					document.getElementById("DialogSelectNRecords").showModal();
 				}
 			}
 		}
