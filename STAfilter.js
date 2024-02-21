@@ -615,19 +615,17 @@
 
 				var staEntities = Object.keys(STAEntities);
 
-				//Wich Entity is: !!!!! Only works with STA (No csv)
+				//Which Entity is: !!!!! Only works with STA (No csv)
 				var entity;
-				if (currentNode.STALastEntity) {
-					entity = currentNode.STALastEntity
+				if (getSTAURLLastEntity(currentNode.STAURL)) {
+					entity = getSTAURLLastEntity(currentNode.STAURL);
 				} else {
 					entity = "STAPlus"
 				}
 
-				var STAEntitiesKeys = Object.keys(STAEntities);
-				var entitiesSTA = STAEntitiesKeys;
-
+				var entitiesSTA;
 				if (entity != "STAPlus") {
-					entitiesSTA = STAEntities[entity]["entities"];
+					entitiesSTA = STAEntities[entity].entities;
 					//First put Itself (Entity)
 					var option = document.createElement("option");
 					option.setAttribute("value", entity);
@@ -639,11 +637,13 @@
 					}
 					select.appendChild(option);
 				}
+				else
+					entitiesSTA=[];
 
 				var newEntityList = [];
 				for (var i = 0; i < entitiesSTA.length; i++) {
 
-					var indexArray = STAEntitiesKeys.find(element => element == entitiesSTA[i]); //Value -1, doesn't exist -> Singular
+					var indexArray = STAEntitiesArray.find(element => element == entitiesSTA[i]); //Value -1, doesn't exist -> Singular
 
 					if (indexArray == undefined) { //singular
 						if (entitiesSTA[i] == "ObservedProperty" || entitiesSTA[i] == "FeatureOfInterest" || entitiesSTA[i] == "Party") {  //need more than + "s"
@@ -816,7 +816,6 @@
 
 				var buttonImage2 = document.createElement("img"); //Button image
 				buttonImage2.setAttribute("src", "arrowSelectButton.png");
-				buttonImage2.setAttribute("class", "buttonImage");
 				displaySelect.appendChild(buttonImage2);
 
 				//Interval select
@@ -872,7 +871,6 @@
 				displaySelectInterval.setAttribute("onclick", "changeWriteToSelect('" + nodeId + "','" + count + "','interval')");
 				var buttonImage3 = document.createElement("img"); //button image
 				buttonImage3.setAttribute("src", "arrowSelectButton.png");
-				buttonImage3.setAttribute("class", "buttonImage");
 				displaySelectInterval.appendChild(buttonImage3);
 
 				placeId.appendChild(displaySelectInterval);
@@ -880,10 +878,10 @@
 				divFilterContainer2.appendChild(cancelButtonInterval);
 
 				var entityy;
-				if (currentNode.STALastEntity) {
-					entityy = currentNode.STALastEntity
+				if (getSTAURLLastEntity(currentNode.STAURL)) {
+					entityy = getSTAURLLastEntity(currentNode.STAURL);
 				} else {
-					entityy = "STAPlus"
+					entityy = "STAPlus";
 				}
 				var selectEntity = document.getElementById("selectorSTAEntity_" + count);
 				var selectEntityValue = selectEntity.options[selectEntity.selectedIndex].value;
@@ -937,11 +935,10 @@
 			var entity = "0";
 			var parentNodeId = network.getConnectedNodes(nodeId, "from");
 			var parentNode = networkNodes.get(parentNodeId);
-			var STAEntitiesKeys = Object.keys(STAEntities);
 
-			for (var i = 0; i < STAEntitiesKeys.length; i++) {
-				if (parentNode[0].label == STAEntitiesKeys[i]) {
-					entity = STAEntitiesKeys[i];//parentNode[0].label;
+			for (var i = 0; i < STAEntitiesArray.length; i++) {
+				if (parentNode[0].label == STAEntitiesArray[i]) {
+					entity = STAEntitiesArray[i];//parentNode[0].label;
 				}
 			}
 
@@ -1025,7 +1022,7 @@
 			var selectCondition = document.getElementById("selectorCondition_" + number);
 			var selectedValueCondition = selectCondition.options[selectCondition.selectedIndex].value;
 
-			var STALastEntity = currentNode.STALastEntity;
+			var STALastEntity = getSTAURLLastEntity(currentNode.STAURL);
 
 
 			selectorValue = document.getElementById("selectorValue_" + number);
@@ -1265,11 +1262,11 @@
 			}
 
 			if (first) {
-				s += `<div class="topButtonsFilterRow"><button onclick="biggestLevelButton('${elem.boxName}','${nodeId}')">Add a bigger priority nexus</button>`;
+				s += `<div class="topButtonsFilterRow"><button onclick="biggestLevelButton('${elem.boxName}','${nodeId}')">New group below</button>`;
 			}
 			if (elem.boxName) {
 
-				s += `<button onclick="addNewCondition('${elem.boxName}','${nodeId}')">Add new condition</button><button onclick="deleteGroup('${elem.boxName}','${nodeId}')" class="deleteGroupFilterRow">Delete group</button></div>`;
+				s += '<button onclick="addNewCondition(\'' + elem.boxName + '\',\''+ nodeId + '\')">New condition below</button><button onclick="deleteGroup(\'' + elem.boxName + '\',\'' + nodeId + '\')" class="deleteGroupFilterRow"><img src="trash.png" alt="Remove" title="Remove" valign="middle"> Delete group</button></div>';
 
 			}
 			if (typeof elem === "object") {
@@ -1329,7 +1326,7 @@
 
 		function GetFilterCondition(elem, dataAttributes, nodeId) {
 			counter.push(elem);
-			return conditionsFilter[elem].property + '<div class="buttonsInFilterRow"><button id="buttonDown_' + elem + '" onClick="MoveDownFilterCondition(' + elem + ')"><img src="arrowDown_18x11.png"></button> <button  id="buttonUp_' + elem + '"onClick="MoveUpFilterCondition(' + elem + ')"><img src="arrowUp_18x11.png"></button><button onClick="DeleteElementButton(' + elem + ')"><img src="trash_18x18.png"></button></div>';
+			return conditionsFilter[elem].property + '<div class="buttonsInFilterRow"><button id="buttonDown_' + elem + '" onClick="MoveDownFilterCondition(' + elem + ')"><img src="arrowDown.png" alt="Move down" title="Move down"></button> <button  id="buttonUp_' + elem + '"onClick="MoveUpFilterCondition(' + elem + ')"><img src="arrowUp.png" alt="Move up" title="Move up"></button><button onClick="DeleteElementButton(' + elem + ')"><img src="trash.png" alt="Remove" title="Remove"></button></div>';
 
 		}
 
@@ -1482,7 +1479,7 @@
 		//Up button
 		function MoveUpFilterCondition(iCon) {
 			event.preventDefault();
-			var previousElement = GivePreviousConditionFilterTable(elemFilter, iCon, "no");
+			var previousElement = GivePreviousConditionFilterTable(elemFilter, iCon);
 			console.log(previousElement)
 			if (previousElement != -1) {
 				searchBoxName(elemFilter, iCon, "no", previousElement);
@@ -1811,10 +1808,9 @@
 
 		}
 
-		function addTitleInRowFilterDIalog() {
-			var previousNode = networkNodes.get(network.getConnectedNodes(currentNode.id, "from"));
+		function addTitleInRowFilterDialog(divName) {
+			/*var previousNode = networkNodes.get(network.getConnectedNodes(currentNode.id, "from"));
 			var previousURL = previousNode[0].STAURL;
-			var STAEntitiesKeys = Object.keys(STAEntities);
 			var final = "";
 			for (var i = previousURL.length - 1; i > 0; i--) { //que hi ha desprÃ©s de l'Ãºltima barra (buscant si es una entity)
 				if (previousURL[i] == "/") {
@@ -1824,26 +1820,26 @@
 				else {
 					final = previousURL[i] + final;
 				}
-			}
+			}*/
 
-			var entity = false;
-			for (var i = 0; i < STAEntitiesKeys.length; i++) {
-				if (STAEntitiesKeys[i] == final) {
-					entity = STAEntitiesKeys[i];
+			/*var entity = false;
+			for (var i = 0; i < STAEntitiesArray.length; i++) {
+				if (STAEntitiesArray[i] == final) {
+					entity = STAEntitiesArray[i];
 					break;
 				}
 			}
 			if (entity == false) {
 				entity = "STAPlus"
-			}
+			}*/
 
 			//posar-ho al titol
-			var divTitleSelectRows = document.getElementById("divTitleSelectRows");
+			var divTitleSelectRows = document.getElementById(divName);
 			var entity;
-			if (currentNode.STALastEntity) {
-				entity = currentNode.STALastEntity
+			if (getSTAURLLastEntity(currentNode.STAURL)) {
+				entity = getSTAURLLastEntity(currentNode.STAURL);
 			} else {
-				entity = "STAPlus"
+				entity = "STAPlus";
 			}
 			divTitleSelectRows.innerHTML = entity;
 
