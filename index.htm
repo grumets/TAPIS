@@ -45,7 +45,9 @@
 				<button onclick='saveNetwork(event);'><img src="SaveNetwork.png" height="20" valign="middle"> Save</button>
 				<button id="buttonOpenLogin" onclick='OpenLogin(event);'><img src="login.png" height="20" valign="middle"> Login</button>
 				<button id="buttonOpenLogout" onclick='OpenLogout(event);' style="display: none");'><img src="login.png" height="20" valign="middle"> Logout</button>
-				<button onclick='OpenConfiguration(event);'><img src="config.png" height="20" valign="middle">Configuration</button><br>
+				<button onclick='OpenConfiguration(event);'><img src="config.png" height="20" valign="middle">Configuration</button>
+				<button onclick='OpenHelp(event);'><img src="help.png" height="20" valign="middle">Help</button>
+				<br>
 				<span style="font-size: 10px;"><a href="TermsOfUse.htm">Terms of Use</a><br>
 					<a href="PrivacyStatement.htm">Privacy Statement</a><br>
 					<a href="AccessPolicy.htm">Access Policy</a><br>
@@ -1302,6 +1304,10 @@
 			});
 
 			return false;
+		}
+
+		function OpenHelp(event) {
+			window.open("help", "TapisHelp");
 		}
 
 		function OpenConfiguration(event) {

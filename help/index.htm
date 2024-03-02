@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>TAPIS: Tables from APIs for Sensors (Sensor Things API plus Explorer)</title>
+	<link rel="icon" type="image/x-icon" href="../favicon.ico">
+
+	<link rel="stylesheet" href="../tapis.css">
+
+</head>
+
+<body>
+	<table border="0" style="width:100%">
+		<tr>
+			<td>
+				<table>
+					<tr>
+						<td><img src="../logo.png" height="70"></td>
+						<td>
+							<div style="font-size: 30px; font-weight: bold;">TAPIS</div>
+							<div style="font-size: 20px; font-weight: bold;">Tables from OGC APIs for Sensors</div>
+							<div style="font-size: 10px; font-weight: normal;"> or a Sensor Things API plus Explorer
+							</div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+
+<H1>Help</H1>
+<H2>Recipes</H2>
+For the moment, only one recipe is provided. More to come soon!.
+
+<H3>Recipe 1: Add semantics (meaning) to a table and share, retrieve and store it</H2>
+In this example, we illustrate how to manage a table semantics.
+<p>
+To start the exercise, need to find a CSV in the Internet. In this case we go to the Open data portal of the Catalan Government to find a dataset of quantity of water in the Catalonia reservoirs
+(<a href="https://analisi.transparenciacatalunya.cat/ca/Medi-Ambient/Quantitat-d-aigua-als-embassaments-de-les-Conques-/gn9e-3qhr/about_data" target="_blank">https://analisi.transparenciacatalunya.cat/ca/Medi-Ambient/Quantitat-d-aigua-als-embassaments-de-les-Conques-/gn9e-3qhr/about_data</a>). 
+<br>
+<img src="recipe01_findcsv_url.png" width="600" class="center">
+<p>
+There is a way to get a direct link to the data in CSV format (<a href="https://analisi.transparenciacatalunya.cat/resource/gn9e-3qhr.csv" target="_blank">https://analisi.transparenciacatalunya.cat/resource/gn9e-3qhr.csv</a>).
+<br>
+<img src="recipe01_copycsv_url.png" width="600" class="center">
+<p>
+First we import a table from the internet using the "Import CSV" tool.
+<br>
+<img src="recipe01_importcsv.png" width="600" class="center">
+
+<p>
+We specify that this is a coma separated file with headers defining the titles of the fields. We do not have any <a href="https://csvw.org/">CSVW</a> to add semantics so we will not select any file name. We will copy the URL of the CSV in the last box. The file is automatically uploaded in the background.
+<br>
+<img src="recipe01_opencsv.png" width="600" class="center">
+
+<p>
+Now we will include the semantics with the fields meaning tool.
+<br>
+<img src="recipe01_fieldsMeaning.png" width="600" class="center">
+
+<p>
+We need to populate the description of each field, the URL of a vocabulary definition and the units of measure description, URL definition and symbol.
+<br>
+<img src="recipe01_defineMeaning.png" width="600" class="center">
+
+<p>
+That is a complicated process because it requires some knowledge of the existing vocabulary services. We can use one of the predefined exemplary combinations to start with. Do not worry if you do not know the answer of some items now as all fields are optional and can be left blank.
+<br>
+<img src="recipe01_dropdownhelp.png" width="600" class="center">
+
+<p>
+Once this is done for all fields, we can check if all works by visualizing the table with the table tool.
+<br>
+<img src="recipe01_table.png" width="600" class="center">
+
+<p>
+Field names are replaced by descriptions that are linked to the concept they represent and the units of measure are represented by a symbol linked to the definition of them.
+<br>
+<img src="recipe01_table_links.png" width="800" class="center">
+
+<p>
+Now, by going back to the "meaning" tool we can share this definitions in the Internet by pressing the "share" button.
+<br>
+<img src="recipe01_shareMeaning.png" width="600" class="center">
+
+<p>
+The NiMMbus system will be open. You are required to login using an identity provider such as Authenix or by creating your own user name in the system. 
+Do not be alarmed by the number of fields you see in the screen. They are all pre-populated, so you only need to press save and the NiMMbus system will close and you will be redirected to the Tapis again.
+<br>
+<img src="recipe01_saveNiMMbus.png" width="800" class="center">
+
+<p>
+To check that all is correct, we can redraw the window to reset the status of it to zero. By adding using the ImportCSV again, we can reload the previous CSV. We will specify again that the file is coma separated and has headers. We will reenter the URL of th CSV but this time we will also select "Automatic retrieve of shared meaning". This will force the system to look for sources of meaning in the NiMMbus system ans retrieve our last definition in the backgroud once we press "Done".
+<br>
+<img src="recipe01_retrieveNiMMbus.png" width="600" class="center">
+
+<p>
+We can verify that the meaning of the field was been loaded by adding and open the "Meaning" tool again, just to see that the definitions were uploaded with no extra human interaction.
+<br>
+<img src="recipe01_retrievedMeaning.png" width="600" class="center">
+
+<p>
+To finalize, we can use the "Save Table" tool to save a CSVW file with the meaning definitions that we have provided as well as the original CSV for latter use.
+<br>
+<img src="recipe01_savecsvw.png" width="600" class="center">
+
+<p>
+This is the result of saving the CSV (fragment) and the CSVW.
+<table>
+<tr><td>
+<textarea rows="30" cols="80" style="white-space: pre; overflow-wrap: normal; overflow-x: scroll;" readonly>
+{
+	"tableSchema": {
+		"columns": [
+			{
+				"name": "dia",
+				"datatype": "string",
+				"titles": "phenomenonTime",
+				"propertyUrl": "http://www.opengis.net/def/docs/15-078r6/Observation/phenomenonTime"
+			},
+			{
+				"name": "estaci",
+				"datatype": "string",
+				"titles": "Estation Name",
+				"propertyUrl": "http://www.opengis.net/def/docs/15-078r6/FeatureOfInterest/name"
+			},
+			{
+				"name": "nivell_absolut",
+				"datatype": "string",
+				"titles": "Lake level",
+				"propertyUrl": "https://hydro.geodab.eu/hydro-ontology/concept/15",
+				"unitMeasureTitles": "Meters",
+				"unitMeasureSymbol": "m",
+				"unitMeasureUrl": "https://qudt.org/vocab/unit/M"
+			},
+			{
+				"name": "percentatge_volum_embassat",
+				"datatype": "string",
+				"titles": "Lake water volume",
+				"propertyUrl": "http://hydro.geodab.eu/hydro-ontology/concept/85",
+				"unitMeasureTitles": "Cubic hectometer",
+				"unitMeasureSymbol": "hm3",
+				"unitMeasureUrl": "http://www.ontology-of-units-of-measure.org/resource/om-2/cubicHectometre"
+			},
+			{
+				"name": "volum_embassat",
+				"datatype": "string",
+				"titles": "Lake water volume",
+				"propertyUrl": "http://hydro.geodab.eu/hydro-ontology/concept/85",
+				"unitMeasureTitles": "Percentage",
+				"unitMeasureSymbol": "%",
+				"unitMeasureUrl": "https://qudt.org/vocab/unit/PERCENT"
+			}
+		]
+	},
+	"dialect": {
+		"header": true,
+		"delimiter": ","
+	}
+}
+</textarea>
+</td><td>
+<textarea rows="30" cols="80" style="white-space: pre; overflow-wrap: normal; overflow-x: scroll;" readonly>
+"dia","estaci","nivell_absolut","percentatge_volum_embassat","volum_embassat"
+"2024-02-22T00:00:00.000","Embassament de la Baells (Cercs)","591.5","20","21.94"
+"2024-02-22T00:00:00.000","Embassament de Sant Ponç (Clariana de Cardener)","512.44","26.9","6.55"
+"2024-02-22T00:00:00.000","Embassament de Susqueda (Osor)","301.07","21.1","49.05"
+"2024-02-22T00:00:00.000","Embassament de Riudecanyes","194.67","2.7","0.15"
+"2024-02-22T00:00:00.000","Embassament de Foix (Castellet i la Gornal)","97.6","57.3","2.14"
+"2024-02-22T00:00:00.000","Embassament de la Llosa del Cavall (Navès)","765.07","16.4","13.13"
+"2024-02-22T00:00:00.000","Embassament de Sau (Vilanova de Sau)","373.12","1.9","3.08"
+"2024-02-22T00:00:00.000","Embassament de Darnius Boadella (Darnius)","132.23","11.3","6.89"
+"2024-02-22T00:00:00.000","Embassament de Siurana (Cornudella de Montsant)","453.89","3.2","0.39"
+"2024-02-21T00:00:00.000","Embassament de Susqueda (Osor)","301.04","21","49.02"
+"2024-02-21T00:00:00.000","Embassament de Riudecanyes","194.67","2.7","0.15"
+"2024-02-21T00:00:00.000","Embassament de Sau (Vilanova de Sau)","373.31","2","3.25"
+"2024-02-21T00:00:00.000","Embassament de la Llosa del Cavall (Navès)","765.1","16.4","13.15"
+"2024-02-21T00:00:00.000","Embassament de la Baells (Cercs)","591.55","20.1","22"
+"2024-02-21T00:00:00.000","Embassament de Darnius Boadella (Darnius)","132.24","11.3","6.9"
+"2024-02-21T00:00:00.000","Embassament de Foix (Castellet i la Gornal)","97.63","57.6","2.16"
+"2024-02-21T00:00:00.000","Embassament de Sant Ponç (Clariana de Cardener)","512.51","27","6.59"
+"2024-02-21T00:00:00.000","Embassament de Siurana (Cornudella de Montsant)","453.9","3.2","0.39"
+"2024-02-20T00:00:00.000","Embassament de Foix (Castellet i la Gornal)","97.63","57.7","2.16"
+"2024-02-20T00:00:00.000","Embassament de Sant Ponç (Clariana de Cardener)","512.58","27.2","6.64"
+"2024-02-20T00:00:00.000","Embassament de Darnius Boadella (Darnius)","132.26","11.3","6.92"
+"2024-02-20T00:00:00.000","Embassament de Siurana (Cornudella de Montsant)","453.92","3.2","0.39"
+"2024-02-20T00:00:00.000","Embassament de Susqueda (Osor)","301.01","21","49"
+"2024-02-20T00:00:00.000","Embassament de la Llosa del Cavall (Navès)","765.15","16.5","13.18"
+"2024-02-20T00:00:00.000","Embassament de Sau (Vilanova de Sau)","373.5","2.1","3.43"
+"2024-02-20T00:00:00.000","Embassament de la Baells (Cercs)","591.6","20.2","22.05"
+"2024-02-20T00:00:00.000","Embassament de Riudecanyes","194.68","2.7","0.15"
+</textarea>
+</td></tr>
+</table>
+</body>
+
+
+
+</html>
