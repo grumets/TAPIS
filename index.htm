@@ -109,8 +109,8 @@
 	<dialog id="DialogSTAViewQuery">
 		<form>
 			<p>
-				<label>STA landing page URL:
-					<input type="text" id="DialogSTAViewQueryInput" size="100"></input>
+				<label>STA query URL:
+					<a id="DialogSTAViewQueryLink" href="" target="_blank"></a>
 				</label>
 			</p>
 			<div class="center">
@@ -3579,10 +3579,12 @@
 					document.getElementById("DialogSTAURL").showModal();
 				}
 				else if (currentNode.image == "ViewQuerySTA.png") {
-					document.getElementById("DialogSTAViewQueryInput").value="";
 					var parentNode=GetFirstParentNode(currentNode);
 					if (parentNode)
-						document.getElementById("DialogSTAViewQueryInput").value = parentNode.STAURL;
+						document.getElementById("DialogSTAViewQueryLink").innerHTML =
+							document.getElementById("DialogSTAViewQueryLink").href = parentNode.STAURL;
+					else
+						document.getElementById("DialogSTAViewQueryLink").innerHTML="";
 					//document.getElementById("DialogSTAURLInput").readOnly = true;
 					//document.getElementById("DialogSTAURLOk").style.display = "none";
 					document.getElementById("DialogSTAViewQuery").showModal();
@@ -3852,8 +3854,12 @@
 
 		function renameNode(nodeId){
 			var node=networkNodes.get(nodeId);
-			node.label=prompt("Change node label to:", node.label);
-			networkNodes.update(node);
+			var name=prompt("Change node label to:", node.label);
+			if (name!=null)
+			{
+				node.label=name;
+				networkNodes.update(node);
+			}
 		}
 
 		function renameCircularImage(event, dialog) {
