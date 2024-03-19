@@ -149,6 +149,20 @@
 			</div>
 		</form>
 	</dialog>
+	<dialog id="DialogFilterRowEntities">
+		<form>
+			<fieldset id="DialogFilterRowEntitiesHTML">
+				<legend>Choose the way to get to the Entity you want to filter</legend>
+				<span id="DialogFilterRowEntitiesCheckBoxes"> 
+				</span>
+			</fieldset>
+			
+			<div class="center">
+				<button value="default" onClick="OkButtonInRowFilterEntities(event)">OK</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+		</form>
+	</dialog>
 
 	<dialog id="DialogSelectNRecords">
 		<form>
@@ -200,8 +214,11 @@
 		<div id="divTitleSelectRows" class="center" style="font-size: large;"></div>
 		<form>
 			Filter:
-			<span id="DialogSelectRowsFilter">
-			</span>
+			<div id="DialogSelectRowsFilter">
+			</div>
+			<label>Number records to request:
+				<input type="text" id="SelectNumberOfRecordsFilterRows" size="6" maxlength="6" value="100"></input>
+			</label>
 			<div class="center">
 				<button value="default" onClick="GetFilterRows(event)">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
@@ -2380,52 +2397,26 @@
 
 			//updateinfoFilter
 			takeSelectInformation(currentNode.id);
-			console.log(currentNode.STAURL);
-			var previousNode = networkNodes.get(network.getConnectedNodes(currentNode.id, "from"));
 
-			urlAPICounter = []; // I need to restart it 
+			currentNode.STAUrlAPICounter = []; // I need to restart it 
 			//put URL ready to add things
-			var previousURL = previousNode[0].STAURL;
+			var previousURL = parentNode.STAURL;
 
-			if (previousURL.includes("$select=") || previousURL.includes("$orderby")) {
-				urlAPI = previousURL + "&$filter=";
-			} else {
-				urlAPI = previousURL + "?$filter=";
-			}
+			currentNode.STAUrlAPI=AddKVPToURL(parentNode.STAURL, "$filter=");
 
 			stopReadInformationRowFilter = false;
 			var entity;
 			if (getSTAURLLastEntity(currentNode.STAURL)) {
 				entity = getSTAURLLastEntity(currentNode.STAURL);
 			} else {
-				entity = "STAPlus"
+				entity = "STAPlus"  //JM: Això no te ni solta ni volta. ·$·
 			}
 
-			readInformationRowFilter(elemFilter, entity, "no", "no"); //And apply filter
-			console.log(urlAPI);
-			currentNode.STAURL = urlAPI;
-			//Selectors Information
-			currentNode.STAelementFilter = elemFilter;
-			currentNode.STAinfoFilter = infoFilter;
-			currentNode.STAboxName = boxNames;
-			currentNode.STAConditionsFilter = conditionsFilter;
+			readInformationRowFilter(currentNode.STAelementFilter, entity, "no", "no"); //And apply filter
+			//console.log(currentNode.STAUrlAPI);
+			currentNode.STAURL = currentNode.STAUrlAPI;
 
-			//keep in this node
-			elemFilter = { //restart for next node
-				elems: [0],
-				nexus: null,
-				boxName: "0_0"
-			}
-			infoFilter = [];
-			boxNames = ["0_0"];
-			conditionsFilter = [ //valors de la taula
-				{
-					property: "<div id='optionsRow_0' class='optionsRow'></div>",
-					number: "0"
-				}
-			];
-
-			currentNode.STAExpectedLength = parentNode.STAExpectedLength;
+			currentNode.STAExpectedLength = document.getElementById("SelectNumberOfRecordsFilterRows").value;
 			networkNodes.update(currentNode);
 			showInfoMessage("Filtering STA rows...");
 			UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
@@ -3677,8 +3668,8 @@
 			document.getElementById("DialogSelectRowsTable").innerHTML = GetHTMLTable(data, networkNodes.get(parentNodeId).STAdataAttributes ? networkNodes.get(parentNodeId).STAdataAttributes : getDataAttributes(data), false, "SelectRow_", networkNodes.get(nodeId).STAURLIdSelected ? networkNodes.get(nodeId).STAURLIdSelected : 0, null, "", isAttributeAnyURI);
 		}
 
-		function ShowTableFilterRowsDialog(nodeId) {
-			var data = networkNodes.get(nodeId).STAdata;
+		function ShowTableFilterRowsDialog(parentNode, node) {
+			var data = parentNode.STAdata;
 			var dataAttributes = getDataAttributes(data);
 
 			addTitleInRowFilterDialog("divTitleSelectRows");
@@ -3689,15 +3680,9 @@
 			}
 
 			document.getElementById("DialogSelectRowsFilter").innerHTML = "<div id='selectorRowsContainer'><div id='divSelectorRowsFilter'></div></div>"; 
-			//Take elemFilter information from Node
-			if (currentNode.STAelementFilter) {
-				elemFilter = currentNode.STAelementFilter;
-				infoFilter = currentNode.STAinfoFilter;
-				boxNames = currentNode.STAboxName;
-				conditionsFilter = currentNode.STAConditionsFilter;
-			}
+			addNecessaryVariablesToFilterRowsSTANode(node);
 
-			ShowFilterTable(dataAttributes, currentNode.id);
+			ShowFilterTable();
 		}
 
 		function SeparatePropertyIfNeeded(record, property, baseName)
@@ -4006,11 +3991,10 @@
 					}
 				}
 				else if (currentNode.image == "FilterRowsSTA.png") {
-					var nodeids = network.getConnectedNodes(currentNode.id, "from");
-					if (nodeids && nodeids.length) {
-						if (networkNodes.get(nodeids[0]) && networkNodes.get(nodeids[0]).STAURL) {
-							ShowTableFilterRowsDialog(nodeids[0]);
-						}
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode) {
+						if (parentNode.STAURL)
+							ShowTableFilterRowsDialog(parentNode, currentNode);
 						document.getElementById("DialogFilterRows").showModal();
 					}
 				}
