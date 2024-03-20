@@ -2450,6 +2450,9 @@
 				if (node.image == STAEntitiesArray[i] + ".png")
 					return i;
 			}
+			//Perhaps this node is a filter of a previous node. The URL can help me to find the entity to use
+			if (node.STAURL)
+				return STAEntitiesArray.indexOf(getFileName(getURLWithoutQueryParams(node.STAURL)));
 			return -1;
 		}
 

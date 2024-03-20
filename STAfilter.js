@@ -1766,7 +1766,7 @@ function readInformationRowFilter(elem, entity, nexus, parent) {
 				currentNode.STAUrlAPI += " " + nexus + " ";
 			}
 		}
-		else { //Build url
+		else { //Build URL
 			//Last Array, which contains the filters 
 			var data = "";
 			for (var i = 0; i < infoFilter.length; i++) {
@@ -1778,12 +1778,10 @@ function readInformationRowFilter(elem, entity, nexus, parent) {
 					}
 
 					var valueOfEntity = infoFilter[i][1];
-					if (infoFilter[i][1].includes("/")) {//Erase entity name from current Node. 
-						var parentLabel = searchParentLabel();
-						var parentLabelLength=parentLabel.length;
-						valueOfEntity=valueOfEntity.slice(parentLabelLength+1); //Erase entity and "/"
-					} 
-
+					var lengthEntity=valueOfEntity.indexOf("/")
+					if (-1!=lengthEntity) { //Erase first entity name in the path
+						valueOfEntity=valueOfEntity.slice(lengthEntity+1); //Erase entity and "/"
+					}
 
 					///Apply filter depending on Select Condition
 					if (infoFilter[i][3] == ' = ' || infoFilter[i][3] == ' &ne; ' || infoFilter[i][3] == ' &ge; ' || infoFilter[i][3] == ' > ' || infoFilter[i][3] == ' &le; ' || infoFilter[i][3] == ' < ') { //passarho a com STA+
