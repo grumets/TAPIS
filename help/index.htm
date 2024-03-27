@@ -55,20 +55,20 @@
 <hr>
 <a id="help"></a>
 <h2>How TAPIS works</h2>
-TAPIS is a javascript interface to deal with tabular data. Internaly, everything is a table that has colummns that represents fields and rows that represent records. 
+TAPIS is a JavaScript interface to deal with tabular data. Internally, everything is a table that has columns that represents fields and rows that represent records. 
 <p>
-While the project is completely independent from the <i>Orange data mining</i> software, it has been inspired by its GUI. IF you have used Orange in the past, you will immediately know how TAPIS works.
+While the project is completely independent from the <i>Orange data mining</i> software, it has been inspired by its GUI. If you have used Orange in the past, you will immediately know how TAPIS works.
 <p>
-But thera are some differences with Orange
+But there are some differences with Orange
 <ul>
 <li>Columns can be semantically tagged adding meaning to the data fields
-<li>SensorThings API (STA) and STAplus is one of the sources of tababular data. 
+<li>SensorThings API (STA) and STAplus is one of the sources of tabular data. 
 </ul>
 
 <p>
-Other capabilities are saving CSVs or GeoJSON and connectings with the MiraMon Map Browser
+Other capabilities are saving CSVs or GeoJSON and connecting with the MiraMon Map Browser
 
-The workspace of Tapis can be devided in the following areas
+The workspace of Tapis can be divided in the following areas
 <br>
 <img src="help_tapisAreas.png" width="800" class="center">
 
@@ -83,17 +83,17 @@ Next thing is connecting other nodes to the starting nodes.
 There are two ways to do so:
 <ul>
 <li>Right click in the previous node will make visible a dialog box with many buttons. Select one of them and it will be placed in the <i>network area</i> as a new node and it will be automatically connected to the previous node.
-<li>Click on one of the buttons of the button area to create a new node in the network area. This node will not be connected to any previous node. You will need to connect the node to the previous node by clicking int he "Connect to nodes" button and the click on the new node and then in the previous node.
+<li>Click on one of the buttons of the button area to create a new node in the network area. This node will not be connected to any previous node. You will need to connect the node to the previous node by clicking in the "Connect to nodes" button and the click on the new node and then in the previous node.
 </ul>
 
-Connections represents the inheritance of information. So if two nodes are connected, the arrow points to the node that is the data source of the next target node (like in a lineage diagram). You can see arrows as "data dependencies". In other words, the information "travels" in the oposite direction of the arrows. Commonly a target node uses the tabular data represented by source node and operates with it to create a new table. Nodes can be source nodes of as many target nodes as needed. Nodes can be target nodes and source nodes at the same time.
+Connections represents the inheritance of information. So if two nodes are connected, the arrow points to the node that is the data source of the next target node (like in a lineage diagram). You can see arrows as "data dependencies". In other words, the information "travels" in the opposite direction of the arrows. Commonly a target node uses the tabular data represented by source node and operates with it to create a new table. Nodes can be source nodes of as many target nodes as needed. Nodes can be target nodes and source nodes at the same time.
 <br>
 <img src="help_sourceTarget.png" width="400" class="center">
 <p>
 
 <a id="helpLeafNodes"></a>
 <h3>Leaf nodes</h3>
-Since almost all nodes represent data in tabular form the "Table" button is a good asset to check the content of a node.
+Since almost all nodes represent data in tabular form, the "Table" button is a good asset to check the content of a node.
 <p>
 "Table" is an example of "leaf node". Leaf nodes cannot be the source node of any other node and represent the "leafs" of a network representation. Other examples of leaf nodes are "Scatter plot", "One value", "View query" or, "Save table".
 <br>
@@ -102,20 +102,20 @@ Since almost all nodes represent data in tabular form the "Table" button is a go
 
 <a id="helpSTAvsTableNodes"></a>
 <h3>SensorThings API nodes vs Table nodes</h3>
-Some operations are performed by TAPIS directly (the ones that has grey icons) and some others are performed by tha STA (Tapis will only build queries and wait for the STA server to return the new table). 
+Some operations are performed by TAPIS directly (the ones that has grey icons) and some others are performed by the STA (Tapis will only build queries and wait for the STA server to return the new table). 
 <p>
 A blue node can commonly be a source node for a grey node but a grey node cannot be a source node for a blue node.
 
 <hr>
 <H2>Recipes</H2>
-Just a few collection of recipies are provided. More recipies to come soon!.
+Just a few collection of recipes are provided. More recipes to come soon!
 
 <a id="recipe01"></a>
 <h3>Recipe 1: Add semantics (meaning) to a table and share, retrieve and store it</h3>
 In this example, we illustrate how to manage a table semantics.
 
 <p>
-To start the exercise, need to find a CSV in the Internet. In this case we go to the Open data portal of the Catalan Government to find a dataset of quantity of water in the Catalonia reservoirs
+To start the exercise, need to find a CSV in the Internet. In this case, we go to the Open data portal of the Catalan Government to find a dataset of quantity of water in the Catalonia reservoirs
 (<a href="https://analisi.transparenciacatalunya.cat/ca/Medi-Ambient/Quantitat-d-aigua-als-embassaments-de-les-Conques-/gn9e-3qhr/about_data" target="_blank">https://analisi.transparenciacatalunya.cat/ca/Medi-Ambient/Quantitat-d-aigua-als-embassaments-de-les-Conques-/gn9e-3qhr/about_data</a>). 
 <br>
 <img src="recipe01_findcsv_url.png" width="600" class="center">
@@ -126,7 +126,7 @@ There is a way to get a direct link to the data in CSV format (<a href="https://
 <img src="recipe01_copycsv_url.png" width="600" class="center">
 
 <p>
-First we import a table from the internet using the "Import CSV" tool.
+First, we import a table from the internet using the "Import CSV" tool.
 <br>
 <img src="recipe01_importcsv.png" width="600" class="center">
 
@@ -172,7 +172,7 @@ Do not be alarmed by the number of fields you see in the screen. They are all pr
 <img src="recipe01_saveNiMMbus.png" width="800" class="center">
 
 <p>
-To check that all is correct, we can redraw the window to reset the status of it to zero. By adding using the ImportCSV again, we can reload the previous CSV. We will specify again that the file is coma separated and has headers. We will reenter the URL of th CSV but this time we will also select "Automatic retrieve of shared meaning". This will force the system to look for sources of meaning in the NiMMbus system ans retrieve our last definition in the backgroud once we press "Done".
+To check that all is correct, we can redraw the window to reset the status of it to zero. By adding using the ImportCSV again, we can reload the previous CSV. We will specify again that the file is coma separated and has headers. We will reenter the URL of th CSV but this time we will also select "Automatic retrieve of shared meaning". This will force the system to look for sources of meaning in the NiMMbus system and retrieve our last definition in the background once we press "Done".
 <br>
 <img src="recipe01_retrieveNiMMbus.png" width="600" class="center">
 
@@ -182,7 +182,7 @@ We can verify that the meaning of the field was been loaded by adding and open t
 <img src="recipe01_retrievedMeaning.png" width="600" class="center">
 
 <p>
-To finalize, we can use the "Save Table" tool to save a CSVW file with the meaning definitions that we have provided as well as the original CSV for latter use.
+To finalize, we can use the "Save Table" tool to save a CSVW file with the meaning definitions that we have provided as well as the original CSV for later use.
 <br>
 <img src="recipe01_savecsvw.png" width="600" class="center">
 
@@ -279,7 +279,7 @@ This is the result of saving the CSV (fragment) and the CSVW.
 <hr width="30%">
 <a id="recipe02"></a>
 <h3>Recipe 2: Show the current evolution of a variable captured by a particular party</h3>
-In this example, we illustrate how to monitor a variable capture by a particular party. The way this is done is conditioned by the STAplus entities data model (see the figure below) that relates Observations to Party through Datastream. Remember that a Datastream is just a convenience entity that links to all observations of a single ObservedProperty, captured by a single Thing using a single Sensor managed by a single Party.<br>
+In this example, we illustrate how to monitor a variable capture by a particular party. The way this is done, is conditioned by the STAplus entities data model (see the figure below) that relates Observations to Party through Datastream. Remember that a Datastream is just a convenience entity that links to all observations of a single ObservedProperty, captured by a single Thing using a single Sensor managed by a single Party.<br>
 <br>
 <img src="STAplusSensingEntities.png" width="800" class="center">
 
@@ -292,7 +292,7 @@ We will start by using the "Add STA service" tool to type the URL of the landing
 <a id="recipe02_01"></a>
 <h4>Cooking method 1: Recurrently selecting a row using entity identifiers</h4>
 
-We will start by selecting a Party, selecting the observed variable by selecting the Datastring (that contains properties that tell us about the ObservedProperty; this saving us the need to actually querying the ObservedProperty). Finally we will request the most recent observations in that Datastream.
+We will start by selecting a Party, selecting the observed variable by selecting the Datastream (that contains properties that tell us about the ObservedProperty; this saving us the need to actually querying the ObservedProperty). Finally, we will request the most recent observations in that Datastream.
 
 <p>
 Then we can request the list of parties available by using the "Parties" tool. We can then see all parties by using the "Table" tool or even better, see the same list and select one from the list using the "Select Row" tool. We are selecting the "Joan Maso" party.<br>
@@ -303,15 +303,15 @@ Now we can add the "Datastreams" to access the Datastreams generated by Joan Mas
 <img src="recipe02_01_selectDatastream.png" width="800" class="center">
 
 <p>
-At this point it becomes difficult to remember our selections. We can use the "Rename" tool or simply press F2 to change the name of the selection tools to a more intuitive name.<br>
+At this point, it becomes difficult to remember our selections. We can use the "Rename" tool or simply press F2 to change the name of the selection tools to a more intuitive name.<br>
 <img src="recipe02_01_rename.png" width="600" class="center">
 
 <p>
-Finally we will be able to see the Observations about Temperature done by Joan Maso adding the Tool "Observations" and adding the "Table" after it<br>
+Finally, we will be able to see the Observations about Temperature done by Joan Maso adding the Tool "Observations" and adding the "Table" after it.<br>
 <img src="recipe02_01_observations.png" width="600" class="center">
 
 <p>
-By double clicking the "Table" tool we will see the observations as a table with the properties that the Entity "Observations" has in the diagram: phenomenonTime (the time where the sample was collected), result (the actual value of the temperature) and resultTime (the time the observation was determined and recorded). If we look at the table, we can see that we get 100 observations and time is increasing so we can assume they are in order starting by the earliest one.<br>
+By double clicking the "Table" tool, we will see the observations as a table with the properties that the Entity "Observations" has in the diagram: phenomenonTime (the time where the sample was collected), result (the actual value of the temperature) and resultTime (the time the observation was determined and recorded). If we look at the table, we can see that we get 100 observations and time is increasing so we can assume they are in order starting by the earliest one.<br>
 <img src="recipe02_01_observationsTable.png" width="400" class="center">
 
 <p>
@@ -368,7 +368,7 @@ We will start by looking at Observations, by connecting the "Observations" tool 
 <img src="recipe02_02_allObservations.png" width="600" class="center">
 
 <p>
-By the use of the FilterRowsSTA tool we are able to formulate complex queries with no much effort. 
+By the use of the FilterRowsSTA tool, we are able to formulate complex queries with no much effort. 
 <br>
 <img src="recipe02_02_filterRowsSTATool.png" width="200" class="center">
 
