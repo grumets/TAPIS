@@ -499,18 +499,15 @@ function createSelect(number, selectorInfo, count) {
 		var parentNode = networkNodes.get(parentNodeid);
 		var data = parentNode[0].STAdata; //STAdata: All data comes from previous Node (Api or filtered previously)
 	}
-	var entity;
-	var isEntity = false;
-	var staEntitiesKeys = Object.keys(STAEntities); //??
+	var entity="";
 	if (getSTAURLLastEntity(currentNode.STAURL)) {
 		entity = getSTAURLLastEntity(currentNode.STAURL);
-		for (var i = 0; i < staEntitiesKeys.length; i++) {
-			if (staEntitiesKeys[i] == entity) {
-				isEntity = true;
+		for (var i = 0; i < STAEntitiesArray.length; i++) {
+			if (STAEntitiesArray[i] == entity)
 				break;
-			}
 		}
-
+		if (i == STAEntitiesArray.length)
+			entity="";
 	}
 	if (number == 1) {
 		//Which Entity is: !!!!! Only works with STA (No csv)
@@ -1606,28 +1603,19 @@ function biggestLevelButton(boxName) {
 
 function addTitleInRowFilterDialog(divName) {
 	var divTitleSelectRows = document.getElementById(divName);
-	var staEntitiesKeys = Object.keys(STAEntities);
-	var entity;
-	var isEntity = false;
+	var entity=null;
 	divTitleSelectRows.innerHTML = ""; //Erase old title saved
 	if (getSTAURLLastEntity(currentNode.STAURL)) {
 		entity = getSTAURLLastEntity(currentNode.STAURL);
-		for (var i = 0; i < staEntitiesKeys.length; i++) {
-			if (staEntitiesKeys[i] == entity) {
-				isEntity = true;
+		for (var i = 0; i < STAEntitiesArray.length; i++) {
+			if (STAEntitiesArray[i] == entity) {
 				break;
 			}
 		}
-
-	} else {
-		entity = "No entity";
+		if (i == STAEntitiesArray.length)
+			entity=null;
 	}
-
-	if (isEntity == false) {
-		divTitleSelectRows.innerHTML += `<img src='ogc.png' style='height:30px'> </img> "STAPlus"` + entity;
-	} else {
-		divTitleSelectRows.innerHTML += `<img src='${entity}.png' style='height:30px'> </img>` + entity;
-	}
+	divTitleSelectRows.innerHTML = entity ? "<img src='" + entity + ".png' style='height:30px' />" + entity : "";
 }
 
 
