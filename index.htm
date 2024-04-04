@@ -40,8 +40,9 @@
 				<span id="UserInfoText"></span>
 				<button id="buttonReloadSTA" onclick='reloadSTA(event);'><img src="reload.png" height="20" valign="middle"> Refresh</button>
 				<label class=labelbotton><img src="OpenNetwork.png" height="20" valign="middle"> Open
-				<input type="file" id="openNetworkFileName" hidden onchange='openNetwork(event);'/>
+				<input type="file" id="openNetworkFileName" hidden onchange='openFileNetwork(event);'/>
 				</label> <!-- https://dev.to/faddalibrahim/how-to-create-a-custom-file-upload-button-using-html-css-and-javascript-1c03 -->
+				<button onclick='document.getElementById("DialogOpenURLNetwork").showModal();'><img src="OpenURLNetwork.png" height="20" valign="middle"> Open URL</button>
 				<button onclick='saveNetwork(event);'><img src="SaveNetwork.png" height="20" valign="middle"> Save</button>
 				<button id="buttonOpenLogin" onclick='OpenLogin(event);'><img src="login.png" height="20" valign="middle"> Login</button>
 				<button id="buttonOpenLogout" onclick='OpenLogout(event);' style="display: none");'><img src="login.png" height="20" valign="middle"> Logout</button>
@@ -95,6 +96,33 @@
 		</form>
 	</dialog>
 
+
+	<dialog id="DialogOpenURLNetwork">
+		<form>
+			<p>
+				<label>Network URL:
+					<input type="text" id="DialogOpenURLNetworkInput" size="100"></input>
+				</label>
+				<br>
+				<label>Suggested STA services:
+					<select id="DialogOpenURLNetworkSelect" onChange="populateDialogOpenURLNetworkInput(event)">
+						<option "">-- Select an option--</option>
+						<option value="help/recipe01_STA_UML_model.json">Recipe 1: Understanding the concept of Datastream in STAplus</option>
+						<option value="help/recipe02_PartyObservationsParty.json">Recipe 2, both methods: Show the current evolution of a variable captured by a particular party
+						<option value="help/recipe02_01_PartyObservations.json">Recipe 2, cooking method 1: Recurrently selecting a row using entity identifiers
+						<option value="help/recipe02_02_ObservationsParty.json">Recipe 2, cooking method 2: Filtering observations
+						<option value="help/recipe03_OpenMap.json">Recipe 3: Show a map of all observation features in an STA service
+						<option value="help/recipe04_CSV_meaning.json">Recipe 4: Add semantics (meaning) to a table and share, retrieve and store it
+						<option value="help/recipe05_spatialFilterTemperature.json">Recipe 5: Add semantics (meaning) to a table and share, retrieve and store it
+					</select>
+				</label>
+			</p>
+			<div class="center">
+				<button value="default" id="DialogDialogOpenURLNetworkInputOk" onClick="openURLNetwork(event)" formmethod="dialog">OK</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+		</form>
+	</dialog>
 
 	<dialog id="DialogSTAURL">
 		<form>
@@ -295,10 +323,12 @@
 		<form>
 			Import CSV file table
 			<br>
-			<label>CSV delimiter:
-				<label><input type="radio" name="DialogImportCSVDelimiter" id="DialogImportCSVDelimiterText" checked></input> <input type="text" id="DialogImportCSVDelimiter" size="1" maxlength="1" value=";"></input></label> <label><input type="radio" name="DialogImportCSVDelimiter" id="DialogImportCSVDelimiterTab"></input> Tab</label>
-			</label>
-			<select id="DialogImportCSVEncoding">
+			<fieldset style="display: inline;">
+				<legend>Delimiter</legend>
+				<label><input type="radio" name="DialogImportCSVDelimiter" id="DialogImportCSVDelimiterText" checked></input><input type="text" id="DialogImportCSVDelimiter" size="1" maxlength="1" value=";"></input></label> &ensp;
+				<label><input type="radio" name="DialogImportCSVDelimiter" id="DialogImportCSVDelimiterTab"></input> Tab</label>
+			</fieldset>
+			Encoding: <select id="DialogImportCSVEncoding">
 				<option value="windows-1252">Windows 1252 (Western Latin)</option>
 				<!-- This is not suported by browsers. If we need it in the future we should use de work "binary", read the text and convert it ourselves. option value="ibm850">OEM 850 (MS-DOS Latin-1)</option-->
 				<option value="">UTF-8</option>
@@ -331,7 +361,7 @@
 				<option value="x-mac-cyrillic">X-MAC-Cyrillic</option>
 			</select>
 			<br>
-			<label><input type="checkbox" id="DialogImportCSVHeader"></input>First line contains names of the fields</label>
+			<label><input type="checkbox" id="DialogImportCSVHeader"></input>The first line contains field names</label>
 			<br>
 			<fieldset>
 				<legend>Meaning source</legend>
@@ -2427,18 +2457,17 @@
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogSelectRow").close();
 
+			if (currentNode.STAURL)
+				var previousSTAURL=currentNode.STAURL;
+
+
 			var parentNode=GetFirstParentNode(currentNode);
 			if (parentNode) {
 				if (parentNode.STAURL)
 					currentNode.STAURL = parentNode.STAURL;
-				//if (parentNode.STAdata)
-				//	currentNode.STAdata = parentNode.STAdata;
 			}
 			else
 				return;
-
-			if (currentNode.STAURL)
-				var previousSTAURL=currentNode.STAURL;
 
 			var elems = document.getElementsByName("SelectRowRadio");
 			for (var i = 0; i < elems.length; i++) {
@@ -2778,9 +2807,14 @@
 			return (s == "url" || s == "definition" || s.endsWith("@iot.selfLink") || s.endsWith("@iot.navigationLink"));
 		}
 
+		function isAttributeSelfNavLink(s){
+			return (s.endsWith("@iot.selfLink") || s.endsWith("@iot.navigationLink"));
+		}
+
 		function ShowTableOptionsDiv(node, optionsDiv, fn_showTable) {
 			if (node.STAdata && node.STAdata.length)
-				document.getElementById(optionsDiv).innerHTML = "<label><input type='checkbox' "+ ((!document.getElementById(optionsDiv + "RowNumber") || document.getElementById(optionsDiv + "RowNumber").checked) ? "checked='checked' " : "") +"id='" + optionsDiv + "RowNumber' onChange='"+fn_showTable+"(networkNodes.get(\"" + node.id + "\"));'/> Show row numbers</label>";
+				document.getElementById(optionsDiv).innerHTML = "<label><input type='checkbox' "+ ((!document.getElementById(optionsDiv + "RowNumber") || document.getElementById(optionsDiv + "RowNumber").checked) ? "checked='checked' " : "") +"id='" + optionsDiv + "RowNumber' onChange='"+fn_showTable+"(networkNodes.get(\"" + node.id + "\"));'/> Show row numbers</label> &ensp;" +
+										"<label><input type='checkbox' "+ ((!document.getElementById(optionsDiv + "SelfNavLink") || document.getElementById(optionsDiv + "SelfNavLink").checked) ? "checked='checked' " : "") +"id='" + optionsDiv + "SelfNavLink' onChange='"+fn_showTable+"(networkNodes.get(\"" + node.id + "\"));'/> Show self and navigation links</label>";
 			else
 				document.getElementById(optionsDiv).innerHTML = "";
 		}
@@ -2795,8 +2829,7 @@
 
 			document.getElementById("DialogOKHTML").innerHTML = GetHTMLTable(data, node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data),
 				document.getElementById("DialogOKOptionsRowNumber").checked ? true : false,
-				"SelectRow_", null,
-				null, "", isAttributeAnyURI);
+				"", null, null, "", isAttributeAnyURI, document.getElementById("DialogOKOptionsSelfNavLink").checked ? null : isAttributeSelfNavLink);
 		}
 
 		function StringifyObjectElements(data, dataAttributesInput) {
@@ -3955,11 +3988,11 @@
 
 		function ShowTableNode(node)
 		{
-			if (node.STAdata) {
+			if (node.STAdata && node.STAdata.length) {
 				ShowTableOptionsDiv(node, "showTableOptions", "ShowTableNode");
 				document.getElementById("showTable").innerHTML = GetHTMLTable(node.STAdata, node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(node.STAdata),
 					document.getElementById("showTableOptionsRowNumber").checked ? true : false,
-					"", null, null, "", isAttributeAnyURI);
+					"", null, null, "", isAttributeAnyURI, document.getElementById("showTableOptionsSelfNavLink").checked ? null : isAttributeSelfNavLink);
 			} else {
 				document.getElementById("showTableOptions").innerHTML="";
 				document.getElementById("showTable").innerHTML="";
@@ -3979,7 +4012,7 @@
 			if (errorText)
 			{
 				alert("Incompatible node. " + errorText + ". It has not been added.");
-				return null;
+				return false;
 			}
 			if (nodeFrom.STAURL && IdOfSTAEntity(nodeTo) != -1) {
 				if (nodeFrom.image=="ogc.png")
@@ -4020,7 +4053,7 @@
 				//LoadJSONNodeSTAData(nodeTo);
 				return true;
 			}
-			if (nodeTo.STAURL && nodeTo.image == "GeoFilterRowsSTA.png") {
+			if (nodeTo.image == "GeoFilterRowsSTA.png") {
 				if (!GetFirstParentNode(nodeTo)){
 					nodeTo.STAURL = nodeFrom.STAURL;
 					nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
@@ -4029,7 +4062,8 @@
 					if (nodeFrom.STAdataAttributes)
 						nodeTo.STAdataAttributes = deapCopy(nodeFrom.STAdataAttributes);		
 					networkNodes.update(nodeTo);
-				}
+				} else if (!nodeTo.STAURL)
+					return false;
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
 				DoGeoFilterRows(nodeTo);
@@ -4095,7 +4129,7 @@
 				manipulation: {  //https://stackoverflow.com/questions/39701703/add-edge-dynamically-visjs
 					enabled: false,
 					addEdge: function (data, callback) {
-						console.log('add edge', data);
+						//console.log('add edge', data);
 						if (data.from == data.to)
 							showInfoMessage("Connection to the same node is not allowed.");
 						else {
@@ -4458,7 +4492,18 @@
 			}
 		}
 
-		function openNetwork(event){
+		function openNetwork(data) {
+			network.destroy();
+			networkNodes = new vis.DataSet(data.nodes);
+			networkEdges = new vis.DataSet(data.edges);
+			network = new vis.Network(document.getElementById("mynetwork"), {
+						nodes: networkNodes,
+						edges: networkEdges
+				}, networkOptions);
+			setEventFunctionsNetwork();
+		}
+
+		function openFileNetwork(event) {
 			var input = event.target;
 
 			var reader = new FileReader();
@@ -4466,15 +4511,7 @@
 				//Transform the JSON text in something in memory
 				try
 				{
-					var data=JSON.parse(reader.result);
-					network.destroy();
-					networkNodes = new vis.DataSet(data.nodes);
-					networkEdges = new vis.DataSet(data.edges);
-					network = new vis.Network(document.getElementById("mynetwork"), {
-							nodes: networkNodes,
-							edges: networkEdges
-						}, networkOptions);
-					setEventFunctionsNetwork();
+					openNetwork(JSON.parse(reader.result));
 					document.getElementById("openNetworkFileName").value = null;  //https://stackoverflow.com/questions/3528359/html-input-type-file-file-selection-event
 				}
 				catch (e) 
@@ -4484,6 +4521,25 @@
 				}
 			};
 			reader.readAsText(input.files[0]);
+		}
+
+		function openURLNetwork(event) {
+			document.getElementById("DialogOpenURLNetwork").close();
+			HTTPJSONData(document.getElementById("DialogOpenURLNetworkInput").value).then(
+						function(value) {
+							openNetwork(value.obj);
+							showInfoMessage('Download network completed.'); 
+						},
+						function(error) { 
+							showInfoMessage('Error downloading network. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
+							console.log(error) ;
+						}
+					);	
+		}
+
+		function populateDialogOpenURLNetworkInput(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogOpenURLNetworkInput").value=document.getElementById("DialogOpenURLNetworkSelect").value
 		}
 
 		function saveNetwork(event){

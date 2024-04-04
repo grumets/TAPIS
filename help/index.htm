@@ -50,6 +50,7 @@
 </ul>
 <li><a href="#recipe03">Recipe 3: Show a map of all observation features in an STA service</a></li>
 <li><a href="#recipe04">Recipe 4: Add semantics (meaning) to a table and share, retrieve and store it</a></li>
+<li><a href="#recipe05">Recipe 5: Selecting temperatures from an area</a></li>
 </ul>
 </ul>
 
@@ -75,7 +76,7 @@ The workspace of Tapis can be divided in the following areas
 
 <a id="helpStart"></a>
 <h3>How start with TAPIS</h3>
-The first thing that you need to do in Tapis is page a starting node in the network area. Examples of starting nodes are "Add STA service" and "Import CSV file". One clicking on them in the <i>button area</i> will place them in the <i>network area</i>. Double clicking on their representation in the network area will make appear dialog box to specify the parameters necessary to import the data in Tapis.
+The first thing that you need to do in Tapis is page a starting node in the network area. Examples of starting nodes are "Add STA service",  "Import CSV file" or Import GeoJSON file. Clicking on them in the <i>button area</i> will place them in the <i>network area</i>. Double clicking on their representation in the network area will make appear dialog box to specify the parameters necessary to import the data in Tapis. After accepting the options messages about the progress and eventual errors will appear in the <i>Information area</i>. The result of the operation will be represented as a table in the <i>Query and table area</i> (a STA query will also be shown if the node is a STA node; the ones with blue icons).
 <p>
 Next thing is connecting other nodes to the starting nodes. 
 
@@ -103,13 +104,11 @@ Since almost all nodes represent data in tabular form, the "Table" button is a g
 
 <a id="helpSTAvsTableNodes"></a>
 <h3>SensorThings API nodes vs Table nodes</h3>
-Some operations are performed by TAPIS directly (the ones that has grey icons) and some others are performed by the STA (Tapis will only build queries and wait for the STA server to return the new table). 
-<p>
-A blue node can commonly be a source node for a grey node but a grey node cannot be a source node for a blue node.
+Some operations are performed by TAPIS directly (the ones that has grey icons) and some others are performed by the STA (the ones that has blue elements in the icon). For the STA icons, Tapis will only build queries and wait for the STA server to return the new table. A blue node can commonly be a source node for a grey node but a grey node cannot be a source node for a blue node.
 
 <hr>
 <H2>Recipes</H2>
-Just a few collection of recipes are provided. More recipes to come soon!
+Just a few collection of recipes are provided. The steps of the recipes can be reproduced by you or can be shown  More recipes to come soon!
 <br><br><br>
 <hr width="30%">
 <a id="recipe01"></a>
@@ -131,7 +130,7 @@ We will select a datastream that we like to start exploring its content. While w
 Now we are ready to reproduce the UML diagram by connecting Datastream with all entities directly connected to it. We can do it by rigth clicking on Datastream and selecting the entity as we did before.<br>
 <img src="recipe01_entitiesConnectedToDataStream.png" width="400" class="center">
 <p>
-By adding a connection to [View table] to any of this entities we will be able to see its content.<br>
+The content of the node as a table can be seen in the <i>Query and table area</i> directly by selecting the node by a single left click. It is also possible (but no longuer necessary) to add a connection to [View table] to any of this entities to open a dialog with its content.<br>
 <img src="recipe01_entitiesToDataStreamTable.png" width="800" class="center">
 <p>
 A Datastream is a collection of observations. This allows us to see the observations as a table.<br>
@@ -144,18 +143,18 @@ All the observations in a datastream are done by the same Party...<br>
 <img src="recipe01_datastreamThing.png" width="600" class="center">
 <p>
 ...in the same current location...<br>
-<img src="recipe01_datastreamLocation.png" width="600" class="center">
+<img src="recipe01_datastreamLocation.png" width="800" class="center">
 <p>
 ...observing the same observed property...<br>
-<img src="recipe01_datastreamObservedProperty.png" width="600" class="center">
+<img src="recipe01_datastreamObservedProperty.png" width="800" class="center">
 <p>
 ...shared with the same License.<br>
-<img src="recipe01_datastreamLicense.png" width="600" class="center">
+<img src="recipe01_datastreamLicense.png" width="800" class="center">
 <p>
-and that is why they are a coherent time series that can be represented in a single scatter plot by adding the tool to the observations node.<br>
+and that is why they are a coherent time series that can be represented in a single scatter plot by adding the [scatter plot] tool to the observations node.<br>
 <img src="recipe01_datastreamScatterPlot.png" width="800" class="center">
 <p>
-We can extend the diagram further by selecting one observations with the blue [select row]...<br>
+We can extend the diagram further by selecting one observation with the blue [select row]...<br>
 <img src="recipe01_observationSelectOne.png" width="800" class="center">
 <p>
 ... and then add a [FeaturesOfInterest] and a [observationsGroup]
@@ -163,7 +162,7 @@ We can extend the diagram further by selecting one observations with the blue [s
 <img src="recipe01_entitiesConnectedToObservation.png" width="800" class="center">
 <p>
 This way we can know the position ofot he feature of interest...<br>
-<img src="recipe01_observationFeatureOfInterest.png" width="600" class="center">
+<img src="recipe01_observationFeatureOfInterest.png" width="800" class="center">
 <p>
 ... and read about the observation group.<br>
 <img src="recipe01_observationObsGroup.png" width="600" class="center">
@@ -532,7 +531,7 @@ As a result, we get a GeoJSON with the features of interest as geometries and th
 </td></tr>
 </table>
 <br><br><br>
-
+<hr width="30%">
 <a id="recipe04"></a>
 <h3>Recipe 4: Add semantics (meaning) to a table and share, retrieve and store it</h3>
 In this example, we illustrate how to manage a table semantics.
@@ -697,6 +696,68 @@ This is the result of saving the CSV (fragment) and the CSVW.
 </textarea>
 </td></tr>
 </table>
+
+<br><br><br>
+
+<hr width="30%">
+<a id="recipe05"></a>
+<h3>Recipe 5: Selecting temperatures from an area</h3>
+In this example, we illustrate how to apply spatial and non-spatial filters to extrat the temperatures of an area
+
+<p>
+We will start by using the "Add STA service" tool to type the URL of the landing page of our favorite STAplus service. We will connect it to observations to get the "Observations" stored in the service.
+<br>
+<img src="recipe05_observationsTable.png" width="800" class="center">
+
+<p>
+Then we will apply the "Geospatial Filter Rows" tool to indicate that we will select observations by an area.
+<br>
+<img src="recipe05_geospatialFilter.png" width="400" class="center">
+
+<p>
+A geospatial filter requires a polygon as an input. To do that, we need to import a GeoJSON file that contains polygons. We are using an smap GeoJSON with 2 polygons called: "callus_munich.geojson" that contains 2 polygons, one in the Callus (Barcelona) area.
+<br>
+<img src="recipe05_rectangleToFilter.png" width="1000" class="center">
+
+<p>
+We need to import the GeoJSON file that contains polygons with the [Import GeoJSON] tool
+<br>
+<img src="recipe05_importGeoJSON.png" width="800" class="center">
+
+<p>
+Then, we need to select one polygon by using the "Select Row" (the one with the grey icon).
+<br>
+<img src="recipe05_selectPolygon.png" width="10a00" class="center">
+
+<p>
+Then we need to create a second connection that starts on the geopatial filter and ends on the selected polygon
+<br>
+<img src="recipe05_secondConnectionGeoFilter.png" width="400" class="center">
+
+<p>
+Now the selections is executed but still we have all observed properties mixed in the results list.
+<br>
+<img src="recipe05_geoFilteredObservations.png" width="400" class="center">
+
+<p>
+We need to concatenate the geospatial filter with a non-geospatial filter and specify that we would like to filter the observations that has an observed property with the definition "http://vocabs.lter-europe.net/EnvThes/22035".
+<br>
+<img src="recipe05_nongeospatialFilter.png" width="800" class="center">
+
+<p>
+Now all observations are temparatures<br>
+<img src="recipe05_temperatures.png" width="400" class="center">
+
+<p>
+Finally, we can sort the observations with the more recent first.
+<br>
+<img src="recipe05_temperaturesSorted.png" width="800" class="center">
+<br>
+This results in thiw complex query URL: <a href="https://citiobs.demo.secure-dimensions.de/staplus/v1.1/Observations?$filter=geo.intersects(FeatureOfInterest/feature,geography'POLYGON ((1.78 41.78, 1.79 41.78, 1.79 41.79, 1.78 41.79, 1.78 41.78))') and ((Datastream/ObservedProperty/definition eq 'http://vocabs.lter-europe.net/EnvThes/22035'))&$orderby=phenomenonTime desc">https://citiobs.demo.secure-dimensions.de/staplus/v1.1/Observations?$filter=geo.intersects(FeatureOfInterest/feature,geography'POLYGON ((1.78 41.78, 1.79 41.78, 1.79 41.79, 1.78 41.79, 1.78 41.78))') and ((Datastream/ObservedProperty/definition eq 'http://vocabs.lter-europe.net/EnvThes/22035'))&$orderby=phenomenonTime desc</a>
+
+<p>
+Now that we have a time series we can use the scater plot tool to generate a temperature/time diagram.<br>
+<img src="recipe05_scatterPlot.png" width="800" class="center">
 
 <br><br><br>
 
