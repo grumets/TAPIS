@@ -113,7 +113,7 @@ Just a few collection of recipes are provided. The steps of the recipes can be r
 <hr width="30%">
 <a id="recipe01"></a>
 <h3>Recipe 1: Understanding the concept of Datastream in STAplus</h3>
-In this example, we would like to illustate what is a Datastream and how to use it. A Datastream is "contaner" entity, a convenience that contains a collection of observations of a single ObservedProperty, captured by a single Thing using a single Sensor managed by a single Party and shared with the same licence. The relation with the different entities in the STAplus data model is illustrated in the following UML diagram. We will use TAPIS to generate the same diagram.<br>
+In this example, we would like to illustate what is a Datastream and how to use it. A <i>Datastream</i> is "container" entity; a convenience that contains a collection of observations of a single <i>ObservedProperty</i>, captured by a single <i>Thing</i> using a single <i>Sensor</i> managed by a single <i>Party</i> and shared with the same <i>license</i>. The relation with the different entities in the STAplus data model is illustrated in the following UML diagram. We will use TAPIS to generate an equivalent diagram an explore the content of each entity.<br>
 <br>
 <img src="STAplusSensingEntities.png" width="800" class="center">
 
@@ -124,8 +124,10 @@ From the landing page, all entity types are available. This give us the flexibil
 <p>
 While it is possible to use [View table] to see the properties of the available datastreams, we will use the [Select Row] button (the blue one) to directly select a particular Datastream.<br>
 <img src="recipe01_pressSelectRow.png" width="600" class="center">
+
+<p>
 We will select a datastream that we like to start exploring its content. While we selecting it we can see that the description of the units of measure is part of the Datastream.<br>
-<img src="recipe01_selectDatastream" width="800" class="center">
+<img src="recipe01_selectDatastream.png" width="800" class="center">
 <p>
 Now we are ready to reproduce the UML diagram by connecting Datastream with all entities directly connected to it. We can do it by rigth clicking on Datastream and selecting the entity as we did before.<br>
 <img src="recipe01_entitiesConnectedToDataStream.png" width="400" class="center">
@@ -702,7 +704,7 @@ This is the result of saving the CSV (fragment) and the CSVW.
 <hr width="30%">
 <a id="recipe05"></a>
 <h3>Recipe 5: Selecting temperatures from an area</h3>
-In this example, we illustrate how to apply spatial and non-spatial filters to extrat the temperatures of an area
+In this example, we illustrate how to apply spatial and non-spatial filters (and easily generate complex queries) to extract temperatures of an area.
 
 <p>
 We will start by using the "Add STA service" tool to type the URL of the landing page of our favorite STAplus service. We will connect it to observations to get the "Observations" stored in the service.

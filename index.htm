@@ -104,8 +104,8 @@
 					<input type="text" id="DialogOpenURLNetworkInput" size="100"></input>
 				</label>
 				<br>
-				<label>Suggested STA services:
-					<select id="DialogOpenURLNetworkSelect" onChange="populateDialogOpenURLNetworkInput(event)">
+				<label>Suggested stored networks:
+					<select id="DialogOpenURLNetworkSelect" onChange="PopulateInputFromSelect(event, 'DialogOpenURLNetwork');">
 						<option "">-- Select an option--</option>
 						<option value="help/recipe01_STA_UML_model.json">Recipe 1: Understanding the concept of Datastream in STAplus</option>
 						<option value="help/recipe02_PartyObservationsParty.json">Recipe 2, both methods: Show the current evolution of a variable captured by a particular party
@@ -113,7 +113,7 @@
 						<option value="help/recipe02_02_ObservationsParty.json">Recipe 2, cooking method 2: Filtering observations
 						<option value="help/recipe03_OpenMap.json">Recipe 3: Show a map of all observation features in an STA service
 						<option value="help/recipe04_CSV_meaning.json">Recipe 4: Add semantics (meaning) to a table and share, retrieve and store it
-						<option value="help/recipe05_spatialFilterTemperature.json">Recipe 5: Add semantics (meaning) to a table and share, retrieve and store it
+						<option value="help/recipe05_spatialFilterTemperature.json">Recipe 5: Selecting temperatures from an area
 					</select>
 				</label>
 			</p>
@@ -132,7 +132,7 @@
 				</label>
 				<br>
 				<label>Suggested STA services:
-					<select id="DialogSTAURLSelect" onChange="PopulateSTAURLInput(event)"></select>
+					<select id="DialogSTAURLSelect" onChange="PopulateInputFromSelect(event, 'DialogSTAURL')"></select>
 				</label>
 			</p>
 			<div class="center">
@@ -378,7 +378,11 @@
 				<label><input type="radio" id="DialogImportCSVSourceFile" name="DialogImportCSVSource" value="file" checked="checked" onClick='SelectImportFileSource(event, "CSV")'>
 				Local file: <input type="file" accept=".csv,*.txt" id="DialogImportCSVSourceFileText" onChange="ReadFileImportCSV(event)"></input></label><br>
 				<label><input type="radio" id="DialogImportCSVSourceURL" name="DialogImportCSVSource" value="url" onClick='SelectImportFileSource(event, "CSV")'>
-				URL: <input type="text" size="70" id="DialogImportCSVSourceURLText" onChange="ReadURLImportCSV(event)" disabled="disabled"></input> <button type="button" id="DialogImportCSVSourceURLButton" onClick="ReadURLImportCSV(event)" disabled="disabled">Load</button></label>
+				URL: <input type="text" size="70" id="DialogImportCSVSourceURLInput" onChange="ReadURLImportCSV(event)" disabled="disabled"></input> <button type="button" id="DialogImportCSVSourceURLButton" onClick="ReadURLImportCSV(event)" disabled="disabled">Load</button></label><br>
+				<label>Suggested CSV URLs:
+					<select id="DialogImportCSVSourceURLSelect" onChange="PopulateInputFromSelect(event, 'DialogImportCSVSourceURL')"></select>
+				</label>
+
 			</fieldset>
 			<div class="center">
 				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "CSV")'>Done</button>
@@ -441,7 +445,10 @@
 				<label><input type="radio" id="DialogImportGeoJSONSourceFile" name="DialogImportGeoJSONSource" value="file" checked="checked" onClick='SelectImportFileSource(event, "GeoJSON")'>
 				Local file: <input type="file" accept=".geojson,*.json" id="DialogImportGeoJSONSourceFileText" onChange="ReadFileImportGeoJSON(event)"></input></label><br>
 				<label><input type="radio" id="DialogImportGeoJSONSourceURL" name="DialogImportGeoJSONSource" value="url" onClick='SelectImportFileSource(event, "GeoJSON")'>
-				URL: <input type="text" size="70" id="DialogImportGeoJSONSourceURLText" onChange="ReadURLImportGeoJSON(event)" disabled="disabled"></input> <button type="button" id="DialogImportGeoJSONSourceURLButton" onClick="ReadURLImportGeoJSON(event)" disabled="disabled">Load</button></label>
+				URL: <input type="text" size="70" id="DialogImportGeoJSONSourceURLInput" onChange="ReadURLImportGeoJSON(event)" disabled="disabled"></input> <button type="button" id="DialogImportGeoJSONSourceURLButton" onClick="ReadURLImportGeoJSON(event)" disabled="disabled">Load</button></label><br>
+				<label>Suggested GeoJSON URLs:
+					<select id="DialogImportGeoJSONSourceURLSelect" onChange="PopulateInputFromSelect(event, 'DialogImportGeoJSONSourceURL')"></select>
+				</label>
 			</fieldset>
 			<div class="center">
 				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "GeoJSON")'>Done</button>
@@ -1295,11 +1302,11 @@
 		function SelectImportFileSource(event, type) {
 			if (document.getElementById("DialogImport"+type+"SourceFile").checked) {
 				document.getElementById("DialogImport"+type+"SourceFileText").disabled=false;
-				document.getElementById("DialogImport"+type+"SourceURLText").disabled=true;
+				document.getElementById("DialogImport"+type+"SourceURLInput").disabled=true;
 				document.getElementById("DialogImport"+type+"SourceURLButton").disabled=true;
 			} else /*if (document.getElementById("DialogImport"+type+"SourceURL").checked)*/ {
 				document.getElementById("DialogImport"+type+"SourceFileText").disabled=true;
-				document.getElementById("DialogImport"+type+"SourceURLText").disabled=false;
+				document.getElementById("DialogImport"+type+"SourceURLInput").disabled=false;
 				document.getElementById("DialogImport"+type+"SourceURLButton").disabled=false;
 			}
 		}
@@ -1468,10 +1475,10 @@
 
 
 		function ReadURLImportCSV() {
-			HTTPJSONData(document.getElementById("DialogImportCSVSourceURLText").value).then(
+			HTTPJSONData(document.getElementById("DialogImportCSVSourceURLInput").value).then(
 						function(value) { 
 							showInfoMessage('Download CSV completed.'); 
-							TransformTextCSVToTable(value.text, document.getElementById("DialogImportCSVSourceURLText").value);
+							TransformTextCSVToTable(value.text, document.getElementById("DialogImportCSVSourceURLInput").value);
 						},
 						function(error) { 
 							showInfoMessage('Error downloading CSV. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -1538,10 +1545,10 @@
 
 
 		function ReadURLImportGeoJSON() {
-			HTTPJSONData(document.getElementById("DialogImportGeoJSONSourceURLText").value).then(
+			HTTPJSONData(document.getElementById("DialogImportGeoJSONSourceURLInput").value).then(
 						function(value) { 
 							showInfoMessage('Download GeoJSON completed.'); 
-							TransformTextGeoJSONToTable(value.text, document.getElementById("DialogImportGeoJSONSourceURLText").value);
+							TransformTextGeoJSONToTable(value.text, document.getElementById("DialogImportGeoJSONSourceURLInput").value);
 						},
 						function(error) { 
 							showInfoMessage('Error downloading GeoJSON. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -1677,18 +1684,21 @@
 			LoadJSONNodeSTAData(currentNode);
 		}
 
-		function PopulateSTAURLInput(event) {
+		function PopulateInputFromSelect(event, idPrefix) {
 			event.preventDefault(); // We don't want to submit this form
-			document.getElementById("DialogSTAURLInput").value=document.getElementById("DialogSTAURLSelect").value
+			document.getElementById(idPrefix+"Input").value=document.getElementById(idPrefix+"Select").value
 		}
 
-		function GetOptionsDialogSTAURLSelect() {
+		function GetOptionsSelectDialog(suggestedURLs) {
 			var cdns=[], stas;
-			for (var g=0; g<config.suggestedSTAurls.length; g++) {
-				cdns.push('<optgroup label="', config.suggestedSTAurls[g].group, '">');
-				stas=config.suggestedSTAurls[g].STAs;
-				for (var i=0; i<stas.length; i++)
-					cdns.push('<option value="', stas[i].url, '">', stas[i].desc, '</option>');
+			if (suggestedURLs)
+			{
+				for (var g=0; g<suggestedURLs.length; g++) {
+					cdns.push('<optgroup label="', suggestedURLs[g].group, '">');
+					stas=suggestedURLs[g].STAs;
+					for (var i=0; i<stas.length; i++)
+						cdns.push('<option value="', stas[i].url, '">', stas[i].desc, '</option>');
+				}
 			}
 			return cdns.join("");  
 		}
@@ -4162,7 +4172,7 @@
 				currentNode = networkNodes.get(params.nodes[0])
 				if (currentNode.image == "ogc.png") {
 					document.getElementById("DialogSTAURLInput").value = currentNode.STAURL;
-					document.getElementById("DialogSTAURLSelect").innerHTML = GetOptionsDialogSTAURLSelect();
+					document.getElementById("DialogSTAURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedSTAurls);
 					//document.getElementById("DialogSTAURLInput").readOnly = false;
 					//document.getElementById("DialogSTAURLOk").style.display = "inline-block";
 					document.getElementById("DialogSTAURL").showModal();
@@ -4179,9 +4189,11 @@
 					document.getElementById("DialogSTAViewQuery").showModal();
 				}
 				else if (currentNode.image == "ImportCSV.png") {
+					document.getElementById("DialogImportCSVSourceURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedCSVurls);
 					document.getElementById("DialogImportCSV").showModal();
 				}
 				else if (currentNode.image == "ImportGeoJSON.png") {
+					document.getElementById("DialogImportGeoJSONSourceURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedGeoJSONurls);
 					document.getElementById("DialogImportGeoJSON").showModal();
 				}
 				else if (currentNode.image == "Table.png") {
@@ -4535,11 +4547,6 @@
 							console.log(error) ;
 						}
 					);	
-		}
-
-		function populateDialogOpenURLNetworkInput(event) {
-			event.preventDefault(); // We don't want to submit this form
-			document.getElementById("DialogOpenURLNetworkInput").value=document.getElementById("DialogOpenURLNetworkSelect").value
 		}
 
 		function saveNetwork(event){
