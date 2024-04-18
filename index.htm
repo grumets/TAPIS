@@ -685,6 +685,7 @@
 					//UploadTimeAverages: {description: "Upload time averages", leafNode: true},
 					SelectColumnsTable: {description: "Select Columns"},
 					SelectRowTable: {description: "Select Row"},
+					FilterRowsTable: {description: "Filter Rows"},
 					JoinTables: {description: "Join Tables"},
 					/*SelectRowsTable: {description: "Select Rows"},*/
 					SeparateColumns: {description: "Separate Columns"},
@@ -4085,7 +4086,7 @@
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
 				return true;
 			}
-			if (nodeTo.image == "SelectRowTable.png") {
+			if (nodeTo.image == "SelectRowTable.png" || nodeTo.image == "FilterRowsTable.png") {
 				if (nodeFrom.STAdata)
 					nodeTo.STAdata = deapCopy(nodeFrom.STAdata);
 				if (nodeFrom.STAdataAttributes)
@@ -4271,11 +4272,13 @@
 						document.getElementById("DialogSelectRow").showModal();
 					}
 				}
-				else if (currentNode.image == "FilterRowsSTA.png") {
+				else if (currentNode.image == "FilterRowsSTA.png" || currentNode.image == "FilterRowsTable.png") {
 					var parentNode=GetFirstParentNode(currentNode);
 					if (parentNode) {
-						if (parentNode.STAURL)
+						if ((currentNode.image == "FilterRowsSTA.png" && parentNode.STAURL) ||
+						    currentNode.image == "FilterRowsTable.png") {
 							ShowTableFilterRowsDialog(parentNode, currentNode);
+						}
 						document.getElementById("DialogFilterRows").showModal();
 					}
 				}
