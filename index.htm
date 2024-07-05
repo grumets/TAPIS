@@ -157,7 +157,6 @@
 		</form>
 	</dialog>
 
-
 	<dialog id="DialogSelectColumns">
 		<form>
 			Select columns:
@@ -277,6 +276,7 @@
 			</div>
 		</form>
 	</dialog>
+
 
 	<dialog id="DialogSelectRow">
 		<div id="divTitleSelectRow" class="center" style="font-size: large;"></div>
@@ -2615,7 +2615,10 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					break;
 				}
 			}
-			return groupByParams;
+			var dataCurrentAttributes={};
+			currentNode.STAdata=GroupByTableData(data, dataAttributes, dataCurrentAttributes, groupByParams);
+			currentNode.STAdataAttributes=dataCurrentAttributes;
+			networkNodes.update(currentNode);
 		}
 
 		function GetSelectNRecords(event) {
@@ -4162,31 +4165,6 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			document.getElementById("SelectSortByNumberOfRecords").value=node.STAExpectedLength;
 		}
 
-		const AggregationsOptions=[{name: "Mean", desc: "Mean"},
-					 {name: "Mode", desc: "Mode"},
-					 {name: "FirstValue", desc: "First value"},
-					 {name: "Median", desc: "Median"},
-					 {name: "StandardDeviation", desc: "Standard deviation"},
-					 {name: "LastValue", desc: "Last value"},
-					 {name: "Q1", desc: "Q1"},
-					 {name: "Variance", desc: "Variance"},
-					 {name: "RandomValue", desc: "Random value"},
-					 {name: "Q3", desc: "Q3"},
-					 {name: "Sum", desc: "Sum"},
-					 {name: "CountDefined", desc: "Count defined"},
-					 {name: "MinValue", desc: "Min. Value"},
-					 {name: "Concatenate", desc: "Concatenate"},
-					 {name: "Count", desc: "Count"},
-					 {name: "MaxValue", desc: "Max. value"},
-					 {name: "Span", desc: "Span"},
-					 {name: "ProportionDefined", desc: "Proportion defined"}]; 
-		const GroupByDateTimeOptions=[{name: "Year", desc: "Year"},
-					 {name: "Month", desc: "Month"},
-					 {name: "Day", desc: "Day"},
-					 {name: "Hour", desc: "Hour"},
-					 {name: "Minute", desc: "Minute"},
-					 {name: "Second", desc: "Second"}]; 
-
 		function showCheckRadioOptions(div_name, div_option_prefix, options, nCols, radio_name, fEvent) {
 			var cdns=[];
 			
@@ -4745,25 +4723,14 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				else if (currentNode.image == "FilterRowsSTA.png" || currentNode.image == "FilterRowsTable.png") {
 					var parentNode=GetFirstParentNode(currentNode);
 					if (parentNode) {
-							if (parentNode.STAURL) {
-								if (currentNode.image == "FilterRowsSTA.png" && parentNode.STAURL) {
-									ShowTableFilterRowsDialog(parentNode, currentNode);
-								}
-							} else {
-								if (currentNode.image == "FilterRowsTable.png") { //It comes from CSV, it hasn't got STAURL
-									ShowTableFilterRowsDialog(parentNode, currentNode);
-								}
-							}
-
-
-							document.getElementById("DialogFilterRows").showModal();
+						if (parentNode.STAOGCAPIconformance){
+							currentNode.STAOGCAPIconformance=parentNode.STAOGCAPIconformance;
 						}
 						if (parentNode.STAOGCAPIqueryable){
 							currentNode.STAOGCAPIqueryable=parentNode.STAOGCAPIqueryable;
 						}
 						ShowTableFilterRowsDialog(parentNode, currentNode);
 						document.getElementById("DialogFilterRows").showModal();
-				
 					}
 				}
 				else if (currentNode.image == "SortBySTA.png") {
@@ -4791,6 +4758,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				}
 			}
 		}
+
 		function networkContext(params) {
 			params.event.preventDefault();  //https://stackoverflow.com/questions/38258940/open-an-extension-popup-html-list-on-right-click-of-node-contextmenu-in-visj
 
