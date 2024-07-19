@@ -3081,6 +3081,8 @@ async function requestAndRefreshCountResults(currentNode, period) {
 								else if (dataAttribute.type=="integer" && type=="number")
 									dataAttribute.type="number";
 							}
+							if (dataAttribute.type=="object")
+								break;
 						}
 					}
 					else
