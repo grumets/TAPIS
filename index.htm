@@ -213,6 +213,115 @@
 			</div>
 		</form>
 	</dialog>
+	<dialog id="DialogCreateColumns">
+		<form>
+			Create columns:
+			<span id="DialogCreateColumnsHTML">
+			 <br>
+			  <label for="columnNameCreateColumns">Column Name </label>
+			  <input id="columnNameCreateColumns" type="text" style="margin-top: 10px; margin-bottom: 10px; "> 
+			  <br>
+			  <div>
+				<fieldset>
+					<legend>Select your operation:</legend>
+					<input type="radio" id="constantValue" name="TypeOfValues" value="constantValue" checked> 
+					<label for="constantValue">Constant value</label><input id="inputText_constantValue" type="text" style="margin-left:10px" ><br>
+					<input type="radio" id="autoincrementalValue" name="TypeOfValues" value="autoincrementalValue">
+					<label for="autoincrementalValue">Autoincemental value</label><input id="inputText_autoincrementalValue" type="text" style="margin-left:10px"  placeholder="Initial value" ><br>
+					<input type="radio" id="empty" name="TypeOfValues" value="empty">
+					<label for="empty">Empty column</label><br>
+				</fieldset>
+				<button value="add" onClick="addColumnToListCreateColumn(event)"style="margin-bottom:10px">Add column to list </button>
+				<div  style="width:auto;">
+					<label>Columns to add</label>
+					<div >
+						<ol id="columnsBoxCreateColumns"></ol>
+					</div>
+				</div>
+			  </div>
+			  
+		
+			</span>
+			<div class="center" style="margin-top: 10px">
+			  <button value="default" onClick="addColumnsToTableInCreateColumns()">Add columns to your table</button>
+			  <button value="cancel" formmethod="dialog" onclick="cancelButtonRecoveryOldData(event)">Cancel</button>
+			</div>
+		  </form>
+	</dialog>
+
+	<dialog id="DialogAggregateColumns">
+		<form>
+			Aggregate columns:
+			<span id="DialogAggregateColumnsHTML">
+			  <br>
+			  <label for="columnNameAggregateColumns">Column Name </label>
+			  <input id="columnNameAggregateColumns" type="text" style="margin-top: 10px; margin-bottom: 10px; "> 
+			  <br>
+			  
+				<fieldset id="columnsFielset" style="display:inline-block">
+				  
+						 
+				</fieldset>		
+			  <fieldset id="operationsFieldSet" style="display:inline-block">
+				<legend>Select your operation:</legend>
+				<input type="radio" id="sum" name="TypeOfOperation" value="sum" checked> 
+				<label for="sum">Sum</label><br>
+				<input type="radio" id="product" name="TypeOfOperation" value="product">
+				<label for="product">Product</label><br>
+				<input type="radio" id="minimalValue" name="TypeOfOperation" value="minimalValue">
+				<label for="minimalValue">Minimal Value</label><br>
+				<input type="radio" id="maximalValue" name="TypeOfOperation" value="maximalValue">
+				<label for="maximalValue">Maximal Value</label><br>
+				<input type="radio" id="meanValue" name="TypeOfOperation" value="meanValue">
+				<label for="meanValue">Mean Value</label><br>
+				<input type="radio" id="variance" name="TypeOfOperation" value="variance">
+				<label for="variance">Variance</label><br>
+				<input type="radio" id="median" name="TypeOfOperation" value="median">
+				<label for="median">Median</label><br>
+				<input type="radio" id="concatenate" name="TypeOfOperation" value="concatenate">
+				<label for="concatenate">Concatenate</label><br>
+			  </fieldset>
+
+				<fieldset  style="display:inline-block" >
+					<legend>Set number of decimals:</legend>
+					<input type="radio" id="chooseNumberDecimals_1" name="chooseNumberDecimals" value="no" checked> 
+					<label for="chooseNumberDecimals_1">No </label>
+					<br>
+					<input type="radio" id="chooseNumberDecimals_0" name="chooseNumberDecimals" value="yes"> 
+					<label for="chooseNumberDecimals_0">Yes: </label>
+					<input id="chooseNumberDecimals_0_input" type="number" max="10" min="0"> 
+								 
+				</fieldset>
+			  <br>
+			  <button value="add" onClick="addColumnToListAggregateColumns(event)"style="margin-bottom:10px">Add column to list </button>
+			  <div style="width:auto;" >
+				<label>Columns to add</label>
+				<div >
+					<ol id="columnsBoxAggregateColumn"></ol>
+				</div>
+			  </div>
+			</span>
+			<div class="center" style="margin-top: 10px">
+			  <button value="default" onClick="addColumnsToTableInAggregateColumns(event)">Create new columns</button>
+			  <button value="cancel" formmethod="dialog" onclick="cancelButtonRecoveryOldData(event)">Cancel</button>
+			</div>
+		  </form>
+	</dialog>
+
+
+
+
+	<dialog id="DialogColumnsCalculator">
+		<form>
+			Columns Calculator:
+			<span id="DialogColumnsCalculatorHTML">
+			</span>
+			<div class="center">
+				<button value="default" onClick="GetColumnsCalculator(event)">OK</button>
+				<button value="cancel" formmethod="dialog" onclick="cancelButtonRecoveryOldData(event)">Cancel</button>
+			</div>
+		</form>
+	</dialog>
 
 	<dialog id="DialogSelectExpands">
 		<form>
@@ -756,6 +865,9 @@
 					JoinTables: {description: "Join Tables"},
 					FilterRowsTable: {description: "Filter Rows"},
 					GroupBy: {description: "GroupBy"},
+					AggregateColumns:{description: "Aggregate Columns"},
+					CreateColumns:{description: "Create Columns"},
+					ColumnsCalculator:{description: "Columns calculator"},
 					SeparateColumns: {description: "Separate Columns"},
 					ScatterPlot: {description: "Scatter Plot", leafNode: true},
 					OneValueSTA: {description: "One Value", leafNode: true},
@@ -1367,7 +1479,11 @@
 				} else if (node.OGCType=="OGCAPIitems") {
 					node.STAdata = (jsonData.type=="FeatureCollection") ? TransformGeoJSONToTable(jsonData) : [jsonData];
 					nextLink = getLinkRelInLinks(jsonData["links"], "next", "application/geo+json");
-				} else {
+				} else if(node.OGCType=="OGCAPIitem") {
+					node.STAdata = (jsonData.type=="FeatureCollection") ? TransformGeoJSONToTable(jsonData) : [jsonData];
+					//nextLink?
+				}
+				else {
 					node.STAdata = (typeof jsonData.value!=="undefined") ? jsonData.value : [jsonData];
 					nextLink = jsonData["@iot.nextLink"];
 				}
@@ -2651,8 +2767,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					return;
 
 				currentNode.STAUrlAPICounter = []; // I need to restart it 
-				//put URL ready to add things
-				var previousURL = parentNode.STAURL;
+				var previousURL = parentNode.STAURL;//put URL ready to add things
 
 				var prevFilter = GetQueryParamFromURL(parentNode.STAURL, "$filter");
 				if (prevFilter) {
@@ -2668,8 +2783,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					entity = getSTAURLLastEntity(currentNode.STAURL);
 				}
 
-				readInformationRowFilterSTA(currentNode.STAelementFilter, entity, "no", "no"); //And apply filter
-				//console.log(currentNode.STAUrlAPI);
+				readInformationRowFilterSTA(currentNode.STAelementFilter, entity, "no", "no"); //apply filter
 				currentNode.STAURL = currentNode.STAUrlAPI;
 
 				currentNode.STAExpectedLength = document.getElementById("SelectNumberOfRecordsFilterRows").value;
@@ -2680,7 +2794,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			stopreadInformationRowFilterTable = false;
 			currentNode.STAtableCounter = [];
 			currentNode.STAtable = "";
-			readInformationRowFilterTable(currentNode.STAelementFilter, "no", "no"); //And apply filter
+			readInformationRowFilterTable(currentNode.STAelementFilter, "no", "no"); //apply filter
 			applyEvalAndFilterData();
 			UpdateChildenTable(currentNode);
 				
@@ -2691,16 +2805,15 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			if (currentNode.STAOGCAPIconformance.includes("cql-text")){
 				currentNode.STAUrlAPICounter = []; // I need to restart it 
 				stopreadInformationRowFilterOGCAPIFeatures = false;
-				currentNode.STAURL = previousURL  +"?filter="; //mirar si ho ha actualitzat
+				currentNode.STAURL = previousURL  +"?filter=";
 				if (currentNode.STAUrlAPI){
 					currentNode.STAUrlAPI="";
 				}
-				readInformationRowFilterOGCAPIFeatures(currentNode.STAelementFilter, "no", "no"); //And apply filter
+				readInformationRowFilterOGCAPIFeatures(currentNode.STAelementFilter, "no", "no"); //apply filter
 				currentNode.STAURL = currentNode.STAURL+currentNode.STAUrlAPI+"&f=json";
 				currentNode.STAExpectedLength = document.getElementById("SelectNumberOfRecordsFilterRows").value;
-				var data = await loadAPIDataWithReturn(currentNode.STAURL, "reloadOGCAPIFeaturesData");
-				console.log(currentNode.STAdata)
-				// networknode.update
+				LoadJSONNodeSTAData(currentNode);
+				networkNodes.update(currentNode);
 				UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousURL);
 
 			}
@@ -2715,8 +2828,8 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			if (currentNode.image == "FilterRowsTable.png" ) { //import CSV
 				GetFilterRowsTable();
 			}else if (currentNode.STAOGCAPIconformance){//OGCAPIFeatures
-				if (!currentNode.STAOGCAPIconformance?.includes("filter")){
-					GetFilterRowsOGCAPIFeatures()// -> Mirar el tipus de filtre i tal
+				if (currentNode.STAOGCAPIconformance?.includes("filter")){
+					GetFilterRowsOGCAPIFeatures()// we can apply filter from API
 				}else{
 					GetFilterRowsTable(); //No filter, use table filter
 				}
@@ -4291,7 +4404,24 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				SeparateColumns(nodeTo, nodeFrom);
 				return true;
 			}
-
+			if (nodeTo.image == "CreateColumns.png") {
+				 if (nodeFrom.STAdata){
+				 	nodeTo.STAdata = deapCopy(nodeFrom.STAdata); //necessary first time
+					networkNodes.update(nodeTo);
+				 }
+				if (calUnir)
+					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
+				return true;
+			}
+			if (nodeTo.image == "AggregateColumns.png") {
+				if (nodeFrom.STAdata){
+					nodeTo.STAdata = deapCopy(nodeFrom.STAdata); //necessary first time
+					networkNodes.update(nodeTo);
+				}
+				if (calUnir)
+					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
+				return true;
+			}
 			return false;
 		}
 
@@ -4481,6 +4611,9 @@ async function requestAndRefreshCountResults(currentNode, period) {
 						if (parentNode.STAOGCAPIqueryable){
 							currentNode.STAOGCAPIqueryable=parentNode.STAOGCAPIqueryable;
 						}
+						if (parentNode.OGCType){
+							currentNode.OGCType="OGCAPIitem";
+						}
 						ShowTableFilterRowsDialog(parentNode, currentNode);
 						document.getElementById("DialogFilterRows").showModal();
 					}
@@ -4498,6 +4631,45 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					if (parentNode) {
 						ShowGroupByDialog(parentNode, currentNode);
 						document.getElementById("DialogGroupBy").showModal();
+					}
+				}
+				else if (currentNode.image == "CreateColumns.png") {
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode.STAdata){
+						currentNode.STAdataCopy=currentNode.STAdata; //To recovery data if cancel is pressed
+						currentNode.STAdata = deapCopy(parentNode.STAdata); //Necessary to reset data taking it from parent	
+					}
+					 if (parentNode) {
+						if (!currentNode.STAnewColumnsToAdd){
+							currentNode.STAnewColumnsToAdd=[]; //First time: To create it. Later: To erase old values					
+						}
+						networkNodes.update(currentNode);
+						document.getElementById("DialogCreateColumns").showModal();
+					 }		
+				}
+				else if (currentNode.image == "AggregateColumns.png") {
+					var parentNode=GetFirstParentNode(currentNode);
+						
+
+					if (parentNode.STAdata){
+						currentNode.STAdataCopy=currentNode.STAdata; //To recovery data if cancel is pressed
+						currentNode.STAdata = deapCopy(parentNode.STAdata); //Necessary to reset data taking it from parent
+					}
+					fillAggregateColumVariablesList();
+					if (parentNode) {
+						if (!currentNode.STAnewColumnsToAdd){
+							currentNode.STAnewColumnsToAdd=[]; //First time: To create it. Later: To erase old values					
+						}
+						networkNodes.update(currentNode);
+						//drawTableInColumnBoxTableInAggregateColumns()
+						document.getElementById("DialogAggregateColumns").showModal();
+					}
+				}
+				else if (currentNode.image == "ColumnsCalculator.png") {
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode) {
+						//ShowColumnsCalculatorsDialog();
+						document.getElementById("DialogColumnsCalculator").showModal();
 					}
 				}
 				else if (currentNode.image == "SeparateColumns.png") {
@@ -4812,6 +4984,240 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					});
 				}
 			}
+		}
+
+		//Create Columns
+		function addColumnToListCreateColumn(event){
+			event.preventDefault();
+			
+			var TypeOfValuesRadiobuttons= document.getElementsByName("TypeOfValues");
+			for (var i = 0; i < TypeOfValuesRadiobuttons.length; i++) {
+                if (TypeOfValuesRadiobuttons[i].checked){
+					var columnName= document.getElementById("columnNameCreateColumns").value;
+					var number= document.getElementById("inputText_"+TypeOfValuesRadiobuttons[i].value)?.value;
+					if (number=="") //to avoid undefined in column list and problems afeter
+						number=0;
+					currentNode.STAnewColumnsToAdd.push([TypeOfValuesRadiobuttons[i].value,columnName,number]);
+				}
+                 
+            }  
+			drawTColumnsInformaionInColumnBoxTableInCreateColumns();
+			
+
+
+		}
+		function drawTColumnsInformaionInColumnBoxTableInCreateColumns(){
+			var columnsBox=document.getElementById("columnsBoxCreateColumns");
+			columnsBox.innerHTML=""
+   
+ 
+			for (var a=0;a<currentNode.STAnewColumnsToAdd.length;a++){
+	
+				if (currentNode.STAnewColumnsToAdd[a][0]=="constantValue" ){
+					columnsBox.innerHTML+= `<li><b>Column type:</b> Constant value, <b>Column name:</b> ${currentNode.STAnewColumnsToAdd[a][1]}, <b>value: </b>${currentNode.STAnewColumnsToAdd[a][2]}<button onclick='deleteRowInColumnsBoxTable(${a})'><img src="trash.png" alt="Remove" title="Remove"></button></li>`;
+				}else if (currentNode.STAnewColumnsToAdd[a][0]=="autoincrementalValue" ){
+					columnsBox.innerHTML+= `<li><b>Column type:</b> Autoincremental value, <b>Column name:</b> ${currentNode.STAnewColumnsToAdd[a][1]}, <b>Initial value: </b>${currentNode.STAnewColumnsToAdd[a][2]}<button onclick='deleteRowInColumnsBoxTable(${a})'><img src="trash.png" alt="Remove" title="Remove"></button></li>`
+				}else{
+					columnsBox.innerHTML+= `<li><b>Column type:</b> Empty column, <b>Column name:</b> ${currentNode.STAnewColumnsToAdd[a][1]} <button onclick='deleteRowInColumnsBoxTable(${a})'><img src="trash.png" alt="Remove" title="Remove"></button></li>`
+				}
+
+			
+			}
+		}
+
+		function deleteRowInColumnsBoxTable(number){
+			event.preventDefault(); 
+			var copyWithoutNumber=[];
+			for (var i=0;i<currentNode.STAnewColumnsToAdd.length;i++){
+				if (i!=number){
+					copyWithoutNumber.push(currentNode.STAnewColumnsToAdd[i])
+				}
+			}
+
+			currentNode.STAnewColumnsToAdd=copyWithoutNumber;
+			if (currentNode.image=="CreateColumns.png"){ //createColumn
+				drawTColumnsInformaionInColumnBoxTableInCreateColumns();
+			}else{ //aggregateTable
+				drawTableInColumnBoxTableInAggregateColumns();
+			} 
+			
+		}
+		function addColumnsToTableInCreateColumns(){
+			event.preventDefault();
+			var data;
+			for (var i=0;i<currentNode.STAnewColumnsToAdd.length;i++){
+	
+				switch(currentNode.STAnewColumnsToAdd[i][0]) {
+				case  "constantValue":
+					data=addNewColumnWithUniqueValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1], currentNode.STAnewColumnsToAdd[i][2])
+					break;
+				case  "autoincrementalValue":
+					data=addNewColumnWithAutoincrementalValues(currentNode.STAdata,currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2])
+					break;
+				case  "empty":
+					data= addNewEmptyColumn(currentNode.STAdata,currentNode.STAnewColumnsToAdd[i][1]);
+					
+					break;
+				}	
+				currentNode.STAdata=data;
+				networkNodes.update(currentNode);
+					
+			}
+			UpdateChildenTable(currentNode);
+			document.getElementById("DialogCreateColumns").close();
+			showInfoMessage("New columns have been added");
+		}
+		function cancelButtonRecoveryOldData(event){
+			event.preventDefault();
+			currentNode.STAdata=currentNode.STAdataCopy;
+			networkNodes.update(currentNode)
+
+			if (currentNode.image=="CreateColumns.png"){
+				document.getElementById("DialogCreateColumns").close();
+			}else{
+				document.getElementById("DialogAggregateColumns").close();
+			}
+		}
+		//Aggregate columns
+		
+		function fillAggregateColumVariablesList(){
+			var columnsFielset= document.getElementById("columnsFielset");
+			columnsFielset.innerHTML="<legend>Select your variables/columns:</legend>";
+			var dataKeys= Object.keys(currentNode.STAdata[0]);
+			for (var i=0;i<dataKeys.length;i++){
+				columnsFielset.innerHTML+=' <input type="checkbox" id="columnsFielset_'+dataKeys[i]+'" value="'+dataKeys[i]+'"/><label for="'+dataKeys[i]+'">'+dataKeys[i]+'</label><br>'
+			}
+		}
+		function addColumnToListAggregateColumns(event){
+			event.preventDefault();
+			var TypeOfOperation=document.getElementsByName("TypeOfOperation"); //operation
+			var STANewColumnsArray=[],variablesArray=[],variable; 
+			var dataKeys= Object.keys(currentNode.STAdata[0]);
+			var chooseNumberDecimalsInputRadio,chooseNumberDecimalsInput;
+
+			for (var i=0;i<TypeOfOperation.length;i++){ //Take operation and column name
+				if (TypeOfOperation[i].checked){
+					var columnName= document.getElementById("columnNameAggregateColumns").value;
+					STANewColumnsArray.push(TypeOfOperation[i].value,columnName);
+				}
+			}
+			for (var a=0;a<dataKeys.length;a++ ){
+				variable=document.getElementById("columnsFielset_"+dataKeys[a]);
+				if (variable.checked){
+					variablesArray.push(dataKeys[a]);
+				}
+			}
+			STANewColumnsArray.push(variablesArray);
+			if (document.getElementById("chooseNumberDecimals_0").checked){
+				STANewColumnsArray.push(document.getElementById("chooseNumberDecimals_0_input").value)
+			}	
+						
+			currentNode.STAnewColumnsToAdd.push(STANewColumnsArray); //[typeOfOperation,columnName,[variables]]
+			networkNodes.update(currentNode);
+			drawTableInColumnBoxTableInAggregateColumns();
+		}
+		function drawTableInColumnBoxTableInAggregateColumns(){
+			var columnsBox=document.getElementById("columnsBoxAggregateColumn");
+			var columns;
+			columnsBox.innerHTML="";
+			
+				for (var i=0;i<currentNode.STAnewColumnsToAdd.length;i++){
+					columns=""
+					for(var a=0;a<currentNode.STAnewColumnsToAdd[i][2].length;a++){ //unfold array with columns to put in string
+						if (a!=0){
+						columns+=", "	;
+						}
+						columns+=currentNode.STAnewColumnsToAdd[i][2][a];
+					}
+					columnsBox.innerHTML+=`<li> <b>Operation: </b> ${currentNode.STAnewColumnsToAdd[i][0]}, <b> Column name: </b>${currentNode.STAnewColumnsToAdd[i][1]}, <b>Variables/columns: </b>${columns}` 
+					if (currentNode.STAnewColumnsToAdd[i][3]){
+						columnsBox.innerHTML+=`<b>Decimal number: </b> ${currentNode.STAnewColumnsToAdd[i][3]}`
+					}
+						
+					columnsBox.innerHTML+=`<button onclick="deleteRowInColumnsBoxTable(${i})"><img src="trash.png" alt="Remove" title="Remove"></button>`;
+				}
+		}
+
+		function addColumnsToTableInAggregateColumns(event){
+			event.preventDefault();
+			var data;
+			var decimalNumber;
+		
+			for (var i=0;i<currentNode.STAnewColumnsToAdd.length;i++){
+				decimalNumber=""; //Restart 
+				if (currentNode.STAnewColumnsToAdd[i][3]){
+				decimalNumber=currentNode.STAnewColumnsToAdd[i][3];
+			}
+				switch(currentNode.STAnewColumnsToAdd[i][0]) {
+					case  "sum":
+						if (decimalNumber!=""){
+							 addnewColumnSummingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],decimalNumber); //data, columnName,columnsToSum, decimalnumber
+
+						}else{
+							 addnewColumnSummingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]); //data, columnName,columnsToSum
+
+						}
+						break;
+					case  "product":
+					if (decimalNumber!=""){
+							addnewColumnMultiplyingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],decimalNumber); //data, columnName,columnsToSum, decimalnumber
+
+						}else{
+							addnewColumnMultiplyingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]); //data, columnName,columnsToSum
+
+						}
+						break;
+					case  "minimalValue":
+					if (decimalNumber!=""){
+						addnewColumnMinimalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber); 
+
+					}else{
+						addnewColumnMinimalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]); 
+					}
+						break;
+					case  "maximalValue":
+					if (decimalNumber!=""){
+						addnewColumnMaximalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber); 
+
+					}else{
+
+					}
+						addnewColumnMaximalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]); 
+
+						break;
+					case  "meanValue":
+					if (decimalNumber!=""){
+						addnewColumnMeanValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber);
+
+					}else{
+						addnewColumnMeanValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]);
+
+					}	
+						break;
+					case  "variance":
+					if (decimalNumber!=""){
+						addnewColumnVarianceValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber);
+
+					}else{
+						addnewColumnVarianceValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]);
+
+					}
+						break;
+					case  "median":
+						if (decimalNumber!=""){
+							addnewColumnMedianValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber);
+
+						}else{
+							addnewColumnMedianValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]);
+
+						}
+						break;
+					case  "concatenate":
+						addnewColumnConcatenatingValues(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]);
+						break;
+				}
+			}
+			document.getElementById("DialogAggregateColumns").close();
 		}
 	</script>
 

@@ -47,6 +47,7 @@
 
 const selectConditionContent = ['---Choose operator ---', ' = ', ' &ne; ', ' &ge; ', ' > ', ' &le; ', ' < ', ' [a,b] ', ' (a,b] ', ' [a,b) ', ' (a,b) ', 'contains', 'no contains', 'starts with', 'ends with', 'year', 'month', 'day', 'hour', 'minute', 'date'];
 const selectConditionContentText = ['---Choose operator ---', ' = ', ' &ne; ', 'contains', 'no contains', 'starts with', 'ends with'];
+const selectConditionContentOGCAPIFeatures = ['---Choose operator ---', ' = ', ' &ne; ', ' &ge; ', ' > ', ' &le; ', ' < ', ' [a,b] ', ' (a,b] ', ' [a,b) ', ' (a,b) '];
 
 
 function addNecessaryVariablesToFilterRowsSTANode(actualNode) {
@@ -57,7 +58,7 @@ function addNecessaryVariablesToFilterRowsSTANode(actualNode) {
 	if (!actualNode.STAconditionsFilter)
 		actualNode.STAconditionsFilter = [ //Table values
 			{
-				property: "<div id='optionsRow_0' style='display: inline-block;'></div>", //class='optionsRow'
+				property: "<div id='optionsRow_0' style='display: inline-block;'></div>",
 				number: "0"
 			}
 		];
@@ -136,9 +137,10 @@ function createSelectorRowFilters(number) {
 	if (dialogType == "withEntities_4selectors") {
 		createEntitySelectorInFilterRows(selectorInfo, number);
 		createPropertySelectInFilterRows(selectorInfo, number);
-	} else {
+	} else { //withoutEntities_3selectors
 		createColumsSelectorFilterRows(selectorInfo, number);
 	}
+	//In both cases 
 	createConditionSelectInFilterRows(selectorInfo, number);
 	createValueSelectInFilterRows(selectorInfo, number);
 
@@ -156,12 +158,9 @@ function createColumsSelectorFilterRows(selectorInfo, count) {
 
 }
 
-function fillColumsSelectorFilterRows(selectorInfo, count) { //2 selectors
+function fillColumsSelectorFilterRows(selectorInfo, count) { //withoutEntities_3selectors
 
 	var selectorColumns = document.getElementById("selectorColumns_" + count);
-
-
-	//First option (-- choose a field--)
 	var option = document.createElement("option"); //First option
 	option.setAttribute("value", "-- choose a field--");
 	option.innerHTML = "-- choose a field--";
@@ -222,10 +221,12 @@ function obtainValuesFromSTAdataInCSV(column) {
 			}
 		}
 	}
-	var valuesSorted = sortValuesForSelect(valuesArray);
+	var valuesSorted = sortValuesNumbersOrText(valuesArray);
 	return valuesSorted;
 }
-async function loadAPIDataWithReturn(url, reasonForData) { // Ask API to , "FIllSelectInRowFilter" and CountResults
+
+//Ask API data or information 
+async function loadAPIDataWithReturn(url, reasonForData) { // Ask API to  "FIllSelectInRowFilter" and CountResults
 	var response, options = {}, data; //Data in FIllSelectInRowFilter will be STAData and in CountResults will be the number of results
 	try {
 		var url_fetch;
@@ -255,9 +256,6 @@ async function loadAPIDataWithReturn(url, reasonForData) { // Ask API to , "FIll
 			data = (typeof data !== "undefined") ? data["conformsTo"] : [data];
 		} else if (reasonForData == "OGCAPIqueryables") {
 			data = (typeof data !== "undefined") ? data["properties"] : [data];
-		} else if (reasonForData == "reloadOGCAPIFeaturesData") {
-			data = (typeof data.value !== "undefined") ? data.value : [data];
-			currentNode.STAdata = data;
 		}
 		else {
 			data = (typeof data.value !== "undefined") ? data["@iot.count"] : [data];
@@ -271,6 +269,46 @@ async function loadAPIDataWithReturn(url, reasonForData) { // Ask API to , "FIll
 
 
 }
+async function askForConformanceInOGCAPIFeatures() {
+	const filterInConformance = ["filter", "features-filter", "simple-cql", "cql-text", "cql-json"];//What I need for filter
+	var url = currentNode.STAURL;
+	var index = url.indexOf("/collection");
+	url = url.slice(0, index);
+	url += "/conformance?f=json";
+	var conformanceInformation = await loadAPIDataWithReturn(url, "OGCAPIConformance"); //ask for conformance (what can I do with this API)
+	var conformanceArray = []
+	for (var i = 0; i < conformanceInformation.length; i++) {
+		for (var a = 0; a < filterInConformance.length; a++) {
+			if (conformanceInformation[i].includes(filterInConformance[a])) {
+				if (!conformanceArray.includes(filterInConformance[a])) {
+					conformanceArray.push(filterInConformance[a])
+				}
+
+			}
+		}
+
+	}
+	currentNode.STAOGCAPIconformance = conformanceArray; //Only keeps what I need for filter
+	networkNodes.update(currentNode);
+}
+async function askForCollectionQueryables() {
+	var url = currentNode.STAURL;
+	var index = url.indexOf("/items");
+	url = url.slice(0, index);
+	url += "/queryables?f=json";
+	var queryablesInformation = await loadAPIDataWithReturn(url, "OGCAPIqueryables");
+	if (Object.keys(queryablesInformation).length != 0) {
+		currentNode.STAOGCAPIqueryable = queryablesInformation;
+	} else {
+		currentNode.STAOGCAPIqueryable = "no";
+	}
+
+
+	networkNodes.update(currentNode);
+}
+
+
+
 //Entiy input, dialog...
 function createEntitySelectorInFilterRows(selectorInfo, count) {
 	var optionsRow = document.getElementById("optionsRow_" + count);
@@ -481,7 +519,6 @@ function createPropertySelectInFilterRows(selectorInfo, count) {
 }
 function onchangePropertySelect(count) {
 	fillValueSelectorFilterRow(count);
-	//Dins el fillValue s'ha de mirar si la property acaba en "/", si es així, deixar el select buit i potser aixo ja farà q s'amagui al ser undefined
 	showInputProperty(count);
 }
 function showInputProperty(count) {
@@ -587,19 +624,6 @@ function fillPropertySelector(number, lastEntity, selectorInfo) { //lastEntity: 
 	}
 }
 
-function fillColumsSelectorFilterRowsOGCAPIFeatures(number, selectorInfo) {
-	var selectProperty = document.getElementById("selectorProperty_" + number);
-	selectProperty.innerHTML = "";
-
-	var option = document.createElement("option"); //First option
-	option.setAttribute("value", " ");
-	option.innerHTML = "--- choose Property ---";
-	selectProperty.appendChild(option);
-
-
-}
-
-
 //condition select
 function createConditionSelectInFilterRows(selectorInfo, count) {
 	var optionsRow = document.getElementById("optionsRow_" + count);
@@ -617,6 +641,10 @@ function createConditionSelectInFilterRows(selectorInfo, count) {
 	} else {
 		selectConditionContent2 = selectConditionContent;
 	}
+	if (currentNode.OGCType = "OGCAPIitem") {
+		selectConditionContent2 = selectConditionContentOGCAPIFeatures;
+	}
+	
 	for (var i = 0; i < selectConditionContent2.length; i++) { //create options in condition Select
 		var opcioCondicio = document.createElement("option");
 		opcioCondicio.setAttribute("value", selectConditionContent2[i]);
@@ -670,6 +698,7 @@ function typeOfValueFromInput(wichinputText, value1, value2) {
 			value2 = "";
 		}
 	}
+	//eval function doesn't work to knowif it is a date, because a number for the function is a date.
 	if (wichinputText == "simple") {
 		if (value1.includes("-") == true) {//inputText1
 			var value1Array = value1.split("-");
@@ -956,7 +985,7 @@ async function fillValueSelectorFilterRow(count) {
 					arrayValors.push(valor);
 				}
 			}
-			arrayValuesArranged = sortValuesForSelect(arrayValors); //arrange values 
+			arrayValuesArranged = sortValuesNumbersOrText(arrayValors); //arrange values 
 		}
 	} else { //CSV, OGCAPIFeature (3selectors)
 		var selectorColumns = document.getElementById("selectorColumns_" + count);
@@ -990,38 +1019,38 @@ async function fillValueSelectorFilterRow(count) {
 
 	showAndHiddeSelectorAndInputsFilterRow(count);
 }
-function sortValuesForSelect(arrayValues) {
-	var arrayNumbers = [];
-	var arrayText = [];
-	var arrayNumbersArranged, arrayTextsArranged, arrayValuesArranged;
-	var isNumber, punctuationMark;
-	for (var i = 0; i < arrayValues.length; i++) { //Separate numbers and text
-		if (typeof arrayValues[i] !== "undefined") {
-			isNumber = true;
-			punctuationMark = false;
-			for (var a = 0; a < arrayValues[i].length; a++) { //check each character
-				if (isNumber == true && arrayValues[i] != "," && arrayValues[i] != "." && punctuationMark != true) {
-					if (isNaN(arrayValues[i][a])) {//is not a number 
-						isNumber = false;
+// function sortValuesForSelect(arrayValues) { //Està a data_tables (sortValuesNumbersOrText())
+// 	var arrayNumbers = [];
+// 	var arrayText = [];
+// 	var arrayNumbersArranged, arrayTextsArranged, arrayValuesArranged;
+// 	var isNumber, punctuationMark;
+// 	for (var i = 0; i < arrayValues.length; i++) { //Separate numbers and text
+// 		if (typeof arrayValues[i] !== "undefined") {
+// 			isNumber = true;
+// 			punctuationMark = false;
+// 			for (var a = 0; a < arrayValues[i].length; a++) { //check each character
+// 				if (isNumber == true && arrayValues[i] != "," && arrayValues[i] != "." && punctuationMark != true) {
+// 					if (isNaN(arrayValues[i][a])) {//is not a number 
+// 						isNumber = false;
 
-					}
-					if (arrayValues[i] != "," || arrayValues[i] != ".") {
-						punctuationMark = true;
-					}
-				}
-			}
-			if (isNumber == true) {
-				arrayNumbers.push(arrayValues[i]);
-			} else {
-				arrayText.push(arrayValues[i]);
-			}
-		}
-		arrayNumbersArranged = arrayNumbers.sort((a, b) => a - b);
-		arrayTextsArranged = arrayText.sort();
-		arrayValuesArranged = arrayNumbersArranged.concat(arrayTextsArranged); //join arrays
-	}
-	return arrayValuesArranged;
-}
+// 					}
+// 					if (arrayValues[i] != "," || arrayValues[i] != ".") {
+// 						punctuationMark = true;
+// 					}
+// 				}
+// 			}
+// 			if (isNumber == true) {
+// 				arrayNumbers.push(arrayValues[i]);
+// 			} else {
+// 				arrayText.push(arrayValues[i]);
+// 			}
+// 		}
+// 		arrayNumbersArranged = arrayNumbers.sort((a, b) => a - b);
+// 		arrayTextsArranged = arrayText.sort();
+// 		arrayValuesArranged = arrayNumbersArranged.concat(arrayTextsArranged); //join arrays
+// 	}
+// 	return arrayValuesArranged;
+// }
 function changeWriteToSelect(number, selector) {  //To take the text in input
 	event.preventDefault();
 
@@ -1470,8 +1499,6 @@ function deleteGroup(numberOfElement) {
 	takeSelectInformation();//get selector values and update an external variable 
 	drawTableAgain();//repaint the selects
 }
-
-
 
 function searchBoxNameGroupForGetFilterRowsTable(numberOfElement, elem, originFunction) { //elem has boxes ...
 	if (typeof elem === "object") {
