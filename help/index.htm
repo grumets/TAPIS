@@ -51,6 +51,7 @@
 <li><a href="#recipe03">Recipe 3: Show a map of all observation features in an STA service</a></li>
 <li><a href="#recipe04">Recipe 4: Add semantics (meaning) to a table and share, retrieve and store it</a></li>
 <li><a href="#recipe05">Recipe 5: Selecting temperatures from an area</a></li>
+<li><a href="#recipe06">Recipe 6: Creating a new stream of observations</a></li>
 </ul>
 </ul>
 
@@ -760,6 +761,59 @@ This results in thiw complex query URL: <a href="https://citiobs.demo.secure-dim
 <p>
 Now that we have a time series we can use the scater plot tool to generate a temperature/time diagram.<br>
 <img src="recipe05_scatterPlot.png" width="800" class="center">
+
+<br><br><br>
+<br>
+<hr width="30%">
+<a id="recipe06"></a>
+<h3>Recipe 6: Creating a new stream of observations</h3>
+In this example, we illustrate how to create a new stream of obeservations in STAplus.
+
+<p>
+The first think that we need is to login in order to be able to write in the STA service using the login button<br>
+<img src="recipe06_loginButton.png" width="600" class="center">
+
+<p>
+The login facility does not have specify users. Instead it uses preexisting user names created in other platforms. In the Authenix window select your platform or institution integrated in Edugain and follow the instructions to login. If you are previously logged in the Authenix window will open and close with no need for interaction.
+<br>
+<img src="recipe06_authenix.png" width="400" class="center">
+
+<p>
+Your name and organization will appear on the left hand side of the <i>control area</i>.
+<br>
+<img src="recipe06_loginUser.png" width="600" class="center">
+
+<p>
+Now select the <i>Add STA service</i> button and select a STA service where you have writing rights.
+<br>
+<img src="recipe06_STAplus.png" width="600" class="center">
+
+<p>
+We will start by creating a Party. Do not worry, if the party already exists it will be retrieved instead. A right click on the STAplus will open a context menu to select <i>Party</i>. (please note that you should select the family of bottons with the entity names in singular that have a icon with a little pencil.
+<br>
+<img src="recipe06_partyButton.png" width="600" class="center">
+
+<p>
+The creation of a Party is particularly easy, as it takes the authId from the authetication process and no need to add any extra information. You only need to press [Create]. Again, do not worry, if the party already exists it will be retrieved instead.
+<br>
+<img src="recipe06_party.png" width="600" class="center">
+
+<p>
+The information area will show the identified of the created or retreived Party.
+<br>
+<img src="recipe06_partyCreated.png" width="600" class="center">
+
+<p>
+The Query and Table area will show the description of the Party.
+<br>
+<img src="recipe06_partyTable.png" width="600" class="center">
+
+<p>
+The same procedure can be used to creat an <i>observedProperty</i>. In this case, you should populate the requered information before pressing [Create].
+<br>
+<img src="recipe06_observedPropertyCreation.png" width="600" class="center">
+
+
 
 <br><br><br>
 

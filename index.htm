@@ -11,6 +11,7 @@
 	<script type="text/javascript" src="authenix.js"></script>
 	<script type="text/javascript" src="mmn_postmessage.js"></script>
 	<script type="text/javascript" src="guf.js"></script>
+	<script type="text/javascript" src="xml2json.js"></script>
 	<script type="text/javascript" src="data_tables.js"></script>
 	<script type="text/javascript" src="STAselectExpand.js"></script>
 	<script type="text/javascript" src="selectColumnsDlg.js"></script>
@@ -59,10 +60,6 @@
 		</tr>
 	</table>
 
-	<button onclick='addCircularImage(null, null, "STAplus", "ogc.png");'><img src="ogc.png" height="20"
-		valign="middle"> Add STA service</button>
-	<button onclick='addCircularImage(null, null, "OGC API", "ogcAPIs.png");'><img src="ogcAPIs.png" height="20"
-		valign="middle"> Add OGC API collection</button><br>
 	<span id="ButtonsSTAEntities"></span>
 	<button onclick="addEdge();">Connect two nodes</button><br>
 
@@ -155,6 +152,19 @@
 			</p>
 			<div class="center">
 				<button value="cancel" formmethod="dialog">Close</button>
+			</div>
+		</form>
+	</dialog>
+
+	<dialog id="DialogCreateUpdateDeleteEntity">
+		<form>
+			<span id="dlgCreateUpdateDeleteEntityProperties">
+			</span>
+			<div class="center">
+				<button value="default" id="dlgCreateUpdateDeleteEntityCreate" onClick="GetCreateEntity(event)">Create</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityUpdate" onClick="GetUpdateEntity(event)">Update</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityDelete" onClick="GetDeleteEntity(event)">Delete</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
@@ -445,10 +455,6 @@
 	<dialog id="DialogContextMenu">
 		<form>
 			<p>
-				<button onclick='addCircularImage(event, "DialogContextMenu", "STAplus", "ogc.png");'><img src="ogc.png"
-						height="20" valign="middle"> Add STA service</button>
-				<button onclick='addCircularImage(event, "DialogContextMenu", "OGC API", "ogcAPIs.png");'><img src="ogcAPIs.png" height="20"
-						valign="middle"> Add OGC API collection</button><br>
 				<span id="ButtonsContextMenuObjects"></span><br>
 				<button onclick='removeCircularImage(event, "DialogContextMenu")'>Remove</button>
 				<button onclick='renameCircularImage(event, "DialogContextMenu")'>Rename</button><br>
@@ -830,6 +836,12 @@
 
 		var config;
 
+		const ServicesAndAPIs = {ogc: {name: "STA plus", description: "Add STA service", startNode: true},
+					ogcAPIs: {name: "OGC API", description: "Add OGC API collection", startNode: true},
+					csw: {name: "Catalogue", description: "Add OGC CSW", startNode: true},
+					ImportCSV: {name: "CSV", description: "Import CSV", startNode: true},
+					ImportGeoJSON: {name: "GeoJSON", description: "Import GeoJSON", startNode: true}};
+		const ServicesAndAPIsArray = Object.keys(ServicesAndAPIs);
 		const STAEntities = {ObservedProperties: {singular: "ObservedProperty", entities: ["Datastreams", "MultiDatastreams"], properties: ["name", "definition", "description", "properties"]},
 				Observations: {singular: "Observation", entities: ["Datastream", "MultiDatastream", "FeatureOfInterest", "ObservationGroups", "Subjects", "Objects"], properties: ["phenomenonTime", "resultTime", "result", "resultQuality", "validTime", "parameters"], entityRelations: ["Object", "Subject"]}, 
       				FeaturesOfInterest: {singular: "FeatureOfInterest", entities: ["Observations"], properties: ["name", "description", "encodingType", "feature", "properties"]},
@@ -842,14 +854,12 @@
 				Parties: {singular: "Party", entities: ["Datastreams", "MultiDatastreams", "Campaigns", "ObservationGroups", "Things"], properties: ["description", "authId", "role", "displayName"]},
 				Campaigns: {singular: "Campaign", entities: ["Datastreams", "MultiDatastreams", "Party", "License"], properties: ["name", "description", "classification", "termsOfUse", "privacyPolicy", "creationTime", "startTime", "endTime", "url", "properties"]},
 				Licenses: {singular: "License", entities: ["Datastreams", "MultiDatastreams", "Campaigns", "ObservationGroups"], properties: ["name", "description", "definition", "logo", "attributionText"]},
-				ObservationGroups: {singular: "ObservationGroup", entities: ["Party", "Campaigns", "License", "Observations", "Relations"], properties: ["name", "description", "purpose", "creationTime", "endTime", "termsOfUsed", "privacyPolicy", "properties", "dataQuality"]},
+				ObservationGroups: {singular: "ObservationGroup", entities: ["Party", "Campaigns", "License", "Observations", "Relations"], properties: ["name", "description", "purpose", "creationTime", "endTime", "termsOfUsed", "privacyPolicy", "dataQuality", "properties"]},
 				Relations: {singular: "Relation", entities: ["Object", "Subject", "ObservationGroups"], properties: ["role", "description", "externalObject", "properties"], entityRelations: ["Objects", "Subjects"]}};
 		const STAEntitiesArray = Object.keys(STAEntities);
 		const STASpecialQueries = {ObsLayer: {description: "Observations Layer", query: "Observations?$orderby=phenomenonTime%20desc&$expand=Datastream($select=unitOfMeasurement),Datastream/ObservedProperty($select=name,description,definition),FeatureOfInterest($select=description,feature)&$select=phenomenonTime,result"}}
 		const STASpecialQueriesArray = Object.keys(STASpecialQueries);
-		const TableOperations = {ImportCSV: {description: "Import CSV", startNode: true},
-					ImportGeoJSON: {description: "Import GeoJSON", startNode: true},
-					Table: {description: "View Table", leafNode: true}, 
+		const TableOperations = {Table: {description: "View Table", leafNode: true}, 
 					Meaning: {description: "Fields meaning"}, 
 					SelectColumnsSTA: {description: "Select Columns", callSTALoad: true},
 					ExpandColumnsSTA: {description: "Expand Columns", callSTALoad: true},
@@ -968,7 +978,7 @@
 		function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
 			if (parentNode.image == "ogc.png" && (node.image == "FilterRowsSTA.png" || node.image == "SelectRowSTA.png" || node.image == "GeoFilterRowsSTA.png" || node.image == "SelectColumnsSTA.png" || node.image == "ExpandColumnsSTA.png" || node.image == "SortBySTA.png" || node.image == "OneValueSTA.png" || node.image == "CountResultsSTA.png" ) )
 				return "The operation cannot be applied to the root of an STA. (Suggestion: connect a STA Entity first)";
-			if (parentNode.image=="ogc.png" || parentNode.image=="ogcAPIs.png")
+			if (parentNode.image=="ogc.png" || parentNode.image=="ogcAPIs.png" || parentNode.image=="csw.png")
 				return null;
 			if (TableOperations[removeExtension(parentNode.image)] && TableOperations[removeExtension(parentNode.image)].leafNode==true)
 				return "Parent node is a leaf node and cannot be connected with any other node";
@@ -1036,7 +1046,7 @@
 		function getSTAURLLastEntity(url)
 		{
 			var s=getURLWithoutQueryParams(url);
-			var i=(s.charAt(s.length-1)=='/')? s.length-2 : s.length-1
+			var i=(s.charAt(s.length-1)=='/')? s.length-2 : s.length-1;
 
 			if (s.charAt(i)!=')')
 			{
@@ -1054,7 +1064,39 @@
 			return s.substring(ii+1);
 		}
 
-		
+		function removeSTAURLNoQueryLastEntity(s)
+		{
+			var entity;
+			var i=(s.charAt(s.length-1)=='/')? s.length-2 : s.length-1;
+
+			if (s.charAt(i)!=')')
+			{
+				i=s.lastIndexOf('/')
+				if (-1==s)
+					return null;
+				entity=s.substring(i+1);
+				return STAEntities[getSTAEntityPlural(entity, false)] ? s.substring(0, i) : null;
+			}
+			i=s.lastIndexOf('(');
+			if (i==-1)
+				return null;
+			var ii=s.lastIndexOf('/');
+			if (i>ii+2) {
+				entity=s.substring(ii+1, i);
+				return STAEntities[getSTAEntityPlural(entity, false)] ? s.substring(0, ii) : null;
+			}
+			entity=s.substring(ii+1);
+			return STAEntities[getSTAEntityPlural(entity, false)] ? s.substring(0, ii) : null;
+		}
+
+		function getSTAURLRoot(url) {
+			var s, urlRoot=getURLWithoutQueryParams(url);
+			while (null!=(s=removeSTAURLNoQueryLastEntity(urlRoot))) {
+				urlRoot=s;
+			}
+			return urlRoot;
+		}
+
 		//From the MiraMon Map Browser TreuAdreca()
 		function getFileName(s)
 		{
@@ -1251,9 +1293,15 @@
 		function PlaceButtonsSTAEntities() {
 			var s = "";
 			if (!document.getElementById("DialogConfigurationOnlyStartNodeButtons").checked) {
+				for (var i = 0; i < ServicesAndAPIsArray.length; i++)
+					s += "<button onclick='addCircularImage(null, null, \"" + ServicesAndAPIs[ServicesAndAPIsArray[i]].name + "\", \"" + ServicesAndAPIsArray[i] + ".png\");'><img src='" + ServicesAndAPIsArray[i] + ".png' height='20' valign='middle'> " + ServicesAndAPIs[ServicesAndAPIsArray[i]].description + "</button> ";
+				s += "<br>";
 				for (var i = 0; i < STAEntitiesArray.length; i++)
 					s += "<button onclick='addCircularImage(null, null, \"" + STAEntitiesArray[i] + "\", \"" + STAEntitiesArray[i] + ".png\");'><img src='" + STAEntitiesArray[i] + ".png' height='20' valign='middle'> " + STAEntitiesArray[i] + "</button> ";
 				s += "<br>";
+				/*for (var i = 0; i < STAEntitiesArray.length; i++)
+					s += "<button onclick='addCircularImage(null, null, \"" + STAEntities[STAEntitiesArray[i]].singular + "\", \"" + STAEntities[STAEntitiesArray[i]].singular + ".png\");'><img src='" + STAEntities[STAEntitiesArray[i]].singular + ".png' height='20' valign='middle'> " + STAEntities[STAEntitiesArray[i]].singular + "</button> ";
+				s += "<br>";*/
 				for (var i = 0; i < STASpecialQueriesArray.length; i++)
 					s += "<button onclick='addCircularImage(null, null, \"" + STASpecialQueriesArray[i] + "\", \"" + STASpecialQueriesArray[i] + ".png\");'><img src='" + STASpecialQueriesArray[i] + ".png' height='20' valign='middle'> " + STASpecialQueries[STASpecialQueriesArray[i]].description + "</button> ";
 				s += "<br>";
@@ -1286,6 +1334,12 @@
 				s += i%2 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
 			}
 			s += "<br>";
+			for (var i = 0; i < STAEntitiesArray.length; i++)
+			{
+				s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + STAEntities[STAEntitiesArray[i]].singular + "\", \"" + STAEntities[STAEntitiesArray[i]].singular + ".png\");'><img src='" + STAEntities[STAEntitiesArray[i]].singular + ".png' height='20' valign='middle'> " + STAEntities[STAEntitiesArray[i]].singular + "</button>";
+				s += i%2 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
+			}
+			s += "<br>";
 			for (var i = 0; i < STASpecialQueriesArray.length; i++)
 			{
 				s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + STASpecialQueriesArray[i] + "\", \"" + STASpecialQueriesArray[i] + ".png\");'><img src='" + STASpecialQueriesArray[i] + ".png' height='20' valign='middle'> " + STASpecialQueries[STASpecialQueriesArray[i]].description + "</button>";
@@ -1309,6 +1363,7 @@
 				return contentType.substring(0, i);
 		}
 
+		var CriptoName=null;
 		function AddHeadersIfNeeded(options) {
 			if (CriptoName &&
 			    hello("authenix").getAuthResponse() &&
@@ -1354,6 +1409,38 @@
 			return simpleCollecs;
 		}
 
+		function getSimplifyOGCCSWRecord(metadatas){
+			var simpleUrlRecords=[], title;
+			for (var i=0; i<metadatas.length; i++)
+			{
+				var metadata=metadatas[i];
+				if (!metadata || !metadata['gmd:distributionInfo'])
+					continue;
+				title="";
+				if (metadata['gmd:identificationInfo']) {
+					var identification=(typeof metadata['gmd:identificationInfo'].length==="undefined") ? (metadata['gmd:identificationInfo']['gmd:MD_Identification'] ? metadata['gmd:identificationInfo']['gmd:MD_Identification'] : metadata['gmd:identificationInfo']['srv:SV_ServiceIdentification']) : (metadata['gmd:identificationInfo'][0]['gmd:MD_Identification'] ? metadata['gmd:identificationInfo'][0]['gmd:MD_Identification'] : metadata['gmd:identificationInfo'][0]['srv:SV_ServiceIdentification']);
+					if (identification && identification['gmd:citation']) {	
+						var citation=identification['gmd:citation']['gmd:CI_Citation'];
+						if (citation && citation['gmd:title']['gco:CharacterString'])
+							title=citation['gmd:title']['gco:CharacterString'];
+					}
+				}
+				var distribution=(typeof metadata['gmd:distributionInfo'].length==="undefined") ? metadata['gmd:distributionInfo']['gmd:MD_Distribution'] : metadata['gmd:distributionInfo'][0]['gmd:MD_Distribution'];
+				if (!distribution || !distribution['gmd:transferOptions'])
+					continue;
+				var digitalTransfer=(typeof distribution['gmd:transferOptions'].length==="undefined") ? distribution['gmd:transferOptions']['gmd:MD_DigitalTransferOptions'] : distribution['gmd:transferOptions'][0]['gmd:MD_DigitalTransferOptions'];
+				if (!digitalTransfer || !digitalTransfer['gmd:onLine'])
+					continue;
+				var online=(typeof digitalTransfer['gmd:onLine'].length==="undefined") ? digitalTransfer['gmd:onLine']['gmd:CI_OnlineResource'] : digitalTransfer['gmd:onLine'][0]['gmd:CI_OnlineResource'];
+				simpleUrlRecords.push({
+						id: metadata['gmd:fileIdentifier'],
+						title: title,
+						link: online['gmd:linkage']['gmd:URL'],
+						extent: null});
+			}
+			return simpleUrlRecords; 
+		}
+
 		//https://web.dev/fetch-api-error-handling/
 		//Despite its name it can also be used for retrieving non-json files (data as text in value.text).
 		//To do GET it can be used with the first parameter only 
@@ -1379,9 +1466,17 @@
 			}
 			// Uses the 'optional chaining' operator
 			if (!(response?.ok)) {
-				showInfoMessage("HTTP Response Code: " + response?.status + " reading <small>" + url + "</small>: " + response?.statusText);
-				console.log("HTTP Response Code: " + response?.status + ": " + response?.statusText);
-				return;
+				var body;
+				if (eliminarParamContentType(response.headers.get('Content-Type'))=="application/json" &&
+					(response.headers.get('Content-Length')==null || parseInt(response.headers.get('Content-Length'))>0)) {
+					body=await response.json();
+					body=JSON.stringify(body);
+				}
+				else
+					body=await response.text();
+				showInfoMessage("HTTP Response Code: " + response?.status + " reading <small>" + url + "</small>: " + response?.statusText + (body ? " "+body : ""));
+				console.log("HTTP Response Code: " + response?.status + ": " + response?.statusText + (body ? JSON.stringify(body) : ""));
+				return response;
 			}
 			try {
 				var headersObj={};
@@ -1393,9 +1488,9 @@
 				}
 				if (eliminarParamContentType(response.headers.get('Content-Type'))=="application/json" &&
 					(response.headers.get('Content-Length')==null || parseInt(response.headers.get('Content-Length'))>0))
-					return {obj: await response.json(), responseHeaders: headersObj};
+					return {obj: await response.json(), responseHeaders: headersObj, ok: true};
 				else
-					return {obj: null, text: await response.text(), responseHeaders: headersObj};
+					return {obj: null, text: await response.text(), responseHeaders: headersObj, ok: true};
 			} catch (error) {
 				if (error instanceof SyntaxError) {
 					showInfoMessage('Syntax error reading ' + url + ": " + error.message);
@@ -1444,7 +1539,10 @@
 				return;
 			}
 			try {
-				jsonData = await response.json();
+				if ((node.OGCType=="OGCCSW"))
+				        jsonData = JSON.parse(xml2json(parseXml(await response.text()), false, null));
+				else
+					jsonData = await response.json();
 			} catch (error) {
 				if (error instanceof SyntaxError) {
 					showInfoMessage('Syntax error reading ' + node.STAURL + ": " + error.message);
@@ -1464,8 +1562,10 @@
 			if (url && typeof node.STAExpectedLength!=="undefined") {
 				if (node.OGCType=="OGCAPIcollections")
 					node.STAdata = node.STAdata.concat(simplifyOGCAPICollections(jsonData.collections));
-				if (node.OGCType=="OGCAPIitems")
+				else if (node.OGCType=="OGCAPIitems")
 					node.STAdata = node.STAdata.concat(TransformGeoJSONToTable(jsonData));
+				else if (node.OGCType=="OGCCSW")
+					node.STAdata = node.STAdata.concat(getSimplifyOGCCSWRecord(jsonData['csw:GetRecordsResponse']['csw:SearchResults']['gmd:MD_Metadata']));
 				else
 					node.STAdata = node.STAdata.concat(jsonData.value);
 					
@@ -1482,8 +1582,9 @@
 				} else if(node.OGCType=="OGCAPIitem") {
 					node.STAdata = (jsonData.type=="FeatureCollection") ? TransformGeoJSONToTable(jsonData) : [jsonData];
 					//nextLink?
-				}
-				else {
+				} else if (node.OGCType=="OGCCSW") {
+					node.STAdata = getSimplifyOGCCSWRecord(jsonData['csw:GetRecordsResponse']['csw:SearchResults']['gmd:MD_Metadata']);
+				} else {
 					node.STAdata = (typeof jsonData.value!=="undefined") ? jsonData.value : [jsonData];
 					nextLink = jsonData["@iot.nextLink"];
 				}
@@ -1848,7 +1949,6 @@
 			return JSON.parse(atob(base64));
 		};
 
-		var CriptoName=null;
 		document.getElementById("UserInfoText").innerHTML="";
 		function OpenLogin(event) {
 			hello("authenix").login({redirect_uri: location.pathname, lang: getLang(), scope: "openid profile idp citiobs.secd.eu%23read citiobs.secd.eu%23create citiobs.secd.eu%23update citiobs.secd.eu%23delete", display: "popup"}).then(
@@ -1929,21 +2029,27 @@
 			document.getElementById("DialogSTAURL").close(document.getElementById("DialogSTAURLInput").value);
 			
 			if ((currentNode.image == "ogc.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value) ||
-				(currentNode.image == "ogcAPIs.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value+"/collections"))
+				(currentNode.image == "ogcAPIs.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value+"/collections") ||
+				(currentNode.image == "csw.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value+"?REQUEST=GetRecords&SERVICE=CSW&version=2.0.2&resultType=results&typeNames=gmd:MD_Metadata&namespace=xmlns(gmd=http://www.isotc211.org/2005/gmd)&outputSchema=http://www.isotc211.org/2005/gmd"))
 				return;
 			var previousSTAURL = currentNode.STAURL;
 			currentNode.STAURL = document.getElementById("DialogSTAURLInput").value;
-			if (currentNode.STAURL.charAt(currentNode.STAURL.length - 1) == '/')
+			if (currentNode.STAURL.charAt(currentNode.STAURL.length - 1) == '/' || 
+				currentNode.STAURL.charAt(currentNode.STAURL.length - 1) == '?')
 				currentNode.STAURL = currentNode.STAURL.slice(0, -1);  //remove last character
 
 			if (currentNode.image == "ogcAPIs.png") {
 				currentNode.STAURL += "/collections";
 				currentNode.OGCType = "OGCAPIcollections";
+				askForConformanceInOGCAPIFeatures();//OCGAPICconformance
+			} else if (currentNode.image == "csw.png") {
+				currentNode.STAURL += "?REQUEST=GetRecords&SERVICE=CSW&version=2.0.2&resultType=results&typeNames=gmd:MD_Metadata&namespace=xmlns(gmd=http://www.isotc211.org/2005/gmd)&outputSchema=http://www.isotc211.org/2005/gmd";
+				currentNode.OGCType = "OGCCSW";
 			}
+			
 
 			networkNodes.update(currentNode);	//https://visjs.github.io/vis-data/data/dataset.html#Data_Manipulation
 
-			askForConformanceInOGCAPIFeatures();//OCGAPICconformande
 			//if childen nodes have also STAURL
 			UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
 			LoadJSONNodeSTAData(currentNode);
@@ -1960,6 +2066,7 @@
 			var cdns=[], stas;
 			if (suggestedURLs)
 			{
+				cdns.push('<option value="">-- Select one option below --</option>');
 				for (var g=0; g<suggestedURLs.length; g++) {
 					cdns.push('<optgroup label="', suggestedURLs[g].group, '">');
 					stas=suggestedURLs[g].STAs;
@@ -2429,6 +2536,11 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				return url;
 		}
 
+		function getUrlToId(url, objsName, id) {
+			return url + "/" + objsName + "(" + (typeof id==="number" ? "" :"'") + id + (typeof id==="number" ? "" :"'") + ")";
+		}
+
+
 		function AddKeysToFilter(url, obj, prefix) {
 			var objArray=Object.keys(obj);
 			for (var i=0; i<objArray.length; i++)
@@ -2437,6 +2549,8 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				{
 					if (objArray[i]=="feature")
 						url+=(url=="" ? "" : " and ") + "st_equals(feature, geography'POINT (" + obj[objArray[i]].geometry.coordinates[0] + " " + obj[objArray[i]].geometry.coordinates[1] + ")')";
+					else if (Array.isArray(obj[objArray[i]]) && obj[objArray[i]].length==1 && typeof obj[objArray[i]][0]==="object")
+						url=AddKeysToFilter(url, obj[objArray[i]][0], prefix ? prefix + "/" + objArray[i] : objArray[i]);
 					else
 						url=AddKeysToFilter(url, obj[objArray[i]], prefix ? prefix + "/" + objArray[i] : objArray[i]);
 				}
@@ -2456,19 +2570,24 @@ async function requestAndRefreshCountResults(currentNode, period) {
 
 		async function GetObjectId(url, objsName, obj){
 			var response=await HTTPJSONData(url+"/"+objsName+ "?$filter=" + encodeURIComponent(AddKeysToFilter("", obj)));
-			var data=(response && response.obj) ? response.obj : null;
+			if (!response || (!response.obj && !response.ok && response.status!=404))
+				throw {name: "Error requesting resource existance.", message: "Status: "+ response.status, at: "", text: url+"/"+objsName+ "?$filter=" + AddKeysToFilter("", obj)};
+			var data=response.obj;
 			if (data && data.value && data.value.length)
 				return data.value[0]["@iot.id"];
 			else
 			{
 				//Not found. I'm creating it.
 				var response=await HTTPJSONData(url+"/"+objsName, ['Location'], 'POST', obj);
-				return ExtractIdFromURL(response.responseHeaders['Location']);
+				if (response?.ok)
+					return ExtractIdFromURL(response.responseHeaders['Location']);
+				else
+					throw {name: "Error creating resource", message: "Status: "+ response.status, at: "", text: url+"/"+objsName+ "?$filter=" + AddKeysToFilter("", obj)};
 			}
 		}
 
 		async function GetPartyId(url, authId) {
-			return GetObjectId(url, "Parties", {
+			return await GetObjectId(url, "Parties", {
 				"authId": authId,
 				//"displayName": authId,  //It might change soon to "description"
 				//"description": null,
@@ -2477,14 +2596,14 @@ async function requestAndRefreshCountResults(currentNode, period) {
 		}
 
 		async function GetObservedPropertyId(url, name, description, definition) {
-			return GetObjectId(url, "ObservedProperties", {
+			return await GetObjectId(url, "ObservedProperties", {
 				"name": name,
 				"description": description,
 				"definition": definition
 			});
 		}
 		async function GetSensorId(url, name, description, metadata) {
-			return GetObjectId(url, "Sensors", {
+			return await GetObjectId(url, "Sensors", {
 				"name": "Sensor for measuring " + name.charAt(0).toLowerCase() + name.substring(1),
 				"description": "Sensor for measuring " + description.charAt(0).toLowerCase() + description.substring(1),
 				"encodingType": "text/html",
@@ -2493,7 +2612,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 		}
 
 		async function GetThingId(url, partyId, name, description) {
-			return GetObjectId(url, "Things", {
+			return await GetObjectId(url, "Things", {
 				"name": "Platform that measures " + name.charAt(0).toLowerCase() + name.substring(1),
 				"description": "Platform that measures " + description.charAt(0).toLowerCase() + description.substring(1),
 				"Party": { "@iot.id":  partyId }
@@ -2502,7 +2621,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 
 
 		async function GetDatastreamId(url, partyId, obsPropId, sensorId, thingId, name, description, UoM, UoMSymbol, UoMDefinition) {
-			return GetObjectId(url, "Datastreams", {
+			return await GetObjectId(url, "Datastreams", {
 				"unitOfMeasurement":{
 					"name": UoM,
 					"symbol": UoMSymbol,
@@ -2519,7 +2638,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 		}
 
 		async function GetFeatureOfInterestId(url, place, longitude, latitude) {
-			return GetObjectId(url, "FeaturesOfInterest", {
+			return await GetObjectId(url, "FeaturesOfInterest", {
 				"name": place,
 				"description": place,
 				"encodingType": "application/geo+json",
@@ -2537,17 +2656,13 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			var d=new Date(time);
 			var t=d.toISOString();
 
-			return GetObjectId(url, "Observations", {
+			return await GetObjectId(url, "Observations", {
 				"result": result,
 				"resultTime": t,
 				"phenomenonTime": t,
 				"FeatureOfInterest": { "@iot.id": FoIId },
 				"Datastream": { "@iot.id": datastreamId }
 			});
-		}
-
-		function getUrlToId(url, objsName, id) {
-			return url + "/" + objsName + "(" + (typeof id==="number" ? "" :"'") + id + (typeof id==="number" ? "" :"'") + ")";
 		}
 
 		async function UploadObservationsSTA(url, data, dataAttributes, selectedOptions) {
@@ -2697,6 +2812,152 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				!isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 		}
 
+		function PopulateCreateUpdateDeleteEntity(entityName, currentNode, parentNode) {
+			var cdns=[];
+			if (!parentNode.STAdata || parentNode.STAdata.length==0){
+				alert("Parent node has no STA data associated");
+				return false;
+			}
+			if (parentNode.image != "ogc.png"){
+				if (parentNode.STAdata.length>1){
+					alert("Parent node has more than a single record. Please select a record first.");
+					return false;
+				}
+				var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), false);
+				if (parentEntityName!=entityName && STAEntities[entityName].entities.indexOf(parentEntityName)==-1) {
+					alert("Parent node ("+STAEntities[parentEntityName].singular+") is not a/an " + STAEntities[entityName].singular + " or is directly related to a/an " +  STAEntities[entityName].singular);
+					return false;
+				}
+			}			
+			cdns.push('<span id="dlgCreateUpdateDeleteEntityType">',STAEntities[entityName].singular, "</span>:<br>");
+			if (parentNode.image != "ogc.png" || parentEntityName==entityName)
+				cdns.push('Id: <input id="dlgCreateUpdateDeleteEntity_id" type="text" readonly=="readonly"><br>');				
+			for (var i=0; i<STAEntities[entityName].properties.length; i++){
+				if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
+					continue;
+				cdns.push('<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '">', STAEntities[entityName].properties[i], ': </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '" type="text"><br>');
+			}
+
+			document.getElementById("dlgCreateUpdateDeleteEntityProperties").innerHTML=cdns.join("");
+
+			if (parentNode.image != "ogc.png" && parentEntityName==entityName) {
+				var record=parentNode.STAdata[0];
+				if (!record["@iot.id"]){
+					alert("Cannot find @iot.id. Did you removed in a select?");
+					return false;
+				}
+				document.getElementById("dlgCreateUpdateDeleteEntity_" + "id").value=record["@iot.id"];
+				for (var i=0; i<STAEntities[entityName].properties.length; i++) {
+					if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
+						continue;
+					document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]).value=record[STAEntities[entityName].properties[i]] ? record[STAEntities[entityName].properties[i]] : "";
+				}
+				document.getElementById("dlgCreateUpdateDeleteEntityCreate").style.display="none";
+				document.getElementById("dlgCreateUpdateDeleteEntityUpdate").style.display="inline-block";
+				document.getElementById("dlgCreateUpdateDeleteEntityDelete").style.display="inline-block";
+				return true;
+			}
+			else /*if (STAEntities[entityName].entities.indexOf(parentEntityName)!=-1)*/ {
+				if (entityName=="Parties" && CriptoName && CriptoName!="Anonymous") {
+					document.getElementById("dlgCreateUpdateDeleteEntity_authId").value=CriptoName;
+					for (var i=0; i<STAEntities[entityName].properties.length; i++) {
+						if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
+							continue;
+						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]).readOnly=true;
+					}
+				}
+				document.getElementById("dlgCreateUpdateDeleteEntityCreate").style.display="inline-block";
+				document.getElementById("dlgCreateUpdateDeleteEntityUpdate").style.display="none";
+				document.getElementById("dlgCreateUpdateDeleteEntityDelete").style.display="none";
+			}
+			return true;
+		}
+
+		function GetCreateEntity(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogCreateUpdateDeleteEntity").close();
+			var node=currentNode;
+
+			var parentNodes=GetParentNodes(node);
+			if (parentNodes.length==0)
+				return;
+
+			var entityName=getSTAEntityPlural(document.getElementById("dlgCreateUpdateDeleteEntityType").innerHTML)
+			var url=getSTAURLRoot(parentNodes[0].STAURL);
+			var obj={};
+			showInfoMessage("Creating a/an "+ STAEntities[entityName].singular +"...");
+
+			for (var i=0; i<parentNodes.length; i++) {
+				var parentNode=parentNodes[i];
+				if (parentNode.image == "ogc.png")
+					continue;
+				if (i!=0 && getSTAURLRoot(parentNode.STAURL)!=url) {
+					alert("Not all parent nodes are from the same root URL: " + getSTAURLRoot(parentNode.STAURL) + ", " + url);
+					continue;
+				}
+			
+				var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), true);
+				var entity;
+				if (STAEntities[entityName].entities.indexOf(parentEntityName)!=-1)
+					entity=parentEntityName;
+				else if (STAEntities[entityName].entities.indexOf(STAEntities[parentEntityName].singular)!=-1)
+					entity=STAEntities[parentEntityName].singular;
+				else {
+					alert("Parent node ("+STAEntities[parentEntityName].singular+") is not directly related to a/an " +  STAEntities[entityName].singular);
+					continue;
+				}
+
+				if (!parentNode.STAdata || parentNode.STAdata.length==0){
+					alert("Parent node has no STA data associated");
+					return;
+				}
+				if (parentNode.STAdata.length>1){
+					alert("Parent node '"+STAEntities[parentEntityName].singular+"' has more than a single record. Please select a record first.");
+					return;
+				}
+				var record=parentNode.STAdata[0];
+				if (!record["@iot.id"]){
+					alert("Cannot find @iot.id. Did you removed in a select?");
+					return;
+				}
+				if (obj[entity]){  //add to a plural array
+					if (entity==STAEntities[parentEntityName].singular){
+						alert("An element '"+STAEntities[entityName].singular+"' can not have more than one '"+parentEntityName+"' Associated. One the first will be considered.");
+						continue;
+					}					
+					obj[parentEntityName].push({"@iot.id": record["@iot.id"]});
+				}
+				else if (entity==STAEntities[parentEntityName].singular)
+					obj[STAEntities[parentEntityName].singular] = {"@iot.id": record["@iot.id"]}
+				else  //Add to a plural element
+					obj[parentEntityName]=[{"@iot.id": record["@iot.id"]}];
+	
+			}
+			var prop;
+			for (var i=0; i<STAEntities[entityName].properties.length; i++) {
+				if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
+					continue;
+				prop=document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]).value;
+				if (prop!=="")
+					obj[STAEntities[entityName].properties[i]]=(entityName=="Observations" && STAEntities[entityName].properties[i]=="result" && !isNaN(prop)) ? parseFloat(prop) : prop;
+			}
+
+			GetObjectId(url, entityName, obj).then(
+				function(value) { 
+					showInfoMessage("Existing in: " + value);
+					node.STAURL=getUrlToId(url, entityName, value);
+					node.STAdata=[];
+					node.STAdata.push(obj);
+					node.STAdata[0]["@iot.id"]=isNaN(value) ? value : parseInt(value);
+					networkNodes.update(node);
+				},
+				function(error) { 
+					showInfoMessage('Error creating entity. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
+					console.log(error) ;
+				}
+			);	
+		}
+
 		function GetSelectRow(event) {
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogSelectRow").close();
@@ -2778,10 +3039,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					currentNode.STAUrlAPI = AddQueryParamsToURL(parentNode.STAURL, "$filter=");
 
 				stopreadInformationRowFilterSTA = false;
-				var entity;
-				if (getSTAURLLastEntity(currentNode.STAURL)) {
-					entity = getSTAURLLastEntity(currentNode.STAURL);
-				}
+				var entity=getSTAURLLastEntity(currentNode.STAURL);
 
 				readInformationRowFilterSTA(currentNode.STAelementFilter, entity, "no", "no"); //apply filter
 				currentNode.STAURL = currentNode.STAUrlAPI;
@@ -4330,7 +4588,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			if (nodeFrom.STAURL && IdOfSTAEntity(nodeTo) != -1) {
 				if (nodeFrom.image=="ogc.png")
 					nodeTo.STAURL = nodeFrom.STAURL + "/" + STAEntitiesArray[IdOfSTAEntity(nodeTo)];
-				else
+				else 
 					nodeTo.STAURL = nodeFrom.STAURL + "/" + getConnectionSTAEntity(nodeFrom, nodeTo).entity;
 				nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
 
@@ -4362,11 +4620,11 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				networkNodes.update(nodeTo);
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
-					if (nodeFrom.OGCType){
+					/*if (nodeFrom.OGCType){
 					if (nodeTo.image == "FilterRowsSTA.png"&& nodeFrom.OGCType=="OGCAPIitems"){
-						//askForConformanceInOGCAPIFeatures();//OCGAPICconformande will be in select node
+						askForConformanceInOGCAPIFeatures();//OCGAPICconformande will be in select node
 					}
-				}
+				}*/
 				//showInfoMessage("Selecting " + (nodeTo.image == "SelectColumnsSTA.png" ? "columns" : "rows") + " to STA...");
 				//LoadJSONNodeSTAData(nodeTo);
 				return true;
@@ -4488,18 +4746,25 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				currentNode = networkNodes.get(params.nodes[0])
 				if (currentNode.image == "ogc.png") {
 					document.getElementById("divTitleDialogSTAURL").innerHTML = "SensorThings API and STAplus";
-					document.getElementById("DialogSTAURLInput").value = currentNode.STAURL;
+					if (currentNode.STAURL)
+						document.getElementById("DialogSTAURLInput").value = currentNode.STAURL;
 					document.getElementById("DialogSTAURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedSTAurls);
 					//document.getElementById("DialogSTAURLInput").readOnly = false;
 					//document.getElementById("DialogSTAURLOk").style.display = "inline-block";
 					document.getElementById("DialogSTAURL").showModal();
 				}
-				if (currentNode.image == "ogcAPIs.png") {
+				else if (currentNode.image == "ogcAPIs.png") {
 					document.getElementById("divTitleDialogSTAURL").innerHTML = "OGC API collections";
-					document.getElementById("DialogSTAURLInput").value = currentNode.STAURL;
+					if (currentNode.STAURL)
+						document.getElementById("DialogSTAURLInput").value = currentNode.STAURL;
 					document.getElementById("DialogSTAURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedOGCAPIurls);
-					//document.getElementById("DialogSTAURLInput").readOnly = false;
-					//document.getElementById("DialogSTAURLOk").style.display = "inline-block";
+					document.getElementById("DialogSTAURL").showModal();
+				}
+				else if (currentNode.image == "csw.png") {
+					document.getElementById("divTitleDialogSTAURL").innerHTML = "Catalogues (OGC CSW)";
+					if (currentNode.STAURL)
+						document.getElementById("DialogSTAURLInput").value = currentNode.STAURL;
+					document.getElementById("DialogSTAURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedCatalogues);
 					document.getElementById("DialogSTAURL").showModal();
 				}
 				else if (currentNode.image == "ViewQuerySTA.png") {
@@ -4682,6 +4947,20 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					IdOfSTASpecialQueries(currentNode) != -1) {
 					document.getElementById("DialogSelectNRecords").showModal();
 				}
+				else if (currentNode.image == "ObservedProperty.png" || currentNode.image == "Observation.png" || 
+					currentNode.image == "FeatureOfInterest.png" || currentNode.image == "Sensor.png" || 
+					currentNode.image == "Thing.png" || currentNode.image == "Location.png" || 
+					currentNode.image == "HistoricalLocation.png" || currentNode.image == "DataStream.png" || 
+					currentNode.image == "MultiDatastream.png" || currentNode.image == "Party.png" || 
+					currentNode.image == "Campaign.png" || currentNode.image == "License.png" || 
+					currentNode.image == "ObservationGroup.png" || currentNode.image == "Relation.png") {
+					startingNodeContextId=currentNode.id;
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode) {
+						if (PopulateCreateUpdateDeleteEntity(getSTAEntityPlural(removeExtension(currentNode.image), true), currentNode, parentNode))
+							document.getElementById("DialogCreateUpdateDeleteEntity").showModal();
+					}
+				}
 			}
 		}
 
@@ -4800,19 +5079,13 @@ async function requestAndRefreshCountResults(currentNode, period) {
 
 			if (image == "ogc.png")
 			{
-				node.STAURL = config.STAurl;
 				node.STAExpectedLength = 100;
 				networkNodes.add(node);
-				//showInfoMessage("Requesting STA landing page");
-				//LoadJSONNodeSTAData(node);
 			}
 			else if (image == "ogcAPIs.png")
 			{
-				node.STAURL = config.OGCAPIurl;
 				node.STAExpectedLength = 100;
 				networkNodes.add(node);
-				//showInfoMessage("Requesting OGC collection page");
-				//LoadJSONNodeSTAData(node);
 			}
 			else
 			{
@@ -4983,6 +5256,14 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					showInfoMessage("Requesting OGC API collections page...");
 					await LoadJSONNodeSTAData(node, function () {
 						showInfoMessage("Reload OGC API collections page and dependencies completed.");
+					});
+				}
+				else if (node.image=="csw.png")
+				{
+					showInfoMessage("Reload OGC CSW records and dependencies...");
+					showInfoMessage("Requesting OGC CSW collections...");
+					await LoadJSONNodeSTAData(node, function () {
+						showInfoMessage("Reload OGC CSW records and dependencies completed.");
 					});
 				}
 			}
