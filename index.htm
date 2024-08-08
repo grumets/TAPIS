@@ -846,7 +846,7 @@
 				Observations: {singular: "Observation", entities: ["Datastream", "MultiDatastream", "FeatureOfInterest", "ObservationGroups", "Subjects", "Objects"], properties: ["phenomenonTime", "resultTime", "result", "resultQuality", "validTime", "parameters"], entityRelations: ["Object", "Subject"]}, 
       				FeaturesOfInterest: {singular: "FeatureOfInterest", entities: ["Observations"], properties: ["name", "description", "encodingType", "feature", "properties"]},
 				Sensors: {singular: "Sensor", entities: ["Datastreams", "MultiDatastreams"], properties: ["name", "description", "encodingType", "metadata", "properties"]}, 
-				Things: {singular: "Thing", entities: ["Datastreams", "MultiDatastreams", "Party", "Locations", "HistoricalLocations"], properties: ["name", "description", "proprties"]},
+				Things: {singular: "Thing", entities: ["Datastreams", "MultiDatastreams", "Party", "Locations", "HistoricalLocations"], properties: ["name", "description", "properties"]},
 				Locations: {singular: "Location", entities: ["Things", "HistoricalLocations"], properties: ["name", "description", "encodingType", "location", "properties"]},
 				HistoricalLocations: {singular: "HistoricalLocation", entities: ["Things", "Location"], properties: ["time"]},
 				Datastreams: {singular: "Datastream", entities: ["Party", "Sensor", "ObservedProperty", "Campaigns", "License", "Observations", "Thing"], properties: ["name", "description", "unitOfMeasurement", "observationType", "observedArea", "phenomenonTime", "resultTime", "properties"]},
@@ -1355,7 +1355,9 @@
 			document.getElementById("ButtonsContextMenuObjects").innerHTML = s;
 		}
 
-		function eliminarParamContentType(contentType) {
+		function removeParamContentType(contentType) {
+			if (!contentType)
+				return contentType;
 			var i=contentType.indexOf(';')
 			if (i<0)
 				return contentType;
@@ -1441,6 +1443,47 @@
 			return simpleUrlRecords; 
 		}
 
+		function standardStatusText(status){
+			switch (status){
+				case 400:
+					return "Bad Request. The request cannot be fulfilled due to bad syntax.";
+				case 401: 
+					return "Unauthorized. The request was a legal request, but the server is refusing to respond to it. Please authenticate using the Login button and try again.";
+				case 403:
+					return "Forbidden. The request was a legal request, but the server is refusing to respond to it.";
+				case 404: 
+					return "Not Found. The requested page could not be found but may be available again in the future.";
+				case 405: 
+					return "Method Not Allowed. A request was made of a page using a request method not supported by that page.";
+				case 406: 
+					return "Not Acceptable. The server can only generate a response that is not accepted by the client.";
+				case 407: 
+					return "Proxy Authentication Required. The client must first authenticate itself with the proxy.";
+				case 408: 
+					return "Request Timeout. The server timed out waiting for the request.";
+				case 409: 
+					return "Conflict. The request could not be completed because of a conflict in the request.";
+				case 410: 
+					return "Gone. The requested page is no longer available.";
+				case 411: 
+					return "Length Required. The \"Content-Length\" is not defined. The server will not accept the request without it.";
+				case 412: 
+					return "Precondition Failed. The precondition given in the request evaluated to false by the server.";
+				case 413: 
+					return "Request Too Large. The server will not accept the request, because the request entity is too large.";
+				case 414: 
+					return "Request-URI Too Long. The server will not accept the request, because the URI is too long. Occurs when you convert a POST request to a GET request with a long query information.";
+				case 415: 
+					return "Unsupported Media Type	The server will not accept the request, because the media type is not supported."; 
+				case 416: 
+					return "Range Not Satisfiable. The client has asked for a portion of the file, but the server cannot supply that portion.";
+				case 417: 
+					return "Expectation Failed.";
+				default:
+					return "";
+			}
+		}
+
 		//https://web.dev/fetch-api-error-handling/
 		//Despite its name it can also be used for retrieving non-json files (data as text in value.text).
 		//To do GET it can be used with the first parameter only 
@@ -1467,14 +1510,14 @@
 			// Uses the 'optional chaining' operator
 			if (!(response?.ok)) {
 				var body;
-				if (eliminarParamContentType(response.headers.get('Content-Type'))=="application/json" &&
+				if (removeParamContentType(response.headers.get('Content-Type'))=="application/json" &&
 					(response.headers.get('Content-Length')==null || parseInt(response.headers.get('Content-Length'))>0)) {
 					body=await response.json();
 					body=JSON.stringify(body);
 				}
 				else
 					body=await response.text();
-				showInfoMessage("HTTP Response Code: " + response?.status + " reading <small>" + url + "</small>: " + response?.statusText + (body ? " "+body : ""));
+				showInfoMessage("Error: HTTP " + (method ? method : "GET") + " URL: " + url + ", HTTP code: " + response?.status + ", Description: "+ (response.statusText ? response.statusText : standardStatusText(response.status)) + (body ? ", " + body : ""));
 				console.log("HTTP Response Code: " + response?.status + ": " + response?.statusText + (body ? JSON.stringify(body) : ""));
 				return response;
 			}
@@ -1486,7 +1529,7 @@
 						headersObj[headersToGet[i]]=response.headers.get(headersToGet[i]);
 					//Enumetates all headers: for(let entry of response.headers.entries()) console.log(entry) })
 				}
-				if (eliminarParamContentType(response.headers.get('Content-Type'))=="application/json" &&
+				if (removeParamContentType(response.headers.get('Content-Type'))=="application/json" &&
 					(response.headers.get('Content-Length')==null || parseInt(response.headers.get('Content-Length'))>0))
 					return {obj: await response.json(), responseHeaders: headersObj, ok: true};
 				else
@@ -2582,7 +2625,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				if (response?.ok)
 					return ExtractIdFromURL(response.responseHeaders['Location']);
 				else
-					throw {name: "Error creating resource", message: "Status: "+ response.status, at: "", text: url+"/"+objsName+ "?$filter=" + AddKeysToFilter("", obj)};
+					null; /*throw {name: "Error creating resource", message: "Status: "+ response.status, at: "", text: url+"/"+objsName+ "?$filter=" + AddKeysToFilter("", obj)};*/
 			}
 		}
 
@@ -2812,41 +2855,78 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				!isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 		}
 
-		function PopulateCreateUpdateDeleteEntity(entityName, currentNode, parentNode) {
+		function PopulateCreateUpdateDeleteEntity(entityName, currentNode) {
 			var cdns=[];
-			if (!parentNode.STAdata || parentNode.STAdata.length==0){
-				alert("Parent node has no STA data associated");
+
+			var parentNodes=GetParentNodes(currentNode);
+			if (parentNodes.length==0) {
+				alert("Parent(s) node(s) are needed to know about the STA root url");
 				return false;
 			}
-			if (parentNode.image != "ogc.png"){
-				if (parentNode.STAdata.length>1){
-					alert("Parent node has more than a single record. Please select a record first.");
-					return false;
-				}
-				var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), false);
-				if (parentEntityName!=entityName && STAEntities[entityName].entities.indexOf(parentEntityName)==-1) {
-					alert("Parent node ("+STAEntities[parentEntityName].singular+") is not a/an " + STAEntities[entityName].singular + " or is directly related to a/an " +  STAEntities[entityName].singular);
-					return false;
-				}
-			}			
+
 			cdns.push('<span id="dlgCreateUpdateDeleteEntityType">',STAEntities[entityName].singular, "</span>:<br>");
-			if (parentNode.image != "ogc.png" || parentEntityName==entityName)
-				cdns.push('Id: <input id="dlgCreateUpdateDeleteEntity_id" type="text" readonly=="readonly"><br>');				
+			for (var i=0; i<parentNodes.length; i++)
+			{
+				var parentNode=parentNodes[i];
+				if (!parentNode.STAdata || parentNode.STAdata.length==0){
+					alert("Parent node has no STA data associated");
+					return false;
+				}
+				if (parentNode.image != "ogc.png"){
+					if (parentNode.STAdata.length>1){
+						alert("Parent node has more than a single record. Please select a record first.");
+						return false;
+					}
+					var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), false);
+					if (parentEntityName!=entityName && STAEntities[entityName].entities.indexOf(parentEntityName)==-1 && STAEntities[entityName].entities.indexOf(STAEntities[parentEntityName].singular)==-1) {
+						alert("Parent node ("+STAEntities[parentEntityName].singular+") is not a/an " + STAEntities[entityName].singular + " or is directly related to a/an " +  STAEntities[entityName].singular);
+						return false;
+					}
+					if (parentEntityName==entityName) { 
+						if (i>1) {
+							alert("One parent node is the same as the entity " + STAEntities[entityName].singular + ". This is for update or delete the entity. In this case, only one parent node is allowed.");
+							return false;
+						}
+						var record=parentNode.STAdata[0];
+						if (!record["@iot.id"]){
+							alert("Cannot find @iot.id. Did you removed in a select?");
+							return false;
+						}
+						cdns.push('Id: <input id="dlgCreateUpdateDeleteEntity_id" type="text" value="', record["@iot.id"], '" readonly=="readonly"><br>');
+					}
+					else { 
+						var record=parentNode.STAdata[0];
+						if (!record["@iot.id"]){
+							alert("Cannot find @iot.id in parent node " + STAEntities[parentEntityName].singular + ". Did you removed in a select?");
+							return false;
+						}
+						cdns.push(STAEntities[parentEntityName].singular, ' id: <a href="', getUrlToId(getSTAURLRoot(parentNodes[0].STAURL), parentEntityName, record["@iot.id"]), '" target="_blank">', record["@iot.id"], '</a><br>');
+					}
+				}
+			}
+
 			for (var i=0; i<STAEntities[entityName].properties.length; i++){
 				if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
 					continue;
+				if ((entityName=="Locations" && STAEntities[entityName].properties[i]=="location") || 
+				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i]=="feature"))
+				{
+					//For the moment in supporting only a point
+					cdns.push('<fieldset>',
+						'<legend>', STAEntities[entityName].properties[i], ' (point):</legend>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_longitude">', 'longitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_longitude" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_latitude">', 'latitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_latitude" type="text"><br>',
+						'</fieldset>',
+						'<br>');
+					continue;	
+				}
 				cdns.push('<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '">', STAEntities[entityName].properties[i], ': </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '" type="text"><br>');
 			}
 
 			document.getElementById("dlgCreateUpdateDeleteEntityProperties").innerHTML=cdns.join("");
 
-			if (parentNode.image != "ogc.png" && parentEntityName==entityName) {
-				var record=parentNode.STAdata[0];
-				if (!record["@iot.id"]){
-					alert("Cannot find @iot.id. Did you removed in a select?");
-					return false;
-				}
-				document.getElementById("dlgCreateUpdateDeleteEntity_" + "id").value=record["@iot.id"];
+			if (parentNodes[0].image != "ogc.png" && parentEntityName==entityName) {
+				//Edit or delete
 				for (var i=0; i<STAEntities[entityName].properties.length; i++) {
 					if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
 						continue;
@@ -2857,7 +2937,8 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				document.getElementById("dlgCreateUpdateDeleteEntityDelete").style.display="inline-block";
 				return true;
 			}
-			else /*if (STAEntities[entityName].entities.indexOf(parentEntityName)!=-1)*/ {
+			else {
+				//Create
 				if (entityName=="Parties" && CriptoName && CriptoName!="Anonymous") {
 					document.getElementById("dlgCreateUpdateDeleteEntity_authId").value=CriptoName;
 					for (var i=0; i<STAEntities[entityName].properties.length; i++) {
@@ -2865,6 +2946,11 @@ async function requestAndRefreshCountResults(currentNode, period) {
 							continue;
 						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]).readOnly=true;
 					}
+				}
+				else if (entityName=="Locations" || entityName=="FeaturesOfInterest")
+				{
+					document.getElementById("dlgCreateUpdateDeleteEntity_encodingType").value="application/geo+json";
+					document.getElementById("dlgCreateUpdateDeleteEntity_encodingType").readOnly=true;	
 				}
 				document.getElementById("dlgCreateUpdateDeleteEntityCreate").style.display="inline-block";
 				document.getElementById("dlgCreateUpdateDeleteEntityUpdate").style.display="none";
@@ -2937,19 +3023,31 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			for (var i=0; i<STAEntities[entityName].properties.length; i++) {
 				if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
 					continue;
+				if ((entityName=="Locations" && STAEntities[entityName].properties[i]=="location") || 
+				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i]=="feature"))
+				{
+					//For the moment in supporting only a point
+					obj[STAEntities[entityName].properties[i]]={"type": "Point", "coordinates": []};
+					obj[STAEntities[entityName].properties[i]].coordinates[0]=parseFloat(document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]+"_longitude").value);
+					obj[STAEntities[entityName].properties[i]].coordinates[1]=parseFloat(document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]+"_latitude").value);
+					continue;	
+				}
 				prop=document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]).value;
 				if (prop!=="")
 					obj[STAEntities[entityName].properties[i]]=(entityName=="Observations" && STAEntities[entityName].properties[i]=="result" && !isNaN(prop)) ? parseFloat(prop) : prop;
 			}
 
 			GetObjectId(url, entityName, obj).then(
-				function(value) { 
-					showInfoMessage("Existing in: " + value);
-					node.STAURL=getUrlToId(url, entityName, value);
-					node.STAdata=[];
-					node.STAdata.push(obj);
-					node.STAdata[0]["@iot.id"]=isNaN(value) ? value : parseInt(value);
-					networkNodes.update(node);
+				function(value) {
+					if (value)
+					{ 
+						showInfoMessage('Available at: <a href="', getUrlToId(url, entityName, value), '" target="_blank">' + value + '</a>');
+						node.STAURL=getUrlToId(url, entityName, value);
+						node.STAdata=[];
+						node.STAdata.push(obj);
+						node.STAdata[0]["@iot.id"]=isNaN(value) ? value : parseInt(value);
+						networkNodes.update(node);
+					}
 				},
 				function(error) { 
 					showInfoMessage('Error creating entity. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -4955,9 +5053,8 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					currentNode.image == "Campaign.png" || currentNode.image == "License.png" || 
 					currentNode.image == "ObservationGroup.png" || currentNode.image == "Relation.png") {
 					startingNodeContextId=currentNode.id;
-					var parentNode=GetFirstParentNode(currentNode);
-					if (parentNode) {
-						if (PopulateCreateUpdateDeleteEntity(getSTAEntityPlural(removeExtension(currentNode.image), true), currentNode, parentNode))
+					if (GetFirstParentNode(currentNode)) {
+						if (PopulateCreateUpdateDeleteEntity(getSTAEntityPlural(removeExtension(currentNode.image), true), currentNode))
 							document.getElementById("DialogCreateUpdateDeleteEntity").showModal();
 					}
 				}
