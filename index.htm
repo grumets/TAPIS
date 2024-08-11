@@ -2588,25 +2588,43 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			var objArray=Object.keys(obj);
 			for (var i=0; i<objArray.length; i++)
 			{
-				if (typeof obj[objArray[i]]==="object")
+				var propName=objArray[i];
+				var value=obj[propName];
+				if (value==null)  //Do not consider null properties in the queries
+ 					continue;
+				if (typeof value==="object")
 				{
-					if (objArray[i]=="feature")
-						url+=(url=="" ? "" : " and ") + "st_equals(feature, geography'POINT (" + obj[objArray[i]].geometry.coordinates[0] + " " + obj[objArray[i]].geometry.coordinates[1] + ")')";
-					else if (Array.isArray(obj[objArray[i]]) && obj[objArray[i]].length==1 && typeof obj[objArray[i]][0]==="object")
-						url=AddKeysToFilter(url, obj[objArray[i]][0], prefix ? prefix + "/" + objArray[i] : objArray[i]);
+					if (propName=="feature" || propName=="location"){
+						var coords;
+						if (value.geometry && value.geometry.coordinates)
+							coords=value.geometry.coordinates;
+						else if (value.coordinates)
+							coords=value.coordinates;
+						else {
+							alert("Wrong format for 'feature' or 'location'. I cannot find the coordinates.");
+							continue;
+						}
+						if (!Array.isArray(coords) || 
+							coords.length<2 || 
+							Array.isArray(coords[0]) || Array.isArray(coords[1])) {
+							alert("The coordinates format for 'feature' or 'location' is not supported. Only a Point structure is supported: Array of two decimal numbers.");
+							continue;
+						}
+						url+=(url=="" ? "" : " and ") + "st_equals(" + propName + ", geography'POINT (" + coords[0] + " " + coords[1] + ")')";
+					}
+					else if (Array.isArray(value) && value.length==1 && typeof value[0]==="object")
+						url=AddKeysToFilter(url, value[0], prefix ? prefix + "/" + propName : propName);
 					else
-						url=AddKeysToFilter(url, obj[objArray[i]], prefix ? prefix + "/" + objArray[i] : objArray[i]);
+						url=AddKeysToFilter(url, value, prefix ? prefix + "/" + propName : propName);
+					continue;
 				}
-				else if (objArray[i]=="encodingType")
+				if (propName=="encodingType")
 					continue;  //I'm ignoring this element in the queries.
+				url+=(url=="" ? "" : " and ") + (prefix ? prefix + "/" : "")+ propName + " eq ";
+				if (typeof value==="number" || propName=="resultTime" || propName=="phenomenonTime" || propName=="validTime" || propName=="creationTime" || propName=="startTime" || propName=="endTime")
+					url+=value;
 				else
-				{
-					url+=(url=="" ? "" : " and ") + (prefix ? prefix + "/" : "")+ objArray[i] + " eq ";
-					if (typeof obj[objArray[i]]==="number" || objArray[i]=="resultTime" || objArray[i]=="phenomenonTime")
-						url+=obj[objArray[i]];
-					else
-						url+="'" + obj[objArray[i]] + "'";
-				}
+					url+="'" + value + "'";
 			}
 			return url;
 		}
@@ -2906,7 +2924,8 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			}
 
 			for (var i=0; i<STAEntities[entityName].properties.length; i++){
-				if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
+				if ((entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties") || 
+					((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i]=="observedArea" || STAEntities[entityName].properties[i]=="phenomenonTime" || STAEntities[entityName].properties[i]=="resultTime")))
 					continue;
 				if ((entityName=="Locations" && STAEntities[entityName].properties[i]=="location") || 
 				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i]=="feature"))
@@ -2919,6 +2938,17 @@ async function requestAndRefreshCountResults(currentNode, period) {
 						'</fieldset>',
 						'<br>');
 					continue;	
+				}
+				if (entityName=="Datastreams" && STAEntities[entityName].properties[i]=="unitOfMeasurement") {
+					//Something similar needs to be done for MultiDataStream
+					cdns.push('<fieldset>',
+						'<legend>', STAEntities[entityName].properties[i], ':</legend>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_name">', 'name: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_name" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_symbol">', 'symbol: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_symbol" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_definition">', 'definition: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_definition" type="text"><br>',
+						'</fieldset>',
+						'<br>');
+					continue;
 				}
 				cdns.push('<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '">', STAEntities[entityName].properties[i], ': </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '" type="text"><br>');
 			}
@@ -2941,17 +2971,17 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				//Create
 				if (entityName=="Parties" && CriptoName && CriptoName!="Anonymous") {
 					document.getElementById("dlgCreateUpdateDeleteEntity_authId").value=CriptoName;
-					for (var i=0; i<STAEntities[entityName].properties.length; i++) {
-						if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
-							continue;
+					for (var i=0; i<STAEntities[entityName].properties.length; i++)
 						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]).readOnly=true;
-					}
 				}
 				else if (entityName=="Locations" || entityName=="FeaturesOfInterest")
 				{
 					document.getElementById("dlgCreateUpdateDeleteEntity_encodingType").value="application/geo+json";
 					document.getElementById("dlgCreateUpdateDeleteEntity_encodingType").readOnly=true;	
 				}
+				else if (entityName=="Datastreams")	
+					document.getElementById("dlgCreateUpdateDeleteEntity_observationType").value="http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement";
+
 				document.getElementById("dlgCreateUpdateDeleteEntityCreate").style.display="inline-block";
 				document.getElementById("dlgCreateUpdateDeleteEntityUpdate").style.display="none";
 				document.getElementById("dlgCreateUpdateDeleteEntityDelete").style.display="none";
@@ -3021,7 +3051,8 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			}
 			var prop;
 			for (var i=0; i<STAEntities[entityName].properties.length; i++) {
-				if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
+				if ((entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties") || 
+					((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i]=="observedArea" || STAEntities[entityName].properties[i]=="phenomenonTime" || STAEntities[entityName].properties[i]=="resultTime")))
 					continue;
 				if ((entityName=="Locations" && STAEntities[entityName].properties[i]=="location") || 
 				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i]=="feature"))
@@ -3032,6 +3063,15 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					obj[STAEntities[entityName].properties[i]].coordinates[1]=parseFloat(document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]+"_latitude").value);
 					continue;	
 				}
+				if (entityName=="Datastreams" && STAEntities[entityName].properties[i]=="unitOfMeasurement")
+				{
+					//Something similar needs to be done for MultiDataStream
+					obj[STAEntities[entityName].properties[i]]={};
+					obj[STAEntities[entityName].properties[i]].name=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_name").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_name").value : null;
+					obj[STAEntities[entityName].properties[i]].symbol=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_symbol").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_symbol").value : null; 
+					obj[STAEntities[entityName].properties[i]].definition=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_definition").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_definition").value : null;
+					continue;
+				}
 				prop=document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]).value;
 				if (prop!=="")
 					obj[STAEntities[entityName].properties[i]]=(entityName=="Observations" && STAEntities[entityName].properties[i]=="result" && !isNaN(prop)) ? parseFloat(prop) : prop;
@@ -3041,7 +3081,8 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				function(value) {
 					if (value)
 					{ 
-						showInfoMessage('Available at: <a href="', getUrlToId(url, entityName, value), '" target="_blank">' + value + '</a>');
+						document.getElementById("DialogCreateUpdateDeleteEntity").close();
+						showInfoMessage('Available at: <a href="' + getUrlToId(url, entityName, value) + '" target="_blank">' + value + '</a>');
 						node.STAURL=getUrlToId(url, entityName, value);
 						node.STAdata=[];
 						node.STAdata.push(obj);
@@ -4215,7 +4256,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			dataAttributes=deapCopy(jsonschema.properties.features.items.properties.properties.properties);
 			dataAttributes["geometry"]={
 				"type": "object",
-				"definition": "DataStream/Observations/FeatureOfInterest/feature/geometry"
+				"definition": "Datastream/Observations/FeatureOfInterest/feature/geometry"
 			};
 			return dataAttributes;
 		}
@@ -5048,7 +5089,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				else if (currentNode.image == "ObservedProperty.png" || currentNode.image == "Observation.png" || 
 					currentNode.image == "FeatureOfInterest.png" || currentNode.image == "Sensor.png" || 
 					currentNode.image == "Thing.png" || currentNode.image == "Location.png" || 
-					currentNode.image == "HistoricalLocation.png" || currentNode.image == "DataStream.png" || 
+					currentNode.image == "HistoricalLocation.png" || currentNode.image == "Datastream.png" || 
 					currentNode.image == "MultiDatastream.png" || currentNode.image == "Party.png" || 
 					currentNode.image == "Campaign.png" || currentNode.image == "License.png" || 
 					currentNode.image == "ObservationGroup.png" || currentNode.image == "Relation.png") {
