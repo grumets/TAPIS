@@ -2631,7 +2631,10 @@ async function requestAndRefreshCountResults(currentNode, period) {
 		}
 
 		async function GetObjectId(url, objsName, obj){
-			var response=await HTTPJSONData(url+"/"+objsName+ "?$filter=" + encodeURIComponent(AddKeysToFilter("", obj)));
+			if (objsName=="Parties")
+				var response=await HTTPJSONData(url+"/"+objsName+ "?$filter=authId eq '" + obj.authId + "'");
+			else
+				var response=await HTTPJSONData(url+"/"+objsName+ "?$filter=" + encodeURIComponent(AddKeysToFilter("", obj)));
 			if (!response || (!response.obj && !response.ok && response.status!=404))
 				throw {name: "Error requesting resource existance.", message: "Status: "+ response.status, at: "", text: url+"/"+objsName+ "?$filter=" + AddKeysToFilter("", obj)};
 			var data=response.obj;
