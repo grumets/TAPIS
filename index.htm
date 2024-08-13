@@ -1365,7 +1365,7 @@
 				return contentType.substring(0, i);
 		}
 
-		var CriptoName=null;
+		var CriptoName=null, DisplayName="";
 		function AddHeadersIfNeeded(options) {
 			if (CriptoName &&
 			    hello("authenix").getAuthResponse() &&
@@ -2000,9 +2000,10 @@
 					document.getElementById("buttonOpenLogout").style.display="inline-block";
 					var jwt_elems=parseJwt(success.authResponse.id_token)
 					CriptoName=jwt_elems.sub;
+					DisplayName=jwt_elems.preferred_username ? jwt_elems.preferred_username : ""
 					if (!CriptoName)
 						CriptoName=="Anonymous"
-					document.getElementById("UserInfoText").innerHTML=jwt_elems.preferred_username +" at "+ jwt_elems.idp_name;
+					document.getElementById("UserInfoText").innerHTML=DisplayName +" at "+ jwt_elems.idp_name;
 				},
 				function(e) 
 				{
@@ -2969,10 +2970,16 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			}
 			else {
 				//Create
-				if (entityName=="Parties" && CriptoName && CriptoName!="Anonymous") {
-					document.getElementById("dlgCreateUpdateDeleteEntity_authId").value=CriptoName;
-					for (var i=0; i<STAEntities[entityName].properties.length; i++)
-						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]).readOnly=true;
+				if (entityName=="Parties") {
+					if (CriptoName && CriptoName!="Anonymous")
+						document.getElementById("dlgCreateUpdateDeleteEntity_authId").value=CriptoName;
+					else {
+						alert("To create a STA Pa·rty, you should login first.");
+						return false;
+					}
+					document.getElementById("dlgCreateUpdateDeleteEntity_authId").readOnly=true;
+					document.getElementById("dlgCreateUpdateDeleteEntity_role").value="individual";
+					document.getElementById("dlgCreateUpdateDeleteEntity_displayName").value=DisplayName;
 				}
 				else if (entityName=="Locations" || entityName=="FeaturesOfInterest")
 				{
