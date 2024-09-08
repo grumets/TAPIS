@@ -556,6 +556,7 @@
 			</fieldset>
 			<div class="center">
 				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "CSV")'>Done</button>
+				<button value="cancel" formmethod="dialog">Close</button>
 			</div>
 		</form>
 	</dialog>
@@ -1328,8 +1329,12 @@
 			
 			PlaceButtonsSTAEntities();
 			var s = "";
-			for (var i = 0; i < STAEntitiesArray.length; i++)
-			{
+			for (var i = 0; i < ServicesAndAPIsArray.length; i++) {
+				s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + ServicesAndAPIs[ServicesAndAPIsArray[i]].name + "\", \"" + ServicesAndAPIsArray[i] + ".png\");'><img src='" + ServicesAndAPIsArray[i] + ".png' height='20' valign='middle'> " + ServicesAndAPIs[ServicesAndAPIsArray[i]].description + "</button> ";
+				s += i%2 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
+			}
+			s += "<br>";
+			for (var i = 0; i < STAEntitiesArray.length; i++) {
 				s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + STAEntitiesArray[i] + "\", \"" + STAEntitiesArray[i] + ".png\");'><img src='" + STAEntitiesArray[i] + ".png' height='20' valign='middle'> " + STAEntitiesArray[i] + "</button>";
 				s += i%2 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
 			}
@@ -1412,33 +1417,100 @@
 		}
 
 		function getSimplifyOGCCSWRecord(metadatas){
-			var simpleUrlRecords=[], title;
+			var simpleUrlRecords=[], id, title, bbox, schema;
 			for (var i=0; i<metadatas.length; i++)
 			{
 				var metadata=metadatas[i];
 				if (!metadata || !metadata['gmd:distributionInfo'])
 					continue;
+				id=""
+				if (metadata['gmd:fileIdentifier'] && metadata['gmd:fileIdentifier']['gco:CharacterString'])
+					id=metadata['gmd:fileIdentifier']['gco:CharacterString'];
 				title="";
+				schema="";
+				bbox=[];
 				if (metadata['gmd:identificationInfo']) {
-					var identification=(typeof metadata['gmd:identificationInfo'].length==="undefined") ? (metadata['gmd:identificationInfo']['gmd:MD_Identification'] ? metadata['gmd:identificationInfo']['gmd:MD_Identification'] : metadata['gmd:identificationInfo']['srv:SV_ServiceIdentification']) : (metadata['gmd:identificationInfo'][0]['gmd:MD_Identification'] ? metadata['gmd:identificationInfo'][0]['gmd:MD_Identification'] : metadata['gmd:identificationInfo'][0]['srv:SV_ServiceIdentification']);
+					var identification=(typeof metadata['gmd:identificationInfo'].length==="undefined") ? (metadata['gmd:identificationInfo']['gmd:MD_DataIdentification'] ? metadata['gmd:identificationInfo']['gmd:MD_DataIdentification'] : metadata['gmd:identificationInfo']['srv:SV_ServiceIdentification']) : (metadata['gmd:identificationInfo'][0]['gmd:MD_DataIdentification'] ? metadata['gmd:identificationInfo'][0]['gmd:MD_DataIdentification'] : metadata['gmd:identificationInfo'][0]['srv:SV_ServiceIdentification']);
 					if (identification && identification['gmd:citation']) {	
 						var citation=identification['gmd:citation']['gmd:CI_Citation'];
 						if (citation && citation['gmd:title']['gco:CharacterString'])
 							title=citation['gmd:title']['gco:CharacterString'];
 					}
+					//Detemine the extent
+					if (identification && (identification['srv:extent'] || identification['gmd:extent'])) {
+						var extents=identification['srv:extent'] ? identification['srv:extent'] : identification['gmd:extent'];
+						var ex_len=(typeof extents.length==="undefined") ? 1 : extents.length; 
+						for (var ex=0; ex<ex_len; ex++) {
+							var extent=(typeof extents.length==="undefined") ? extents['gmd:EX_Extent'] : extents[ex]['gmd:EX_Extent'];
+							if (extent && extent['gmd:geographicElement']) {
+								var ge_len=(typeof extent['gmd:geographicElement'].length==="undefined") ? 1 : extent['gmd:geographicElement'].length; 
+								for (var ge=0; ge<ge_len; ge++) {
+									var geoElem=(typeof extent['gmd:geographicElement'].length==="undefined") ? extent['gmd:geographicElement'] : extent['gmd:geographicElement'][ge];
+									var gbb=extent['gmd:geographicElement']['gmd:EX_GeographicBoundingBox'];
+									if (gbb) {
+										var n=0;
+										if (gbb['gmd:westBoundLongitude'] && gbb['gmd:westBoundLongitude']['gco:Decimal']) {
+											bbox.push(parseFloat(gbb['gmd:westBoundLongitude']['gco:Decimal']));
+											n++;
+										}
+										if (gbb['gmd:southBoundLatitude'] && gbb['gmd:southBoundLatitude']['gco:Decimal']) {
+											bbox.push(parseFloat(gbb['gmd:southBoundLatitude']['gco:Decimal']));
+											n++;
+										}
+										if (gbb['gmd:eastBoundLongitude'] && gbb['gmd:eastBoundLongitude']['gco:Decimal']) {
+											bbox.push(parseFloat(gbb['gmd:eastBoundLongitude']['gco:Decimal']));
+											n++;
+										}
+										if (gbb['gmd:northBoundLatitude'] && gbb['gmd:northBoundLatitude']['gco:Decimal']) {
+											bbox.push(parseFloat(gbb['gmd:northBoundLatitude']['gco:Decimal']));
+											n++;
+										}
+										if (n!=4)
+											bbox=[];
+									}
+								}
+							}
+						}
+					}
 				}
-				var distribution=(typeof metadata['gmd:distributionInfo'].length==="undefined") ? metadata['gmd:distributionInfo']['gmd:MD_Distribution'] : metadata['gmd:distributionInfo'][0]['gmd:MD_Distribution'];
-				if (!distribution || !distribution['gmd:transferOptions'])
-					continue;
-				var digitalTransfer=(typeof distribution['gmd:transferOptions'].length==="undefined") ? distribution['gmd:transferOptions']['gmd:MD_DigitalTransferOptions'] : distribution['gmd:transferOptions'][0]['gmd:MD_DigitalTransferOptions'];
-				if (!digitalTransfer || !digitalTransfer['gmd:onLine'])
-					continue;
-				var online=(typeof digitalTransfer['gmd:onLine'].length==="undefined") ? digitalTransfer['gmd:onLine']['gmd:CI_OnlineResource'] : digitalTransfer['gmd:onLine'][0]['gmd:CI_OnlineResource'];
-				simpleUrlRecords.push({
-						id: metadata['gmd:fileIdentifier'],
-						title: title,
-						link: online['gmd:linkage']['gmd:URL'],
-						extent: null});
+				if (metadata['gmd:applicationSchemaInfo']) {
+					var asi_len=(typeof metadata['gmd:applicationSchemaInfo'].length==="undefined") ? 1 : metadata['gmd:applicationSchemaInfo'].length;
+					for (var asi=0; asi<asi_len; asi++) {
+						var appSchemaInfo=(typeof metadata['gmd:applicationSchemaInfo'].length==="undefined") ? metadata['gmd:applicationSchemaInfo']['gmd:MD_ApplicationSchemaInformation'] : metadata['gmd:applicationSchemaInfo'][asi]['gmd:MD_ApplicationSchemaInformation'];
+						if (appSchemaInfo['gmd:schemaLanguage'] && appSchemaInfo['gmd:schemaLanguage']['gco:CharacterString'].toLowerCase()=="json" && 
+							appSchemaInfo['gmd:constraintLanguage'] && appSchemaInfo['gmd:constraintLanguage']['gco:CharacterString'].toLowerCase()=="csvw")
+						{
+							if (appSchemaInfo['gmd:name']['gmd:CI_Citation']['gmd:title'] && appSchemaInfo['gmd:name']['gmd:CI_Citation']['gmd:title']['gmx:Anchor'] && appSchemaInfo['gmd:name']['gmd:CI_Citation']['gmd:title']['gmx:Anchor']['@xlink:href']) {
+								schema=appSchemaInfo['gmd:name']['gmd:CI_Citation']['gmd:title']['gmx:Anchor']['@xlink:href'];
+								break;
+							}
+						}
+					}
+				}
+
+				//There can be many online resources. For each online resource, a record is create.
+				var d_len=(typeof metadata['gmd:distributionInfo'].length==="undefined") ? 1 : metadata['gmd:distributionInfo'].length
+				for (var d=0; d<d_len; d++) {
+					var distribution=(typeof metadata['gmd:distributionInfo'].length==="undefined") ? metadata['gmd:distributionInfo']['gmd:MD_Distribution'] : metadata['gmd:distributionInfo'][d]['gmd:MD_Distribution'];
+					if (!distribution || !distribution['gmd:transferOptions'])
+						continue;
+					var dt_len=(typeof distribution['gmd:transferOptions'].length==="undefined") ? 1 : distribution['gmd:transferOptions'].length 
+					for (var dt=0; dt<dt_len; dt++) {
+						var digitalTransfer=(typeof distribution['gmd:transferOptions'].length==="undefined") ? distribution['gmd:transferOptions']['gmd:MD_DigitalTransferOptions'] : distribution['gmd:transferOptions'][dt]['gmd:MD_DigitalTransferOptions'];
+						if (!digitalTransfer || !digitalTransfer['gmd:onLine'])
+							continue;
+						var ol_len=(typeof digitalTransfer['gmd:onLine'].length==="undefined") ? 1 : digitalTransfer['gmd:onLine'].length;
+						for (var ol=0; ol<ol_len; ol++) {
+							var online=(typeof digitalTransfer['gmd:onLine'].length==="undefined") ? digitalTransfer['gmd:onLine']['gmd:CI_OnlineResource'] : digitalTransfer['gmd:onLine'][ol]['gmd:CI_OnlineResource'];
+							simpleUrlRecords.push({
+								id: metadata['gmd:fileIdentifier']['gco:CharacterString'],
+								title: title,
+								dataURL: online['gmd:linkage']['gmd:URL'],
+								schemaURL: schema,
+								extent: bbox.length ? bbox : null});
+						}
+					}
+				}
 			}
 			return simpleUrlRecords; 
 		}
@@ -1582,7 +1654,7 @@
 				return;
 			}
 			try {
-				if ((node.OGCType=="OGCCSW"))
+				if (node.OGCType=="OGCCSW")
 				        jsonData = JSON.parse(xml2json(parseXml(await response.text()), false, null));
 				else
 					jsonData = await response.json();
@@ -1726,7 +1798,12 @@
 				}, "eng", null, RetrieveMeaningTableCallback, {node: currentNode});
 			}
 			UpdateChildenTable(currentNode);
-			document.getElementById("DialogImport"+type).close();
+			if (!currentNode.STAdata) {
+				if (confirm("No data has been loaded. Do you want to close this window anyway?"))
+					document.getElementById("DialogImport"+type).close();
+			}
+			else
+				document.getElementById("DialogImport"+type).close();
 		}
 
 		function TransformTextCSVWToDataAttributes(csvwText)
@@ -2074,7 +2151,7 @@
 			
 			if ((currentNode.image == "ogc.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value) ||
 				(currentNode.image == "ogcAPIs.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value+"/collections") ||
-				(currentNode.image == "csw.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value+"?REQUEST=GetRecords&SERVICE=CSW&version=2.0.2&resultType=results&typeNames=gmd:MD_Metadata&namespace=xmlns(gmd=http://www.isotc211.org/2005/gmd)&outputSchema=http://www.isotc211.org/2005/gmd"))
+				(currentNode.image == "csw.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value+"?REQUEST=GetRecords&SERVICE=CSW&version=2.0.2&resultType=results&elementSetName=full&typeNames=gmd:MD_Metadata&namespace=xmlns(gmd=http://www.isotc211.org/2005/gmd)&outputSchema=http://www.isotc211.org/2005/gmd&maxRecords=100"))
 				return;
 			var previousSTAURL = currentNode.STAURL;
 			currentNode.STAURL = document.getElementById("DialogSTAURLInput").value;
@@ -2087,7 +2164,7 @@
 				currentNode.OGCType = "OGCAPIcollections";
 				askForConformanceInOGCAPIFeatures();//OCGAPICconformance
 			} else if (currentNode.image == "csw.png") {
-				currentNode.STAURL += "?REQUEST=GetRecords&SERVICE=CSW&version=2.0.2&resultType=results&typeNames=gmd:MD_Metadata&namespace=xmlns(gmd=http://www.isotc211.org/2005/gmd)&outputSchema=http://www.isotc211.org/2005/gmd";
+				currentNode.STAURL += "?REQUEST=GetRecords&SERVICE=CSW&version=2.0.2&resultType=results&elementSetName=full&typeNames=gmd:MD_Metadata&namespace=xmlns(gmd=http://www.isotc211.org/2005/gmd)&outputSchema=http://www.isotc211.org/2005/gmd&maxRecords=100";
 				currentNode.OGCType = "OGCCSW";
 			}
 			
@@ -3129,8 +3206,9 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				if (elems[i].checked)
 					break;
 			}
+			var requiresLoadJSON=currentNode.STAURL && (!parentNode || parentNode.OGCType!="OGCCSW");
 			if (i < elems.length) {
-				if (currentNode.STAURL) {
+				if (requiresLoadJSON) {
 					const s = elems[i].id.substring("SelectRow_".length);
 					currentNode.STAURLIdSelected=s;
 
@@ -3149,21 +3227,24 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					}
 				}
 			}
-			if (currentNode.STAURL){
+			if (requiresLoadJSON){
 				// currentNode.STAExpectedLength = parentNode.STAExpectedLength;
-				currentNode.STAExpectedLength = document.getElementById("SelectNumberOfRecordsSelectRow").value;
-				
+				currentNode.STAExpectedLength = document.getElementById("SelectNumberOfRecordsSelectRow").value;				
+				if (currentNode.OGCType=="OGCAPIitems")
+					askForCollectionQueryables();
 			}
+			else
+				currentNode.STAURL = null;
 				
-			askForCollectionQueryables();
 			networkNodes.update(currentNode);
-			if (currentNode.STAURL)
+			if (requiresLoadJSON)
 			{
 				showInfoMessage("Selecting OGC row...");
 				UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
 				LoadJSONNodeSTAData(currentNode);
 			}
 		}
+
 		function GetFilterRowsSTA() {
 				var previousSTAURL = currentNode.STAURL;
 				var parentNode = GetFirstParentNode(currentNode);
@@ -3560,55 +3641,86 @@ async function requestAndRefreshCountResults(currentNode, period) {
 
 
 		function GetGeoJSON(data, selectedOptions) {
-			var dataSorted=deapCopy(data), geojson={"type": "FeatureCollection", "features": []};
+			var geojson={"type": "FeatureCollection", "features": []};
 
-			//Sorted by place, variable and date (older first).
-			dataSorted.sort(function (a, b) {
-				if (a[selectedOptions.place]<b[selectedOptions.place])
-					return -1;
-				if (a[selectedOptions.place]>b[selectedOptions.place])
-					return 1;
-				if (a[selectedOptions.longitude]-b[selectedOptions.longitude]<-0.0000001)
-					return -1;
-				if (a[selectedOptions.longitude]-b[selectedOptions.longitude]>0.0000001)
-					return 1;
-				if (a[selectedOptions.latitude]-b[selectedOptions.latitude]<-0.0000001)
-					return -1;
-				if (a[selectedOptions.latitude]-b[selectedOptions.latitude]>0.0000001)
-					return 1;
-				if (a[selectedOptions.variable]<b[selectedOptions.variable])
-					return -1;
-				if (a[selectedOptions.variable]>b[selectedOptions.variable])
-					return 1;
-				if (a[selectedOptions.time]<b[selectedOptions.time])
-					return -1;
-				if (a[selectedOptions.time]>b[selectedOptions.time])
-					return 1;
-				return 0;});
-			var a, b;
-			for (var i = 0, f=-1; i < dataSorted.length; i++) {
-				a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
-				if (i==0 || a[selectedOptions.place]!=b[selectedOptions.place] ||
-					a[selectedOptions.longitude]>b[selectedOptions.longitude]+0.0000001 ||
-					a[selectedOptions.latitude]<b[selectedOptions.latitude]-0.0000001 ||
-					a[selectedOptions.latitude]>b[selectedOptions.latitude]+0.0000001)
-				{
-					f++;
-					geojson.features[f]={
-						"type": "Feature",
-						"geometry": {
-							"type": "Point",
-							"coordinates": [
-								a[selectedOptions.longitude],
-								a[selectedOptions.latitude]
-							]
-						},
-						"properties": {
-							"Place": a[selectedOptions.place],
-						}
-					};
+			if (selectedOptions.time && selectedOptions.value) {
+				var dataSorted=deapCopy(data); 
+
+				//Sorted by place, variable and date (older first).
+				dataSorted.sort(function (a, b) {
+					if (a[selectedOptions.place]<b[selectedOptions.place])
+						return -1;
+					if (a[selectedOptions.place]>b[selectedOptions.place])
+						return 1;
+					if (a[selectedOptions.longitude]-b[selectedOptions.longitude]<-0.0000001)
+						return -1;
+					if (a[selectedOptions.longitude]-b[selectedOptions.longitude]>0.0000001)
+						return 1;
+					if (a[selectedOptions.latitude]-b[selectedOptions.latitude]<-0.0000001)
+						return -1;
+					if (a[selectedOptions.latitude]-b[selectedOptions.latitude]>0.0000001)
+						return 1;
+					if (a[selectedOptions.variable]<b[selectedOptions.variable])
+						return -1;
+					if (a[selectedOptions.variable]>b[selectedOptions.variable])
+						return 1;
+					if (a[selectedOptions.time]<b[selectedOptions.time])
+						return -1;
+					if (a[selectedOptions.time]>b[selectedOptions.time])
+						return 1;
+					return 0;});
+				var a, b;
+				for (var i = 0, f=-1; i < dataSorted.length; i++) {
+					a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
+					if (i==0 || a[selectedOptions.place]!=b[selectedOptions.place] ||
+						a[selectedOptions.longitude]>b[selectedOptions.longitude]+0.0000001 ||
+						a[selectedOptions.latitude]<b[selectedOptions.latitude]-0.0000001 ||
+						a[selectedOptions.latitude]>b[selectedOptions.latitude]+0.0000001)
+					{
+						f++;
+						geojson.features[f]={
+							"type": "Feature",
+							"geometry": {
+								"type": "Point",
+								"coordinates": [
+									a[selectedOptions.longitude],
+									a[selectedOptions.latitude]
+								]
+							},
+							"properties": {
+								"Place": a[selectedOptions.place],
+							}
+						};
+					}
+					geojson.features[f].properties[a[selectedOptions.variable]+"_"+a[selectedOptions.time]]=a[selectedOptions.value];
 				}
-				geojson.features[f].properties[a[selectedOptions.variable]+"_"+a[selectedOptions.time]]=a[selectedOptions.value];
+			}
+			else
+			{
+				for (var i = 0; i < data.length; i++) {
+					var a=data[i];
+					geojson.features.push({
+							"type": "Feature",
+							"geometry": {
+								"type": "Point",
+								"coordinates": [
+									a[selectedOptions.longitude],
+									a[selectedOptions.latitude]
+								]
+							},
+							"properties": {
+							}
+						});
+					if (selectedOptions.place) {
+						geojson.features[i].properties["Place"]=a[selectedOptions.place];
+					}
+					var propertiesArray = Object.keys(a);
+					for (var j=0; j<propertiesArray.length; j++) {
+						if (propertiesArray[j]==selectedOptions?.place || propertiesArray[j]==selectedOptions?.longitude || propertiesArray[j]==selectedOptions?.latitude)
+							continue;
+						geojson.features[i].properties[propertiesArray[j]]=a[propertiesArray[j]];
+					}
+				}
 			}
 			return geojson;
 		}
@@ -3633,7 +3745,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 								},
 								"properties": {
 									"type": "object",
-									"properties": GetGeoJSONPropertiesSchema(data, selectedOptions)
+									"properties": GetGeoJSONPropertiesSchema(data, null, selectedOptions)
 								}
 							}
 						}
@@ -3642,41 +3754,58 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			};
 		}
 
-		function GetGeoJSONPropertiesSchema(data, selectedOptions) {
-			var dataSorted=deapCopy(data);
+		function GetGeoJSONPropertiesSchema(data, dataAttributes, selectedOptions) {
 
-			var attributes={
-				"Place": {
-					"description": "Place name",
-					"mostrar": "si"
+			var attributes={};
+			if (selectedOptions.place)
+				attributes["Place"]= {"description": "Place name", "mostrar": "si"};
+
+			if (selectedOptions.time && selectedOptions.value) {
+				var dataSorted=deapCopy(data);
+
+				//Sorted by variable.
+				dataSorted.sort(function (a, b) {
+					if (a[selectedOptions.variable]<b[selectedOptions.variable])
+						return -1;
+					if (a[selectedOptions.variable]>b[selectedOptions.variable])
+						return 1;
+					return 0;});
+				var a, b, UoMSymbol;
+				for (var i = 0; i < dataSorted.length; i++) {
+					a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
+					if (i==0 || a[selectedOptions.variable]!=b[selectedOptions.variable])
+					{
+						UoMSymbol=a[selectedOptions.variableUoMSymbol];
+						if (UoMSymbol=="ug/m3")
+							UoMSymbol=="µg/m³";
+						attributes[a[selectedOptions.variable] + "_{time?f=ISO}"]={
+							"description": a[selectedOptions.variableDescription],
+							"definition": a[selectedOptions.variableDefinition],
+							"UoM": a[selectedOptions.variableUoM],
+							"UoMSymbol": UoMSymbol,
+							"UoMDefinition": a[selectedOptions.variableUoMDefinition],
+							"mostrar": "si",
+							"serieTemporal": {
+								"color": "#ff0000"
+							}
+						};
+					}
 				}
-			};
-
-			//Sorted by variable.
-			dataSorted.sort(function (a, b) {
-				if (a[selectedOptions.variable]<b[selectedOptions.variable])
-					return -1;
-				if (a[selectedOptions.variable]>b[selectedOptions.variable])
-					return 1;
-				return 0;});
-			var a, b, UoMSymbol;
-			for (var i = 0; i < dataSorted.length; i++) {
-				a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
-				if (i==0 || a[selectedOptions.variable]!=b[selectedOptions.variable])
+			} else {
+				if (!dataAttributes)
+					dataAttributes=getDataAttributes(data);
+				var dataAttributesArray = Object.keys(dataAttributes);
+				for (i=0; i<dataAttributesArray.length; i++)
 				{
-					UoMSymbol=a[selectedOptions.variableUoMSymbol];
-					if (UoMSymbol=="ug/m3")
-						UoMSymbol=="µg/m³";
-					attributes[a[selectedOptions.variable] + "_{time?f=ISO}"]={
-						"description": a[selectedOptions.variableDescription],
-						"definition": a[selectedOptions.variableDefinition],
-						"UoM": a[selectedOptions.variableUoM],
-						"UoMSymbol": UoMSymbol,
-						"UoMDefinition": a[selectedOptions.variableUoMDefinition],
+					if (dataAttributesArray[i]==selectedOptions?.place || dataAttributesArray[i]==selectedOptions?.longitude || dataAttributesArray[i]==selectedOptions?.latitude)
+						continue;
+					attributes[dataAttributesArray[i]]={
+						"description": dataAttributes[dataAttributesArray[i]].description ? dataAttributes[dataAttributesArray[i]].description : null,
+						"definition": dataAttributes[dataAttributesArray[i]].definition ? dataAttributes[dataAttributesArray[i]].definition : null,
+						"UoM": dataAttributes[dataAttributesArray[i]].UoM ? dataAttributes[dataAttributesArray[i]].UoM : null,
+						"UoMSymbol": dataAttributes[dataAttributesArray[i]].UoMSymbol? dataAttributes[dataAttributesArray[i]].UoMSymbol : null,
+						"UoMDefinition": dataAttributes[dataAttributesArray[i]].UoMDefinition ? dataAttributes[dataAttributesArray[i]].UoMDefinition : null,
 						"mostrar": "si",
-						"serieTemporal": {
-							"color": "#ff0000"
-						}
 					};
 				}
 			}
@@ -3849,108 +3978,173 @@ async function requestAndRefreshCountResults(currentNode, period) {
 		}
 
 		function GetGeoJSONStyles(data, selectedOptions) {
-			var dataSorted=deapCopy(data), estil=[];
+			var estil=[];
+			if (selectedOptions.time && selectedOptions.value) {
 
-			//Sorted by variable.
-			dataSorted.sort(function (a, b) {
-				if (a[selectedOptions.variable]<b[selectedOptions.variable])
-					return -1;
-				if (a[selectedOptions.variable]>b[selectedOptions.variable])
-					return 1;
-				return 0;});
-			var a, b, maximum;
-			for (var i = 0, f=-1; i < dataSorted.length; i++) {
-				a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
-				if (i==0 || a[selectedOptions.variable]!=b[selectedOptions.variable])
-				{
-					if (f>=0)
-						estil[f].simbols[0].simbol[0].icona.r=maximum>0.001 ? 10/maximum: 1; 
-					f++;
-					maximum=a[selectedOptions.value];
-					estil[f]={
-						"nom": null,
-						"desc": a[selectedOptions.variableDescription],
-						"DescItems": a[selectedOptions.variableUoMSymbol],
-						"TipusObj": "P",
-						"ItemLleg": [
-							{
-								"color": "#ff0000",
-								"DescColor": a[selectedOptions.variableDescription]
-							}
-						],
-						"ncol": 1,
-						"simbols": [
-							{
-								"NomCampFEscala": a[selectedOptions.variable] + "_{time?f=ISO}",
-								"simbol": [
+				var dataSorted=deapCopy(data);
+
+				//Sorted by variable.
+				dataSorted.sort(function (a, b) {
+					if (a[selectedOptions.variable]<b[selectedOptions.variable])
+						return -1;
+					if (a[selectedOptions.variable]>b[selectedOptions.variable])
+						return 1;
+					return 0;});
+				var a, b, maximum;
+				for (var i = 0, f=-1; i < dataSorted.length; i++) {
+					a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
+					if (i==0 || a[selectedOptions.variable]!=b[selectedOptions.variable])
+					{
+						if (f>=0)
+							estil[f].simbols[0].simbol[0].icona.r=maximum>0.001 ? 10/maximum: 1; 
+						f++;
+						maximum=a[selectedOptions.value];
+						estil[f]={
+							"nom": null,
+							"desc": a[selectedOptions.variableDescription],
+							"DescItems": a[selectedOptions.variableUoMSymbol],
+							"TipusObj": "P",
+							"ItemLleg": [
+								{
+									"color": "#ff0000",
+									"DescColor": a[selectedOptions.variableDescription]
+								}
+							],
+							"ncol": 1,
+							"simbols": [
+								{
+									"NomCampFEscala": a[selectedOptions.variable] + "_{time?f=ISO}",
+									"simbol": [
+										{
+											"icona": {
+												"type": "circle",
+												"r": 1
+											}
+										}
+									]
+								}
+							],
+							"formes": [{
+								"vora": {
+									"paleta": {
+										"colors": [
+											"#ff0000"
+										]
+									}
+								},
+								"interior": {
+									"paleta": {
+										"colors": [
+											"rgba(255,0,0,0.4)"
+										]
+									}
+								}}],
+							"fonts": {
+								"NomCampText": a[selectedOptions.variable] + "_{time?f=ISO}",
+								"aspecte": [
 									{
-										"icona": {
-											"type": "circle",
-											"r": 1
+										"font": {
+											"font": "12px Verdana",
+											"color": "#B50000",
+											"align": "center",
+											"i": 0,
+											"j": -5
 										}
 									}
 								]
 							}
-						],
-						"formes": [{
-							"vora": {
-								"paleta": {
-									"colors": [
-										"#ff0000"
-									]
-								}
-							},
-							"interior": {
-								"paleta": {
-									"colors": [
-										"rgba(255,0,0,0.4)"
-									]
-								}
-							}}],
-						"fonts": {
-							"NomCampText": a[selectedOptions.variable] + "_{time?f=ISO}",
-							"aspecte": [
+						};
+					}
+					else
+					{
+						if (maximum<a[selectedOptions.value])
+							maximum=a[selectedOptions.value];
+					}
+				}
+				if (f>=0)
+					estil[f].simbols[0].simbol[0].icona.r=maximum>0.001 ? 10/maximum: 1;
+			}
+			else
+			{
+				estil.push({
+					"nom": null,
+					"desc": null,
+					"DescItems": null,
+					"TipusObj": "P",
+					"ItemLleg": [
+						{
+							"color": "#ff0000",
+							"DescColor": ""
+						}
+					],
+					"ncol": 1,
+					"simbols": [
+						{
+							"simbol": [
 								{
-									"font": {
-										"font": "12px Verdana",
-										"color": "#B50000",
-										"align": "center",
-										"i": 0,
-										"j": -5
+									"icona": {
+										"type": "circle",
+										"r": 10
 									}
 								}
 							]
 						}
-					};
-				}
-				else
-				{
-					if (maximum<a[selectedOptions.value])
-						maximum=a[selectedOptions.value];
-				}
+					],
+					"formes": [{
+						"vora": {
+							"paleta": {
+								"colors": [
+									"#ff0000"
+								]
+							}
+						},
+						"interior": {
+							"paleta": {
+								"colors": [
+									"rgba(255,0,0,0.4)"
+								]
+							}
+						}}],
+					"fonts": {
+						"NomCampText": selectedOptions.place ? "Place" : null,
+						"aspecte": [
+							{
+								"font": {
+									"font": "12px Verdana",
+									"color": "#B50000",
+									"align": "center",
+									"i": 0,
+									"j": -5
+								}
+							}
+						]
+					}
+				});
 			}
-			if (f>=0)
-				estil[f].simbols[0].simbol[0].icona.r=maximum>0.001 ? 10/maximum: 1;
 			return estil;
 		}
 
 		function GetGeoJSONDates(data, selectedOptions) {
-			var dataSorted=deapCopy(data), datetimes=[];
+			if (selectedOptions.time && selectedOptions.value) {
+				var dataSorted=deapCopy(data), datetimes=[];
 
-			//Sorted by date (older first).
-			dataSorted.sort(function (a, b) {
-				if (a[selectedOptions.time]<b[selectedOptions.time])
-					return -1;
-				if (a[selectedOptions.time]>b[selectedOptions.time])
-					return 1;
-				return 0;});
-			var a, b;
-			for (var i = 0; i < dataSorted.length; i++) {
-				a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
-				if (i==0 || a[selectedOptions.time]!=b[selectedOptions.time])
-					datetimes.push(a[selectedOptions.time]);
+				//Sorted by date (older first).
+				dataSorted.sort(function (a, b) {
+					if (a[selectedOptions.time]<b[selectedOptions.time])
+						return -1;
+					if (a[selectedOptions.time]>b[selectedOptions.time])
+						return 1;
+					return 0;});
+				var a, b;
+				for (var i = 0; i < dataSorted.length; i++) {
+					a=dataSorted[i], b=dataSorted[i==0 ? 0 : i-1];
+					if (i==0 || a[selectedOptions.time]!=b[selectedOptions.time])
+						datetimes.push(a[selectedOptions.time]);
+				}
+				return datetimes;
 			}
-			return datetimes;
+			else
+				return null;
 		}
 
 		/*function ShowSaveTableDialog(nodeId) {
@@ -4478,7 +4672,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			var parentNode=GetFirstParentNode(currentNode);
 			if (parentNode) {
 				var selectedOptionsSaveLayer=GetSelectedOptionsSaveLayer(true);
-				OpenMapMMN(getAbsoluteURL(config.MMNpath) + (config.MMNpath.indexOf('?')>0 ? "&" : "?") + "reset=1", GetGeoJSON(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONPropertiesSchema(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONStyles(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONDates(parentNode.STAdata, selectedOptionsSaveLayer));
+				OpenMapMMN(getAbsoluteURL(config.MMNpath) + (config.MMNpath.indexOf('?')>0 ? "&" : "?") + "reset=1", GetGeoJSON(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONPropertiesSchema(parentNode.STAdata, parentNode.STAdataAttributes, selectedOptionsSaveLayer), GetGeoJSONStyles(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONDates(parentNode.STAdata, selectedOptionsSaveLayer));
 			}
 		}
 
@@ -4929,6 +5123,35 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				}
 				else if (currentNode.image == "ImportCSV.png") {
 					document.getElementById("DialogImportCSVSourceURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedCSVurls);
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode) {
+						// Has de table a dataURL and a schemaURL?, then I add this to the dialogbox.
+						var data=parentNode.STAdata;
+						if (!data || !data.length) 
+							alert("Parent node has no data loaded. It will be ignored.");
+						else if (data.length>1)
+							alert("Parent node has more than one row. Please select on row first. It will be ignored.");
+						else {
+							var record=data[0];
+							if (!record.dataURL)
+								alert("Parent node has no dataURL column. It will be ignored.");
+							else {
+								document.getElementById("DialogImportCSVSourceFile").checked=false;
+								document.getElementById("DialogImportCSVSourceURL").checked=true;
+								document.getElementById("DialogImportCSVSourceURLInput").value=record.dataURL;
+								document.getElementById("DialogImportCSVSourceURLButton").disabled=false;
+								
+								if (record.schemaURL)
+								{
+									document.getElementById("DialogImportMeaningCSVSourceFile").checked=false;
+									document.getElementById("DialogImportMeaningCSVSourceURL").checked=true;
+									document.getElementById("DialogImportMeaningCSVSourceAuto").checked=false;
+									document.getElementById("DialogImportMeaningCSVSourceURLInput").value=record.schemaURL;
+									document.getElementById("DialogImportMeaningCSVSourceURLButton").disabled=false;
+								}
+							}
+						}
+					}
 					document.getElementById("DialogImportCSV").showModal();
 				}
 				else if (currentNode.image == "ImportGeoJSON.png") {
