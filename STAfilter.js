@@ -368,8 +368,15 @@ function updateSTAFilterRowEntities(number, counter, entitySelected) { //Modify 
 
 
 function takeEntitiesAndFilterThemInFilterRow(filterRowEntities, i) { //avoid duplications
-	var entities = STAEntities[getSTAEntityPlural(filterRowEntities[i], true)].entities;
-	var entitiesFiltered = entities; //To use the filter (entities not filtered yet);
+	//var entities = STAEntities[getSTAEntityPlural(filterRowEntities[i], true)].entities;
+	var entityInPlural=getSTAEntityPlural(filterRowEntities[i], true);
+	var n= STAEntities[entityInPlural].entities.length, entitiesConnectedArray=[];
+	for (var t=0;t<n;t++){
+		entitiesConnectedArray.push(STAEntities[entityInPlural].entities[t].name);
+	}
+
+
+	var entitiesFiltered = entitiesConnectedArray; //To use the filter (entities not filtered yet);
 	if (i != 0) {
 		for (var a = 0; a < i; a++) { //I need entities before this entity in the array 
 			entitiesFiltered = entitiesFiltered.filter(entity => {
@@ -551,7 +558,16 @@ function fillPropertySelector(number, lastEntity, selectorInfo) { //lastEntity: 
 	var selectProperty = document.getElementById("selectorProperty_" + number);
 	selectProperty.innerHTML = "";
 
-	var properties = STAEntities[getSTAEntityPlural(lastEntity, true)]["properties"];
+	var entity= getSTAEntityPlural(lastEntity, true);
+	var properties = [], n= STAEntities[entity].properties.length;
+	for (var p = 0; p < n; p++) {
+		properties.push(STAEntities[entity].properties[p].name)
+	}
+
+
+
+
+
 	var option = document.createElement("option"); //First option
 	option.setAttribute("value", " ");
 	option.innerHTML = "--- choose Property ---";
@@ -641,7 +657,7 @@ function createConditionSelectInFilterRows(selectorInfo, count) {
 	} else {
 		selectConditionContent2 = selectConditionContent;
 	}
-	if (currentNode.OGCType = "OGCAPIitem") {
+	if (currentNode.OGCType == "OGCAPIitem") {
 		selectConditionContent2 = selectConditionContentOGCAPIFeatures;
 	}
 	
@@ -719,7 +735,7 @@ function typeOfValueFromInput(wichinputText, value1, value2) {
 			}
 		}
 		if (typeOfValues != "date") {
-			if (isNaN(parseInt(value1)) != true) {
+			if (Number.isNaN(parseInt(value1)) != true) {
 				var newValue = "";
 				for (var a = 0; a < value1.length; a++) {//erase 0 if starts with 0. 
 					if (value1.charAt(a) != 0) {
@@ -768,7 +784,7 @@ function typeOfValueFromInput(wichinputText, value1, value2) {
 			
 		}
 		if (inputText1 != "date") {
-			if (isNaN(parseInt(value1)) != true) { //numero
+			if (Number.isNaN(parseInt(value1)) != true) { //numero
 				var newValue = "";
 				for (var a = 0; a < value1.length; a++) {//erase 0 if starts with 0. 
 					if (value1.charAt(a) != 0) {
@@ -786,7 +802,7 @@ function typeOfValueFromInput(wichinputText, value1, value2) {
 			} else { inputText1 = "text"; }
 		}
 		if (inputText2 != "date") {
-			if (isNaN(parseInt(value2)) != true) { //If first is not a number, let's see second
+			if (Number.isNaN(parseInt(value2)) != true) { //If first is not a number, let's see second
 				var newValue2 = "";
 				for (var a = 0; a < value1.length; a++) {//erase 0 if starts with 0. 
 					if (value1.charAt(a) != 0) {

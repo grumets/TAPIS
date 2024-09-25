@@ -6,11 +6,13 @@
 	<title>TAPIS: Tables from APIs for Sensors (Sensor Things API plus Explorer)</title>
 	<link rel="icon" type="image/x-icon" href="favicon.ico">
 	<script type="text/javascript" src="vis.min.js"></script>
-	<script type="text/javascript" src="papaparse.min.js"></script>
-	<script type="text/javascript" src="hello.all.min.js"></script>
-	<script type="text/javascript" src="authenix.js"></script>
-	<script type="text/javascript" src="mmn_postmessage.js"></script>
-	<script type="text/javascript" src="guf.js"></script>
+	<script type="text/javascript" src="Chart.bundle.min.js" async defer></script>
+        <script type="text/javascript" src="chartjs-plugin-labels.js" async defer></script>
+	<script type="text/javascript" src="papaparse.min.js" async defer></script>
+	<script type="text/javascript" src="hello.all.min.js" async></script>
+	<script type="text/javascript" src="authenix.js" async defer></script>
+	<script type="text/javascript" src="mmn_postmessage.js" async defer></script>
+	<script type="text/javascript" src="guf.js" async defer></script>
 	<script type="text/javascript" src="xml2json.js"></script>
 	<script type="text/javascript" src="data_tables.js"></script>
 	<script type="text/javascript" src="STAselectExpand.js"></script>
@@ -163,7 +165,7 @@
 			<div class="center">
 				<button value="default" id="dlgCreateUpdateDeleteEntityCreate" onClick="GetCreateEntity(event)">Create</button>
 				<button value="default" id="dlgCreateUpdateDeleteEntityUpdate" onClick="GetUpdateEntity(event)">Update</button>
-				<button value="default" id="dlgCreateUpdateDeleteEntityDelete" onClick="GetDeleteEntity(event)">Delete</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityDelete" onClick="AskForDeleteEntity(event)">Delete</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
@@ -225,35 +227,37 @@
 	</dialog>
 	<dialog id="DialogCreateColumns">
 		<form>
-			Create columns:
 			<span id="DialogCreateColumnsHTML">
-			 <br>
-			  <label for="columnNameCreateColumns">Column Name </label>
-			  <input id="columnNameCreateColumns" type="text" style="margin-top: 10px; margin-bottom: 10px; "> 
-			  <br>
-			  <div>
-				<fieldset>
-					<legend>Select your operation:</legend>
-					<input type="radio" id="constantValue" name="TypeOfValues" value="constantValue" checked> 
-					<label for="constantValue">Constant value</label><input id="inputText_constantValue" type="text" style="margin-left:10px" ><br>
-					<input type="radio" id="autoincrementalValue" name="TypeOfValues" value="autoincrementalValue">
-					<label for="autoincrementalValue">Autoincemental value</label><input id="inputText_autoincrementalValue" type="text" style="margin-left:10px"  placeholder="Initial value" ><br>
-					<input type="radio" id="empty" name="TypeOfValues" value="empty">
-					<label for="empty">Empty column</label><br>
-				</fieldset>
-				<button value="add" onClick="addColumnToListCreateColumn(event)"style="margin-bottom:10px">Add column to list </button>
-				<div  style="width:auto;">
-					<label>Columns to add</label>
-					<div >
-						<ol id="columnsBoxCreateColumns"></ol>
-					</div>
-				</div>
+
+				<div>
+				  <fieldset>
+					  <legend>Select your operation:</legend>
+					  <input type="radio" id="columnNameRadioType_constantValue" name="TypeOfValues" value="constantValue" checked> 
+					  <label for="columnNameRadioType_constantValue">Constant value</label><input id="inputText_constantValue" type="text" style="margin-left:10px" ><br>
+					  <input type="radio" id="columnNameRadioType_autoincrementalValue" name="TypeOfValues" value="autoincrementalValue">
+					  <label for="columnNameRadioType_autoincrementalValue">Autoincemental value</label><input id="inputText_autoincrementalValue" type="text" style="margin-left:10px"  placeholder="Initial value" ><br>
+					  <input type="radio" id="columnNameRadioType_empty" name="TypeOfValues" value="empty">
+					  <label for="columnNameRadioType_empty">Empty column</label><br>
+				  </fieldset>
+				  <br>
+				  <fieldset>
+					  <legend>Column name:</legend>
+					  <input type="radio" name="columnNameRadioCreateColumns" id ="columnNameRadioACreateColumns_personalized" checked="checked"> <!--Function has no sense, it is only to mimic aggregated columns dialog-->
+					  <label for ="columnNameRadioACreateColumns_personalized" >Personalized</label>
+					  <input id="columnNameCreateColumns" type="text" style="margin-top: 10px; margin-bottom: 10px; "> 
+				  </fieldset>
+				  <br>
+				  <button value="add" onClick="addColumnToListCreateColumn(event)"style="margin-bottom:10px">Add column to list </button>
+				  <br><br><hr>
+				  <div style="width:auto;" >
+					  <label>List of columns to add</label>
+					  <span id= spanColumnsListCreateColumns></span>
 			  </div>
 			  
 		
 			</span>
 			<div class="center" style="margin-top: 10px">
-			  <button value="default" onClick="addColumnsToTableInCreateColumns()">Add columns to your table</button>
+			  <button value="default" onClick="addColumnsToTableInCreateColumns()">Ok</button>
 			  <button value="cancel" formmethod="dialog" onclick="cancelButtonRecoveryOldData(event)">Cancel</button>
 			</div>
 		  </form>
@@ -261,58 +265,52 @@
 
 	<dialog id="DialogAggregateColumns">
 		<form>
-			Aggregate columns:
 			<span id="DialogAggregateColumnsHTML">
 			  <br>
-			  <label for="columnNameAggregateColumns">Column Name </label>
-			  <input id="columnNameAggregateColumns" type="text" style="margin-top: 10px; margin-bottom: 10px; "> 
-			  <br>
-			  
-				<fieldset id="columnsFielset" style="display:inline-block">
-				  
-						 
+			<div>
+			<fieldset style="display:inline-block">
+			  <legend>Select attributes:</legend>
+			  <span id="DialogcolumnsFielsetHTML"></span>
 				</fieldset>		
-			  <fieldset id="operationsFieldSet" style="display:inline-block">
-				<legend>Select your operation:</legend>
-				<input type="radio" id="sum" name="TypeOfOperation" value="sum" checked> 
-				<label for="sum">Sum</label><br>
-				<input type="radio" id="product" name="TypeOfOperation" value="product">
-				<label for="product">Product</label><br>
-				<input type="radio" id="minimalValue" name="TypeOfOperation" value="minimalValue">
-				<label for="minimalValue">Minimal Value</label><br>
-				<input type="radio" id="maximalValue" name="TypeOfOperation" value="maximalValue">
-				<label for="maximalValue">Maximal Value</label><br>
-				<input type="radio" id="meanValue" name="TypeOfOperation" value="meanValue">
-				<label for="meanValue">Mean Value</label><br>
-				<input type="radio" id="variance" name="TypeOfOperation" value="variance">
-				<label for="variance">Variance</label><br>
-				<input type="radio" id="median" name="TypeOfOperation" value="median">
-				<label for="median">Median</label><br>
-				<input type="radio" id="concatenate" name="TypeOfOperation" value="concatenate">
-				<label for="concatenate">Concatenate</label><br>
+			<fieldset style="display:inline-block">
+			  <legend>Aggregations:</legend>
+			  <span id="operationsFieldSet"></span>
 			  </fieldset>
-
-				<fieldset  style="display:inline-block" >
-					<legend>Set number of decimals:</legend>
-					<input type="radio" id="chooseNumberDecimals_1" name="chooseNumberDecimals" value="no" checked> 
-					<label for="chooseNumberDecimals_1">No </label>
-					<br>
-					<input type="radio" id="chooseNumberDecimals_0" name="chooseNumberDecimals" value="yes"> 
+			<br>
+			<fieldset style="display:inline-block">
+				<legend>Set number of decimal figures:</legend>
+				<span>
+					<input type="checkbox" id="chooseNumberDecimals_0" name="chooseNumberDecimals" value="yes"> 
 					<label for="chooseNumberDecimals_0">Yes: </label>
-					<input id="chooseNumberDecimals_0_input" type="number" max="10" min="0"> 
-								 
-				</fieldset>
+					<input id="chooseNumberDecimals_0_input" type="number" max="10" min="0">
+
+				</span>
+			</fieldset>
+		</div>
 			  <br>
-			  <button value="add" onClick="addColumnToListAggregateColumns(event)"style="margin-bottom:10px">Add column to list </button>
-			  <div style="width:auto;" >
-				<label>Columns to add</label>
-				<div >
-					<ol id="columnsBoxAggregateColumn"></ol>
-				</div>
+			<fieldset style="display:inline-block">
+			  <legend>Column name: </legend>
+			  <input type="radio" name="columnNameRadioAggregateColumns" id="columnNameRadioAggregateColumns_personalized" onchange="deselectColumnNameRadioButton('personalized')">
+			  <label for="columnNameRadioAggregateColumns_personalized">Personalized</label>
+			  <input disabled=true id="columnNameAggregateColumns" type="text" style="margin-top: 10px; margin-bottom: 10px; " >
+			  <br>
+			  <input type="radio" name="columnNameRadioAggregateColumns" checked="checked" id="columnNameRadioAggregateColumns_suggested" onchange="deselectColumnNameRadioButton('suggested')">
+			  <label for="columnNameRadioAggregateColumns_suggested">Suggested: </label>
+			  <span id="columnNameAggregateColumns_span"></span>
+			</fieldset>
+			<br>
+			<br>	
+			<button value="add" onClick="addColumnToListAggregateColumns(event)" style="margin-bottom:10px">Add column to
+			  list </button>
+	
+			<br><br><hr>
+			<div style="width:auto;">
+			  <label>List of columns to add</label>
+			  <span id=spanColumnsListAggregateColumns></span>
 			  </div>
 			</span>
 			<div class="center" style="margin-top: 10px">
-			  <button value="default" onClick="addColumnsToTableInAggregateColumns(event)">Create new columns</button>
+			<button value="default" onClick="addColumnsToTableInAggregateColumns(event)">Ok</button>
 			  <button value="cancel" formmethod="dialog" onclick="cancelButtonRecoveryOldData(event)">Cancel</button>
 			</div>
 		  </form>
@@ -322,12 +320,147 @@
 
 
 	<dialog id="DialogColumnsCalculator">
-		<form>
-			Columns Calculator:
-			<span id="DialogColumnsCalculatorHTML">
-			</span>
-			<div class="center">
-				<button value="default" onClick="GetColumnsCalculator(event)">OK</button>
+		<form >
+			<br>
+			<label for="calculator_selectColumns">Attribute:</label>
+			<select id="calculator_selectColumns" name="calculator_selectColumnsValue" style="width:400px;" onchange="">
+			</select>
+		
+			<button onclick="WriteInTheFormulaButtons('attributeSelected')" >Write in the formula</button>
+			<br><br>
+			<fieldset>
+			  <legend>Operators and functions for the formula: </legend>
+			  <input type="button" style="width:40px" value="&#40;" onclick="WriteInTheFormulaButtons('&#40;')">
+			  <input type="button" style="width:40px" value="&#41;" onclick="WriteInTheFormulaButtons('&#41;')">
+			  <input type="button" style="width:40px" value="If" onclick="WriteInTheFormulaButtons('? :')">
+			  <br>
+			  <input type="button" style="width:40px" value="=" onclick="WriteInTheFormulaButtons('==')">
+			  <input type="button" style="width:40px" value="&gt;=" onclick="WriteInTheFormulaButtons('>=')">
+			  <input type="button" style="width:40px" value="&lt;" onclick="WriteInTheFormulaButtons('<')">&nbsp;&nbsp;&nbsp;&nbsp;
+		
+		
+		
+			  <input type="button" style="width:30px" value="7" onclick="WriteInTheFormulaButtons('7')">
+			  <input type="button" style="width:30px" value="8" onclick="WriteInTheFormulaButtons('8')">
+			  <input type="button" style="width:30px" value="9" onclick="WriteInTheFormulaButtons('9')">&nbsp;&nbsp;&nbsp;&nbsp;
+		
+			  <input type="button" style="width:30px" value="/" onclick="WriteInTheFormulaButtons('/')">
+			  &nbsp;&nbsp;&nbsp;&nbsp;
+		
+			  <input type="button" style="width:40px" value="and" onclick="WriteInTheFormulaButtons('&&')">
+		
+			  <br>
+			  <input type="button" style="width:40px" value="≠" onclick="WriteInTheFormulaButtons('!=')">
+			  <input type="button" style="width:40px" value="&lt;=" onclick="WriteInTheFormulaButtons('<=')">
+			  <input type="button" style="width:40px" value="&gt;" 	onclick="WriteInTheFormulaButtons('>')">&nbsp;&nbsp;&nbsp;&nbsp;
+		
+		
+			  <input type="button" style="width:30px" value="4" onclick="WriteInTheFormulaButtons('4')">
+			  <input type="button" style="width:30px" value="5" onclick="WriteInTheFormulaButtons('5')">
+			  <input type="button" style="width:30px" value="6" onclick="WriteInTheFormulaButtons('6')">&nbsp;&nbsp;&nbsp;&nbsp;
+		
+			  <input type="button" style="width:30px" value="×" onclick="WriteInTheFormulaButtons('*')">
+			  &nbsp;&nbsp;&nbsp;&nbsp;
+		
+			  <input type="button" style="width:40px" value="or" onclick="WriteInTheFormulaButtons('||')">
+			  <br>
+		
+			  <input type="button" style="width:40px" value="Log" onclick="WriteInTheFormulaButtons('Math.log10()')">
+			  <input type="button" style="width:40px" value="Ln" onclick="WriteInTheFormulaButtons('Math.log()')">
+			  <input type="button" style="width:40px" value="xⁿ"
+				onclick="WriteInTheFormulaButtons('**')">&nbsp;&nbsp;&nbsp;&nbsp;
+		
+		
+			  <input type="button" style="width:30px" value="1" onclick="WriteInTheFormulaButtons('1')">
+			  <input type="button" style="width:30px" value="2" onclick="WriteInTheFormulaButtons('2')">
+			  <input type="button" style="width:30px" value="3" onclick="WriteInTheFormulaButtons('3')">&nbsp;&nbsp;&nbsp;&nbsp;
+		
+			  <input type="button" style="width:30px" value="-" onclick="WriteInTheFormulaButtons('-')">
+			  &nbsp;&nbsp;&nbsp;&nbsp;
+		
+			  <input type="button" style="width:40px" value="not" onclick="WriteInTheFormulaButtons('!')">
+		
+			  <br>
+			  <input type="button" style="width:40px" value="Exp" onclick="WriteInTheFormulaButtons('Math.exp()')">
+			  <input type="button" style="width:40px" value="%" onclick="WriteInTheFormulaButtons('%')">
+			  <input type="button" style="width:40px" value="√¯" onclick="WriteInTheFormulaButtons('Math.sqrt()')">&nbsp;&nbsp;&nbsp;&nbsp;
+		
+		
+			  <input type="button" style="width:30px" value="&#928;" onclick="WriteInTheFormulaButtons('Math.PI')">
+			  <input type="button" style="width:30px" value="0" onclick="WriteInTheFormulaButtons('0')">
+			  <input type="button" style="width:30px" value="." onclick="WriteInTheFormulaButtons('.')">&nbsp;&nbsp;&nbsp;&nbsp;
+		
+			  <input type="button" style="width:30px" value="+" onclick="WriteInTheFormulaButtons('+')">
+			  &nbsp;&nbsp;&nbsp;&nbsp;
+		
+		
+			  <input type="button" style="width:40px" value="xor" onclick="WriteInTheFormulaButtons('^')">
+		
+			  <br>
+		
+			  <input type="button" style="width:40px" value="1/x" onclick="WriteInTheFormulaButtons('1/()')">
+			  <input type="button" style="width:40px" value="Ent" onclick="WriteInTheFormulaButtons('Math.trunc()')">
+			  <input type="button" style="width:40px" value="Abs"
+				onclick="WriteInTheFormulaButtons('Math.abs()')">&nbsp;&nbsp;&nbsp;&nbsp;
+		
+			  <input type="button" style="width:30px" value="e" onclick="WriteInTheFormulaButtons('Math.E')">
+		
+			  <br><br>
+			  <input type="button" style="width:62px" value="sin" onclick="WriteInTheFormulaButtons('Math.sin()')">
+			  <input type="button" style="width:62px" value="asin" onclick="WriteInTheFormulaButtons('Math.asin()')">
+			  <input type="button" style="width:62px" value="cos" onclick="WriteInTheFormulaButtons('Math.cos()')">
+			  <input type="button" style="width:62px" value="acos" onclick="WriteInTheFormulaButtons('Math.acos()')">
+			  <input type="button" style="width:62px" value="tan" onclick="WriteInTheFormulaButtons('Math.tan()')">
+			  <input type="button" style="width:62px" value="atan" onclick="WriteInTheFormulaButtons('Math.atan()')">
+		
+			  <br>
+			  <input type="button" style="width:62px" value="sing"
+				onclick="WriteInTheFormulaButtons('Math.sin( *Math.PI/180)')"> 
+			  <input type="button" style="width:62px" value="asing"
+				onclick="WriteInTheFormulaButtons('Math.asin()*180/Math.PI')">
+			  <input type="button" style="width:62px" value="cosg"
+				onclick="WriteInTheFormulaButtons('Math.cos( *Math.PI/180)')">
+			  <input type="button" style="width:62px" value="acosg"
+				onclick="WriteInTheFormulaButtons('Math.acos( *Math.PI/180)')">
+			  <input type="button" style="width:62px" value="tang"
+				onclick="WriteInTheFormulaButtons('Math.tan( *Math.PI/180)	')">
+			  <input type="button" style="width:62px" value="atang"
+				onclick="WriteInTheFormulaButtons('Math.atan( *Math.PI/180)')">
+			</fieldset>
+			<div>
+			<label style="position:relative;top:22px">Formula:</label>
+			<br>
+			
+			<textarea id="textAreaFormulaColumnsCalculator" style="width:350px;height:100px;display:inline-block;position:relative;top:27px"></textarea>
+			<fieldset  style="display:inline-block;position:relative; top:10px" >
+				<legend>Set number of decimal figures:</legend>
+				<span>
+					<input type="checkbox" id="chooseNumberDecimalsCalculator_0" name="chooseNumberDecimalsCalculator" value="yes"> 
+					<label for="chooseNumberDecimalsCalculator_0">Yes: </label>
+					<input id="chooseNumberDecimalsCalculator_0_input" type="number" max="10" min="0">
+				</span> 
+			</fieldset>
+		</div>
+		<br>
+		<fieldset>
+			<legend>Column name:</legend>
+			<input type="radio" name="columnNameRadioCalculatorColumns" id ="columnNameRadioACalculatorColumns_personalized" checked="checked"> <!--Function has no sense, it is only to mimic aggregated columns dialog-->
+			<label for ="columnNameRadioACalculatorColumns_personalized" >Personalized</label>
+			<input id="columnNameColumnsCalculator" type="text" style="margin-top: 10px; margin-bottom: 10px; "> 
+		</fieldset>
+			<br>
+			
+			<button value="add" onClick="addColumnToListColumnsCalculator(event)" style="margin-bottom:10px">Add column to list
+			</button>
+			<br>
+			<hr>
+			<div style="width:auto;" >
+				<label>List of columns to add</label>
+				<span id= spanColumnsListCalculatorColumns></span>
+			  </div>
+			<br>
+			<div class="center" style="margin-top: 10px">
+			  <button value="default" onClick="addColumnsToTableInColumnsCalculator()">Ok</button>
 				<button value="cancel" formmethod="dialog" onclick="cancelButtonRecoveryOldData(event)">Cancel</button>
 			</div>
 		</form>
@@ -458,6 +591,7 @@
 				<span id="ButtonsContextMenuObjects"></span><br>
 				<button onclick='removeCircularImage(event, "DialogContextMenu")'>Remove</button>
 				<button onclick='renameCircularImage(event, "DialogContextMenu")'>Rename</button><br>
+				<!--button onclick='giveMeNetworkInformation(event, "DialogContextMenu")'>Network Info</button><br><br-->
 			</p>
 			<div class="center">
 				<button value="cancel" onClick="startingNodeContextId=null;" formmethod="dialog">Cancel</button>
@@ -693,6 +827,41 @@
 		</tr></table>
 	</dialog>
 
+	<dialog id="DialogBarPlot">
+		<table border="0"><tr><td>
+			<span id="DialogBarPlotTitle"></span>
+			<form>
+			<fieldset>
+    				<legend>Plot type:</legend>
+				<label><input type="radio" name="DialogBarPlotType" id="DialogBarPlotTypeBar" checked="checked"></input>Bar</label>
+				<label><input type="radio" name="DialogBarPlotType" id="DialogBarPlotTypePie"></input>Pie</label>
+			</fieldset>
+			<fieldset>
+    				<legend>Axes:</legend>
+				<label>Categories:
+					<span id="DialogBarPlotAxisX"></span>
+				</label>
+				<br>
+				<label>Values:
+					<span id="DialogBarPlotAxisY"></span>
+				</label>
+				<br>
+				<label>Variable name:
+					<span id="DialogBarPlotVariable"></span>
+				</label>
+			</fieldset>
+			<br>
+			<div class="center">
+				<button value="draw" onClick="DrawBarPlot(event)">Draw</button>
+				<button value="ok" onClick="CloseDialogBarPlot(event)" formmethod="dialog">Close</button>
+			</div>
+			</form>
+		</td>
+		<td><div id="DialogBarPlotVisualization" style="width:600px; height:500px;">
+				<canvas id="DialogBarPlotVisualizationCanvas" style="width:100%; height:100%;"></canvas></div></td>
+		</tr></table>
+	</dialog>
+
 	<dialog id="DialogOneValue">
 		<span id="DialogOneValueTitle"></span>
 		<form>
@@ -784,6 +953,28 @@
 		</form>
 	</dialog>
 
+	<!--dialog id="UploadTimeAverages">
+		<div id="UploadTimeAveragesLoginFirst" style="display: none;">
+		<form>
+			To upload data in a STA server, you should Login first.<br>
+			<div class="center">
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+		</form>
+		</div>
+		<form id="UploadTimeAveragesForm">
+			Upload Datastream as STA time averages
+			<br>
+			<label>STA target service URL:
+				<input type="text" id="DialogTimeAveragesSTAUploadURLInput" size="100"></input>
+			</label>
+			<div class="center">
+				<button value="ok" onClick="UploadTimeAveragesSTAURL(event)" formmethod="dialog">Upload</button>
+			</div>
+		</form>
+	</dialog-->
+
+
 	<!--h2 id="eventSpanHeading"></h2>
 	<pre id="eventSpanContent"></pre-->
 
@@ -837,26 +1028,29 @@
 
 		var config;
 
-		const ServicesAndAPIs = {ogc: {name: "STA plus", description: "Add STA service", startNode: true},
+		const ServicesAndAPIs = {sta: {name: "STA plus", description: "Add STA service", startNode: true},
 					ogcAPIs: {name: "OGC API", description: "Add OGC API collection", startNode: true},
 					csw: {name: "Catalogue", description: "Add OGC CSW", startNode: true},
 					ImportCSV: {name: "CSV", description: "Import CSV", startNode: true},
-					ImportGeoJSON: {name: "GeoJSON", description: "Import GeoJSON", startNode: true}};
+					ImportGeoJSON: {name: "GeoJSON", description: "Import GeoJSON", startNode: true},
+					staRoot: {name: "STA root", description: "STA root"}};
 		const ServicesAndAPIsArray = Object.keys(ServicesAndAPIs);
-		const STAEntities = {ObservedProperties: {singular: "ObservedProperty", entities: ["Datastreams", "MultiDatastreams"], properties: ["name", "definition", "description", "properties"]},
-				Observations: {singular: "Observation", entities: ["Datastream", "MultiDatastream", "FeatureOfInterest", "ObservationGroups", "Subjects", "Objects"], properties: ["phenomenonTime", "resultTime", "result", "resultQuality", "validTime", "parameters"], entityRelations: ["Object", "Subject"]}, 
-      				FeaturesOfInterest: {singular: "FeatureOfInterest", entities: ["Observations"], properties: ["name", "description", "encodingType", "feature", "properties"]},
-				Sensors: {singular: "Sensor", entities: ["Datastreams", "MultiDatastreams"], properties: ["name", "description", "encodingType", "metadata", "properties"]}, 
-				Things: {singular: "Thing", entities: ["Datastreams", "MultiDatastreams", "Party", "Locations", "HistoricalLocations"], properties: ["name", "description", "properties"]},
-				Locations: {singular: "Location", entities: ["Things", "HistoricalLocations"], properties: ["name", "description", "encodingType", "location", "properties"]},
-				HistoricalLocations: {singular: "HistoricalLocation", entities: ["Things", "Location"], properties: ["time"]},
-				Datastreams: {singular: "Datastream", entities: ["Party", "Sensor", "ObservedProperty", "Campaigns", "License", "Observations", "Thing"], properties: ["name", "description", "unitOfMeasurement", "observationType", "observedArea", "phenomenonTime", "resultTime", "properties"]},
-				MultiDatastreams: {singular: "MultiDatastream", entities: ["Party", "Sensor", "ObservedProperties", "Campaigns", "License", "Observations", "Thing"], properties: ["name", "description", "unitOfMeasurements", "observationType", "observedArea", "phenomenonTime", "resultTime", "multiObservationDataTypes", "properties"]},
-				Parties: {singular: "Party", entities: ["Datastreams", "MultiDatastreams", "Campaigns", "ObservationGroups", "Things"], properties: ["description", "authId", "role", "displayName"]},
-				Campaigns: {singular: "Campaign", entities: ["Datastreams", "MultiDatastreams", "Party", "License"], properties: ["name", "description", "classification", "termsOfUse", "privacyPolicy", "creationTime", "startTime", "endTime", "url", "properties"]},
-				Licenses: {singular: "License", entities: ["Datastreams", "MultiDatastreams", "Campaigns", "ObservationGroups"], properties: ["name", "description", "definition", "logo", "attributionText"]},
-				ObservationGroups: {singular: "ObservationGroup", entities: ["Party", "Campaigns", "License", "Observations", "Relations"], properties: ["name", "description", "purpose", "creationTime", "endTime", "termsOfUsed", "privacyPolicy", "dataQuality", "properties"]},
-				Relations: {singular: "Relation", entities: ["Object", "Subject", "ObservationGroups"], properties: ["role", "description", "externalObject", "properties"], entityRelations: ["Objects", "Subjects"]}};
+		const STAEntities = {
+			ObservedProperties: { singular: "ObservedProperty", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "definition", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			Observations: { singular: "Observation", entities: [{ name: "Datastream", required: "true" }, { name: "MultiDatastream", required: "true" }, { name: "FeatureOfInterest", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Subjects", required: "false" }, { name: "Objects", required: "false" }], properties: [{ name: "phenomenonTime", dataType: "object", required: "true" }, { name: "resultTime", dataType: "isodatetime", required: "true" }, { name: "result", dataType: "", required: "true" }, { name: "resultQuality", dataType: "object", required: "false" }, { name: "validTime", dataType: "data_isoperiod", required: "false" }, { name: "parameters", dataType: "JSON", required: "false" }], entityRelations: ["Object", "Subject"] },
+			FeaturesOfInterest: { singular: "FeatureOfInterest", entities: [{ name: "Observations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "feature", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			Sensors: { singular: "Sensor", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "metadata", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			Things: { singular: "Thing", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "Locations", required: "true" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			Locations: { singular: "Location", entities: [{ name: "Things", required: "false" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "location", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			HistoricalLocations: { singular: "HistoricalLocation", entities: [{ name: "Things", required: "true" }, { name: "Location", required: "true" }], properties: [{ name: "time", dataType: "isodatetime", required: "true" }] },
+			Datastreams: { singular: "Datastream", entities: [{ name: "Party", required: "true" }, { name: "Sensor", required: "true" }, { name: "ObservedProperty", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Thing", required: "true" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "observationType", dataType: "string", required: "true" }, { name: "unitOfMeasurement", dataType: "JSON", required: "true" }, { name: "observedArea", dataType: "object", required: "false" }, { name: "phenomenonTime", dataType: "data_isoperiod", required: "false" }, { name: "resultTime", dataType: "data_isoperiod", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			MultiDatastreams: { singular: "MultiDatastream", entities: [{ name: "Party", required: "true" }, { name: "Sensor", required: "true" }, { name: "ObservedProperty", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Thing", required: "true" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "observationType", dataType: "string", required: "true" }, { name: "unitOfMeasurement", dataType: "JSON", required: "true" }, { name: " observedArea", dataType: "object", required: "false" }, { name: "phenomenonTime", dataType: "data_isoperiod", required: "false" }, { name: "resultTime", dataType: "data_isoperiod", required: "false" }, { name: "multiObservationDataType", dataType: "JSON", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			Parties: { singular: "Party", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Things", required: "false" }], properties: [{ name: "description", dataType: "string", required: "false" }, { name: "authId", dataType: "string", required: "false" }, { name: "role", dataType: "PartyRoleCode", required: "true" }, { name: "displayName", dataType: "string", required: "false" }] },
+			Campaigns: { singular: "Campaign", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "License", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "classification", dataType: "string", required: "false" }, { name: "termsOfUse", dataType: "string", required: "true" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "true" }, { name: "url", dataType: "URI", required: "false" }, { name: "startTime", dataType: "isodatetime", required: "false" }, { name: "endTime", dataType: "isodatetime", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			Licenses: { singular: "License", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "definition", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "logo", dataType: "string", required: "false" }, { name: "attributionText", dataType: "JSON", required: "false" }] },
+			ObservationGroups: { singular: "ObservationGroup", entities: [{ name: "Party", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Relations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "purpose", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "false" }, { name: "endTimecreationTime", dataType: "isodatetime", required: "false" }, { name: "termsOfUsed", dataType: "string", required: "false" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "dataQuality", dataType: "JSON", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			Relations: { singular: "Relation", entities: [{ name: "Object", required: "true" }, { name: "Subject", required: "true" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "role", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "false" }, { name: "externalObject", dataType: "URI", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], entityRelations: ["Objects", "Subjects"] }
+		};
 		const STAEntitiesArray = Object.keys(STAEntities);
 		const STASpecialQueries = {ObsLayer: {description: "Observations Layer", query: "Observations?$orderby=phenomenonTime%20desc&$expand=Datastream($select=unitOfMeasurement),Datastream/ObservedProperty($select=name,description,definition),FeatureOfInterest($select=description,feature)&$select=phenomenonTime,result"}}
 		const STASpecialQueriesArray = Object.keys(STASpecialQueries);
@@ -881,6 +1075,7 @@
 					ColumnsCalculator:{description: "Columns calculator"},
 					SeparateColumns: {description: "Separate Columns"},
 					ScatterPlot: {description: "Scatter Plot", leafNode: true},
+					BarPlot: {description: "Bar Plot", leafNode: true},
 					OneValueSTA: {description: "One Value", leafNode: true},
 					CountResultsSTA: { description: "Count results", leafNode: true },
 					SaveTable: {description: "Save Table", leafNode: true},
@@ -894,9 +1089,9 @@
 			//Determinino si ha de ser singular o plural
 			for (var i=0; i<parentEntity.entities.length; i++)
 			{			
-				if (parentEntity.entities[i]==entityName)
+				if (parentEntity.entities[i].name==entityName)
 					return entityName;
-				else if (parentEntity.entities[i]==STAEntities[entityName].singular)
+				else if (parentEntity.entities[i].name==STAEntities[entityName].singular)
 					return STAEntities[entityName].singular;
 			}
 			return null;
@@ -957,8 +1152,12 @@
 					var entityName=transformToSingularIfNeededSTAEntity(parentEntity, nextEntity)
 					if (entityName)
 						return {entity: entityName};
-					else
-						return {error: "The node connection does not match the STA data model. Use one of the following: " + JSON.stringify(parentEntity.entities)};
+					else{
+						var n=parentEntity.entities.length, s= n ? parentEntity.entities[0].name : "";
+						for (var t=1; t<n; t++)
+							s+=", " + parentEntity.entities[t].name;
+						return {error: "The node connection does not match the STA data model. Connect '" + parentLastEntity + "' to one of the following: " + s};
+					}
 				}
 				else
 				{
@@ -971,15 +1170,19 @@
 			var entityName=transformToSingularIfNeededSTAEntity(parentEntity, nextEntity);
 			if (entityName)
 				return {entity: entityName};
-			else
-				return {error: "The node connection does not match the STA data model. Use one of the following: " + JSON.stringify(parentEntity.entities)};
+			else{
+				var n=parentEntity.entities.length, s= n ? parentEntity.entities[0].name : "";
+				for (var t=1; t<n; t++)
+					s+=", " + parentEntity.entities[t].name;
+				return {error: "The node connection does not match the STA data model. Connect '"+ parentLastEntity +"' to one of the following: " + s};
+			}
 		}
 
 		//Return null if there is no reason (and there is a "fit").
 		function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
-			if (parentNode.image == "ogc.png" && (node.image == "FilterRowsSTA.png" || node.image == "SelectRowSTA.png" || node.image == "GeoFilterRowsSTA.png" || node.image == "SelectColumnsSTA.png" || node.image == "ExpandColumnsSTA.png" || node.image == "SortBySTA.png" || node.image == "OneValueSTA.png" || node.image == "CountResultsSTA.png" ) )
+			if (parentNode.image == "sta.png" && (node.image == "FilterRowsSTA.png" || node.image == "SelectRowSTA.png" || node.image == "GeoFilterRowsSTA.png" || node.image == "SelectColumnsSTA.png" || node.image == "ExpandColumnsSTA.png" || node.image == "SortBySTA.png" || node.image == "OneValueSTA.png" || node.image == "CountResultsSTA.png" ) )
 				return "The operation cannot be applied to the root of an STA. (Suggestion: connect a STA Entity first)";
-			if (parentNode.image=="ogc.png" || parentNode.image=="ogcAPIs.png" || parentNode.image=="csw.png")
+			if (parentNode.image=="sta.png" || parentNode.image=="ogcAPIs.png" || parentNode.image=="csw.png")
 				return null;
 			if (TableOperations[removeExtension(parentNode.image)] && TableOperations[removeExtension(parentNode.image)].leafNode==true)
 				return "Parent node is a leaf node and cannot be connected with any other node";
@@ -1331,30 +1534,30 @@
 			var s = "";
 			for (var i = 0; i < ServicesAndAPIsArray.length; i++) {
 				s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + ServicesAndAPIs[ServicesAndAPIsArray[i]].name + "\", \"" + ServicesAndAPIsArray[i] + ".png\");'><img src='" + ServicesAndAPIsArray[i] + ".png' height='20' valign='middle'> " + ServicesAndAPIs[ServicesAndAPIsArray[i]].description + "</button> ";
-				s += i%2 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
+				s += (i+1)%3==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
 			}
 			s += "<br>";
 			for (var i = 0; i < STAEntitiesArray.length; i++) {
 				s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + STAEntitiesArray[i] + "\", \"" + STAEntitiesArray[i] + ".png\");'><img src='" + STAEntitiesArray[i] + ".png' height='20' valign='middle'> " + STAEntitiesArray[i] + "</button>";
-				s += i%2 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
+				s += (i+1)%3==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
 			}
 			s += "<br>";
 			for (var i = 0; i < STAEntitiesArray.length; i++)
 			{
 				s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + STAEntities[STAEntitiesArray[i]].singular + "\", \"" + STAEntities[STAEntitiesArray[i]].singular + ".png\");'><img src='" + STAEntities[STAEntitiesArray[i]].singular + ".png' height='20' valign='middle'> " + STAEntities[STAEntitiesArray[i]].singular + "</button>";
-				s += i%2 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
+				s += (i+1)%3==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
 			}
 			s += "<br>";
 			for (var i = 0; i < STASpecialQueriesArray.length; i++)
 			{
 				s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + STASpecialQueriesArray[i] + "\", \"" + STASpecialQueriesArray[i] + ".png\");'><img src='" + STASpecialQueriesArray[i] + ".png' height='20' valign='middle'> " + STASpecialQueries[STASpecialQueriesArray[i]].description + "</button>";
-				s += i%2 || i == STASpecialQueriesArray.length-1 ? "<br>" : " ";
+				s += (i+1)%3==0 || i == STASpecialQueriesArray.length-1 ? "<br>" : " ";
 			}
 			s += "<br>";
 			for (var i = 0; i < TableOperationsArray.length; i++)
 			{
 				s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + TableOperations[TableOperationsArray[i]].description + "\", \"" + TableOperationsArray[i] + ".png\");'><img src='" + TableOperationsArray[i] + ".png' height='20' valign='middle'> " + TableOperations[TableOperationsArray[i]].description + "</button>";
-				s += i%2 || i == TableOperationsArray.length-1 ? "<br>" : " ";
+				s += (i+1)%3==0 || i == TableOperationsArray.length-1 ? "<br>" : " ";
 			}
 
 			document.getElementById("ButtonsContextMenuObjects").innerHTML = s;
@@ -1502,12 +1705,17 @@
 						var ol_len=(typeof digitalTransfer['gmd:onLine'].length==="undefined") ? 1 : digitalTransfer['gmd:onLine'].length;
 						for (var ol=0; ol<ol_len; ol++) {
 							var online=(typeof digitalTransfer['gmd:onLine'].length==="undefined") ? digitalTransfer['gmd:onLine']['gmd:CI_OnlineResource'] : digitalTransfer['gmd:onLine'][ol]['gmd:CI_OnlineResource'];
+							if (!online['gmd:linkage'] || !online['gmd:linkage']['gmd:URL'])
+								continue;
 							simpleUrlRecords.push({
 								id: metadata['gmd:fileIdentifier']['gco:CharacterString'],
 								title: title,
 								dataURL: online['gmd:linkage']['gmd:URL'],
-								schemaURL: schema,
-								extent: bbox.length ? bbox : null});
+								schemaURL: schema});
+							if (online['gmd:name'] && online['gmd:name']['gco:CharacterString'])
+								simpleUrlRecords[simpleUrlRecords.length-1].distribution=online['gmd:name']['gco:CharacterString'];
+							if (bbox.length)
+								simpleUrlRecords[simpleUrlRecords.length-1].extent=bbox;
 						}
 					}
 				}
@@ -1712,7 +1920,7 @@
 			}
 			else
 			{
-				if (node.image!="ogc.png" && !node.OGCType)
+				if (node.image!="sta.png" && !node.OGCType && node.image!="staRoot.png")
 				{
 					node.STAdataAttributes=getDataAttributes(node.STAdata);
 					addSemanticsSTADataAttributes(node.STAdataAttributes, node.STAURL);
@@ -2149,7 +2357,7 @@
 			event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogSTAURL").close(document.getElementById("DialogSTAURLInput").value);
 			
-			if ((currentNode.image == "ogc.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value) ||
+			if ((currentNode.image == "sta.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value) ||
 				(currentNode.image == "ogcAPIs.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value+"/collections") ||
 				(currentNode.image == "csw.png" && currentNode.STAURL == document.getElementById("DialogSTAURLInput").value+"?REQUEST=GetRecords&SERVICE=CSW&version=2.0.2&resultType=results&elementSetName=full&typeNames=gmd:MD_Metadata&namespace=xmlns(gmd=http://www.isotc211.org/2005/gmd)&outputSchema=http://www.isotc211.org/2005/gmd&maxRecords=100"))
 				return;
@@ -2290,13 +2498,41 @@
 
 			data = parentNodes[1].STAdata;
 			if (!data || data.length!=1) {
-				document.getElementById("DialogScatterPlotTitle").innerHTML = "Second connection should only have only item. Continuing without title.";
+				document.getElementById("DialogScatterPlotTitle").innerHTML = "Second connection should only have one item. Continuing without title.";
 				document.getElementById("DialogScatterPlotVariableUoM").style.display = "none";
 				return;
 			}
 			var dataAttributes = parentNodes[1].STAdataAttributes ? parentNodes[1].STAdataAttributes : getDataAttributes(data);
 			PopulateSelectSaveLayerDialog("DialogScatterPlotVariable", dataAttributes, "name");
 			PopulateSelectSaveLayerDialog("DialogScatterPlotUoM", dataAttributes, "unitOfMeasurement/symbol");
+		}
+
+		function ShowBarPlotDialog(parentNodes) {
+			var data = parentNodes[0].STAdata;
+			if (!data || !data.length) {
+				document.getElementById("DialogBarPlotTitle").innerHTML = "No data to show.";
+				return;
+			}
+			document.getElementById("DialogBarPlotTitle").innerHTML = "Bar Plot";
+
+			var dataAttributes = parentNodes[0].STAdataAttributes ? parentNodes[0].STAdataAttributes : getDataAttributes(data);
+			PopulateSelectSaveLayerDialog("DialogBarPlotAxisX", dataAttributes, "phenomenonTime");
+			PopulateSelectSaveLayerDialog("DialogBarPlotAxisY", dataAttributes, "result");
+
+
+			if (parentNodes.length<2){
+				document.getElementById("DialogBarPlotVariable").innerHTML='<input id="DialogBarPlotVariableInput" value="">';
+				return;
+			}
+
+			data = parentNodes[1].STAdata;
+			if (!data || data.length!=1) {
+				document.getElementById("DialogBarPlotTitle").innerHTML = "Second connection should only have one item. Continuing without title.";
+				return;
+			}
+
+			var dataAttributes = parentNodes[1].STAdataAttributes ? parentNodes[1].STAdataAttributes : getDataAttributes(data);
+			PopulateSelectSaveLayerDialog("DialogBarPlotVariable", dataAttributes, "name");
 		}
 
 		function UpdateJoinTablesRowMatchingNode(node) {
@@ -2329,7 +2565,6 @@
 			UpdateJoinTablesRowMatchingNode(node);
 			AddJoinTablesRowMatching(networkNodes.get(nodeLeftId), networkNodes.get(nodeRightId), node, true);
 		}
-
 
 		function AddJoinTablesRowMatching(nodeLeft, nodeRight, node, add)
 		{
@@ -2372,7 +2607,7 @@
 			if (!dataLeft || !dataLeft.length) {
 				document.getElementById("DialogJoinTablesRowMatching").innerHTML = "No data to show.";
 				return;
-			}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       			}
 			if (parentNodes.length<2)
 			{
 				document.getElementById("DialogJoinTablesRowMatching").innerHTML = "Two tables are required.";
@@ -2463,6 +2698,140 @@
 			document.getElementById("DialogScatterPlot").close();
 		}
 
+const ColorsForBarPlot=["#1f77b4","#aec7e8","#ff7f0e","#ffbb78","#2ca02c","#98df8a","#d62728","#ff9896","#9467bd","#c5b0d5","#8c564b","#c49c94","#e377c2","#f7b6d2","#7f7f7f","#c7c7c7","#bcbd22","#dbdb8d","#17becf","#9edae5"];
+
+		var BarPlotGraph2d=null;
+		function DrawBarPlot(event){
+			event.preventDefault(); // We don't want to submit this form
+			var selectedOptions={};
+			selectedOptions.AxisX=document.getElementById("DialogBarPlotAxisXSelect").value;
+			selectedOptions.AxisY=document.getElementById("DialogBarPlotAxisYSelect").value;
+
+			var nodes=GetParentNodes(currentNode);
+			if (nodes && nodes.length) {
+				var node=nodes[0];
+				var data, dataAttributes, record;
+				if (node.STAdata) {
+					var labels=[], dataY=[], backgroundColor=[], labelY="Magnitude", plotType, scales, legend, plugins;
+					data=node.STAdata;
+					dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data);
+
+					for (var i = 0; i < data.length; i++) {
+						record=data[i];
+						labels.push(record[selectedOptions.AxisX]);
+						dataY.push(record[selectedOptions.AxisY]);
+						backgroundColor.push(ColorsForBarPlot[i%ColorsForBarPlot.length]);
+					}
+					if (document.getElementById("DialogBarPlotVariableSelect"))
+						labelY=document.getElementById("DialogBarPlotVariableSelect").value;
+					else if (document.getElementById("DialogBarPlotVariableInput") && document.getElementById("DialogBarPlotVariableInput").value)
+						labelY=document.getElementById("DialogBarPlotVariableInput").value;
+					else if (dataAttributes[selectedOptions.AxisY].description) {
+						labelY=dataAttributes[selectedOptions.AxisY].description;
+						if (dataAttributes[selectedOptions.AxisY].UoMSymbol)
+							labelY+=" (" + dataAttributes[selectedOptions.AxisY].UoMSymbol + ")";
+						else if (dataAttributes[selectedOptions.AxisY].UoM)
+							labelY+=" (" + dataAttributes[selectedOptions.AxisY].UoM + ")";
+					}
+					if (document.getElementById("DialogBarPlotTypePie").checked) {
+						plotType="pie";
+						scales=null;
+						legend={
+							position: "right",
+							labels: {
+								fontSize: 10,
+								padding: 3
+							}
+						};
+						plugins={
+							labels: {
+								render: 'value',
+								precision: 0,
+								showZero: true,
+								fontSize: 12,
+								fontColor: '#fff',
+								fontStyle: 'normal',
+								fontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+								textShadow: true,
+								shadowOffsetX: -5,
+								shadowOffsetY: 5,
+								shadowColor: 'rgba(255,0,0,0.75)',
+								arc: true,
+								position: 'default',
+								overlap: true,
+								showActualPercentages: true,
+								images: [{
+								  src: 'image.png',
+								  width: 16,
+								  height: 16
+								}],
+								outsidePadding: 4,
+								textMargin: 4
+							}
+						};
+					} else {
+						plotType="bar";
+						scales={
+							xAxes: [{
+								scaleLabel: {display: true, labelString: dataAttributes[selectedOptions.AxisX].description ? dataAttributes[selectedOptions.AxisX].description : selectedOptions.AxisX},
+								categoryPercentage: 1,
+								barPercentage: 1,
+								gridLines: { display: false},
+								ticks: { autoSkip: false /*, maxRotation: 0 */}
+							}],
+							yAxes: [{
+								//type: "logarithmic",
+								scaleLabel: {display: true, labelString: labelY},
+							ticks: { beginAtZero:true }
+							}]
+						};
+						legend={
+							display: false
+						};
+						plugins={
+							labels: {
+								render: 'value',
+								precision: 0,
+								showZero: true,
+								fontSize: 12,
+								fontStyle: 'normal',
+								fontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+								position: 'default',
+								overlap: true,
+								showActualPercentages: false,
+								outsidePadding: 4,
+								textMargin: 4
+							}
+						};
+					}
+					if (BarPlotGraph2d)
+						BarPlotGraph2d.destroy();
+					BarPlotGraph2d = new Chart(document.getElementById('DialogBarPlotVisualizationCanvas'), {
+								type: plotType,
+								data: {
+									labels: labels,
+									datasets: [{
+										data: dataY,
+										backgroundColor: backgroundColor,
+										borderWidth: 0
+									}]
+								},
+								options: {	
+									legend: legend,
+									scales: scales,
+									plugins: plugins,
+									maintainAspectRatio: false,
+									resizeDelay: 100
+								}
+							});
+				}
+			}
+		}
+
+		function CloseDialogBarPlot(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogBarPlot").close();
+		}
 
 		function ShowOneValueDialog(currentNode) {
 			var parentNode=GetFirstParentNode(currentNode);
@@ -2733,7 +3102,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				"authId": authId,
 				//"displayName": authId,  //It might change soon to "description"
 				//"description": null,
-				role: "individual"
+				"role": "individual"
 			});
 		}
 
@@ -2954,6 +3323,15 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				!isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 		}
 
+		function returnIndexEntityRelatedInSTAEntity(entityName, entityRelated) {
+			var n=STAEntities[entityName].entities.length;
+			for (var t=0;t<n;t++){
+				if (STAEntities[entityName].entities[t].name==entityRelated)
+					return t;
+			}
+			return -1;
+		}
+
 		function PopulateCreateUpdateDeleteEntity(entityName, currentNode) {
 			var cdns=[];
 
@@ -2971,13 +3349,13 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					alert("Parent node has no STA data associated");
 					return false;
 				}
-				if (parentNode.image != "ogc.png"){
+				if (parentNode.image != "sta.png"){
 					if (parentNode.STAdata.length>1){
 						alert("Parent node has more than a single record. Please select a record first.");
 						return false;
 					}
 					var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), false);
-					if (parentEntityName!=entityName && STAEntities[entityName].entities.indexOf(parentEntityName)==-1 && STAEntities[entityName].entities.indexOf(STAEntities[parentEntityName].singular)==-1) {
+					if (parentEntityName!=entityName && returnIndexEntityRelatedInSTAEntity(entityName, parentEntityName)==-1 && returnIndexEntityRelatedInSTAEntity(entityName, STAEntities[parentEntityName].singular)==-1) {
 						alert("Parent node ("+STAEntities[parentEntityName].singular+") is not a/an " + STAEntities[entityName].singular + " or is directly related to a/an " +  STAEntities[entityName].singular);
 						return false;
 					}
@@ -2991,7 +3369,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 							alert("Cannot find @iot.id. Did you removed in a select?");
 							return false;
 						}
-						cdns.push('Id: <input id="dlgCreateUpdateDeleteEntity_id" type="text" value="', record["@iot.id"], '" readonly=="readonly"><br>');
+						cdns.push('Id: <input id="dlgCreateUpdateDeleteEntity_id" type="text" value="', record["@iot.id"], '" readonly=="readonly"><br>'); //update/delete
 					}
 					else { 
 						var record=parentNode.STAdata[0];
@@ -3003,45 +3381,44 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					}
 				}
 			}
-
 			for (var i=0; i<STAEntities[entityName].properties.length; i++){
-				if ((entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties") || 
-					((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i]=="observedArea" || STAEntities[entityName].properties[i]=="phenomenonTime" || STAEntities[entityName].properties[i]=="resultTime")))
+				if ((entityName=="Observations" ? STAEntities[entityName].properties[i].name=="parameters" : STAEntities[entityName].properties[i].name=="properties") || 
+					((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i].name=="observedArea" || STAEntities[entityName].properties[i].name=="phenomenonTime" || STAEntities[entityName].properties[i].name=="resultTime")))
 					continue;
-				if ((entityName=="Locations" && STAEntities[entityName].properties[i]=="location") || 
-				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i]=="feature"))
+				if ((entityName=="Locations" && STAEntities[entityName].properties[i].name=="location") || 
+				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i].name=="feature"))
 				{
 					//For the moment in supporting only a point
 					cdns.push('<fieldset>',
-						'<legend>', STAEntities[entityName].properties[i], ' (point):</legend>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_longitude">', 'longitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_longitude" type="text"><br>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_latitude">', 'latitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_latitude" type="text"><br>',
+						'<legend>', STAEntities[entityName].properties[i].name, ' (point):</legend>', //Volem posar que sigui required?
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude">', 'longitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude">', 'latitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude" type="text"><br>',
 						'</fieldset>',
 						'<br>');
 					continue;	
 				}
-				if (entityName=="Datastreams" && STAEntities[entityName].properties[i]=="unitOfMeasurement") {
+				if (entityName=="Datastreams" && STAEntities[entityName].properties[i].name=="unitOfMeasurement") {
 					//Something similar needs to be done for MultiDataStream
 					cdns.push('<fieldset>',
-						'<legend>', STAEntities[entityName].properties[i], ':</legend>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_name">', 'name: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_name" type="text"><br>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_symbol">', 'symbol: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_symbol" type="text"><br>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_definition">', 'definition: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '_definition" type="text"><br>',
+						'<legend>', STAEntities[entityName].properties[i].name, ':</legend>', //Quins volem que siguin required? perque al esquema diu que es required el unitOfMeasurement sencer, no desglosa
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name">', 'name: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol">', 'symbol: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition">', 'definition: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" type="text"><br>',
 						'</fieldset>',
 						'<br>');
 					continue;
 				}
-				cdns.push('<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '">', STAEntities[entityName].properties[i], ': </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i], '" type="text"><br>');
+				cdns.push('<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" data-STArequired='+STAEntities[entityName].properties[i].required+'>', (STAEntities[entityName].properties[i].required=='true')? STAEntities[entityName].properties[i].name+'*':STAEntities[entityName].properties[i].name, ': </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" type="text"><br>');
 			}
 
 			document.getElementById("dlgCreateUpdateDeleteEntityProperties").innerHTML=cdns.join("");
 
-			if (parentNodes[0].image != "ogc.png" && parentEntityName==entityName) {
+			if (parentNodes[0].image != "sta.png" && parentEntityName==entityName) {
 				//Edit or delete
 				for (var i=0; i<STAEntities[entityName].properties.length; i++) {
-					if (entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties")
+					if (entityName=="Observations" ? STAEntities[entityName].properties[i].name=="parameters" : STAEntities[entityName].properties[i].name=="properties")
 						continue;
-					document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]).value=record[STAEntities[entityName].properties[i]] ? record[STAEntities[entityName].properties[i]] : "";
+					document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name).value=record[STAEntities[entityName].properties[i].name] ? record[STAEntities[entityName].properties[i].name] : "";
 				}
 				document.getElementById("dlgCreateUpdateDeleteEntityCreate").style.display="none";
 				document.getElementById("dlgCreateUpdateDeleteEntityUpdate").style.display="inline-block";
@@ -3092,7 +3469,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 
 			for (var i=0; i<parentNodes.length; i++) {
 				var parentNode=parentNodes[i];
-				if (parentNode.image == "ogc.png")
+				if (parentNode.image == "sta.png")
 					continue;
 				if (i!=0 && getSTAURLRoot(parentNode.STAURL)!=url) {
 					alert("Not all parent nodes are from the same root URL: " + getSTAURLRoot(parentNode.STAURL) + ", " + url);
@@ -3101,9 +3478,9 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			
 				var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), true);
 				var entity;
-				if (STAEntities[entityName].entities.indexOf(parentEntityName)!=-1)
+				if (returnIndexEntityRelatedInSTAEntity(entityName, parentEntityName)!=-1)
 					entity=parentEntityName;
-				else if (STAEntities[entityName].entities.indexOf(STAEntities[parentEntityName].singular)!=-1)
+				else if (returnIndexEntityRelatedInSTAEntity(entityName, STAEntities[parentEntityName].singular)!=-1)
 					entity=STAEntities[parentEntityName].singular;
 				else {
 					alert("Parent node ("+STAEntities[parentEntityName].singular+") is not directly related to a/an " +  STAEntities[entityName].singular);
@@ -3138,30 +3515,30 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			}
 			var prop;
 			for (var i=0; i<STAEntities[entityName].properties.length; i++) {
-				if ((entityName=="Observations" ? STAEntities[entityName].properties[i]=="parameters" : STAEntities[entityName].properties[i]=="properties") || 
-					((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i]=="observedArea" || STAEntities[entityName].properties[i]=="phenomenonTime" || STAEntities[entityName].properties[i]=="resultTime")))
+				if ((entityName=="Observations" ? STAEntities[entityName].properties[i].name=="parameters" : STAEntities[entityName].properties[i].name=="properties") || 
+					((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i].name=="observedArea" || STAEntities[entityName].properties[i].name=="phenomenonTime" || STAEntities[entityName].properties[i].name=="resultTime")))
 					continue;
-				if ((entityName=="Locations" && STAEntities[entityName].properties[i]=="location") || 
-				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i]=="feature"))
+				if ((entityName=="Locations" && STAEntities[entityName].properties[i].name=="location") || 
+				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i].name=="feature"))
 				{
 					//For the moment in supporting only a point
-					obj[STAEntities[entityName].properties[i]]={"type": "Point", "coordinates": []};
-					obj[STAEntities[entityName].properties[i]].coordinates[0]=parseFloat(document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]+"_longitude").value);
-					obj[STAEntities[entityName].properties[i]].coordinates[1]=parseFloat(document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]+"_latitude").value);
+					obj[STAEntities[entityName].properties[i].name]={"type": "Point", "coordinates": []};
+					obj[STAEntities[entityName].properties[i].name].coordinates[0]=parseFloat(document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_longitude").value);
+					obj[STAEntities[entityName].properties[i].name].coordinates[1]=parseFloat(document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_latitude").value);
 					continue;	
 				}
-				if (entityName=="Datastreams" && STAEntities[entityName].properties[i]=="unitOfMeasurement")
+				if (entityName=="Datastreams" && STAEntities[entityName].properties[i].name=="unitOfMeasurement")
 				{
 					//Something similar needs to be done for MultiDataStream
-					obj[STAEntities[entityName].properties[i]]={};
-					obj[STAEntities[entityName].properties[i]].name=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_name").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_name").value : null;
-					obj[STAEntities[entityName].properties[i]].symbol=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_symbol").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_symbol").value : null; 
-					obj[STAEntities[entityName].properties[i]].definition=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_definition").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i] + "_definition").value : null;
+					obj[STAEntities[entityName].properties[i].name]={};
+					obj[STAEntities[entityName].properties[i].name].name=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_name").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_name").value : null;
+					obj[STAEntities[entityName].properties[i].name].symbol=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_symbol").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_symbol").value : null; 
+					obj[STAEntities[entityName].properties[i].name].definition=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_definition").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_definition").value : null;
 					continue;
 				}
-				prop=document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i]).value;
+				prop=document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name).value;
 				if (prop!=="")
-					obj[STAEntities[entityName].properties[i]]=(entityName=="Observations" && STAEntities[entityName].properties[i]=="result" && !isNaN(prop)) ? parseFloat(prop) : prop;
+					obj[STAEntities[entityName].properties[i].name]=(entityName=="Observations" && STAEntities[entityName].properties[i].name=="result" && !isNaN(prop)) ? parseFloat(prop) : prop;
 			}
 
 			GetObjectId(url, entityName, obj).then(
@@ -3183,6 +3560,65 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				}
 			);	
 		}
+
+		function GetUpdateEntity(event){
+			event.preventDefault(); 
+			document.getElementById("DialogCreateUpdateDeleteEntity").close();
+			var parentNodes=GetParentNodes(currentNode);
+			var url=parentNodes[0].STAURL;
+			var entityName=getSTAEntityPlural(document.getElementById("dlgCreateUpdateDeleteEntityType").innerHTML)
+			
+			showInfoMessage("Updating  "+ STAEntities[entityName].singular +" "+parentNodes[0].STAURLIdSelected+" ...");
+			
+			var childrenNodes=document.getElementById("dlgCreateUpdateDeleteEntityProperties").childNodes;
+			console.log(childrenNodes)
+			var obj={}, idSplited
+			for (var i=0;i<childrenNodes.length;i++){
+				if (childrenNodes[i].nodeName=="INPUT"){
+					//Està en reqired i al value es blanc? anulaho tot
+					idSplited=childrenNodes[i].id.split("dlgCreateUpdateDeleteEntity_")[1];
+					obj[idSplited]=childrenNodes[i].value;
+				}
+			}
+
+			console.log(obj);
+
+			var response= HTTPJSONData(url,null,"PUT",obj);
+			
+
+
+		}
+		function AskForDeleteEntity(event){
+			event.preventDefault(); 
+			var parentNodes=GetParentNodes(currentNode);
+			var entityName=getSTAEntityPlural(document.getElementById("dlgCreateUpdateDeleteEntityType").innerHTML);
+			var entityNameSingular= STAEntities[entityName].singular;
+			var id= parentNodes[0].STAURLIdSelected;
+
+			var opcion = confirm("Do you want to erase "+entityNameSingular+" "+parentNodes[0].STAURLIdSelected);
+				if (opcion == true) {
+					GetDeleteEntity(entityName, id)
+					console.log("borrar")
+				} else{
+					console.log("cancelar")
+				}
+		}
+
+
+		function GetDeleteEntity(entityName, id){
+			event.preventDefault(); 
+			console.log("borrant")
+			document.getElementById("DialogCreateUpdateDeleteEntity").close();
+			var parentNodes=GetParentNodes(currentNode);
+			var url=parentNodes[0].STAURL;
+
+			//var response= HTTPJSONData(url,null,"DELETE",null);
+
+			showInfoMessage("Deleting  "+ entityName +" "+id+" ...");
+		}
+
+
+
 
 		function GetSelectRow(event) {
 			event.preventDefault(); // We don't want to submit this form
@@ -4929,7 +5365,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				return null;
 			}
 			if (nodeFrom.STAURL && IdOfSTAEntity(nodeTo) != -1) {
-				if (nodeFrom.image=="ogc.png")
+				if (nodeFrom.image=="sta.png")
 					nodeTo.STAURL = nodeFrom.STAURL + "/" + STAEntitiesArray[IdOfSTAEntity(nodeTo)];
 				else 
 					nodeTo.STAURL = nodeFrom.STAURL + "/" + getConnectionSTAEntity(nodeFrom, nodeTo).entity;
@@ -5025,6 +5461,21 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
 				return true;
 			}
+			if (nodeTo.image == "staRoot.png") {
+				if (nodeFrom) {
+					var previousSTAURL=nodeTo.STAURL;
+					nodeTo.STAURL=getSTAURLRoot(nodeFrom.STAURL);
+					nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
+					networkNodes.update(nodeTo);
+				}
+				if (calUnir)
+					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
+				if (nodeFrom) {
+					UpdateChildenSTAURL(nodeTo, nodeTo.STAURL, previousSTAURL);
+					LoadJSONNodeSTAData(nodeTo);
+				}
+				return true;
+			}
 			return false;
 		}
 
@@ -5087,13 +5538,29 @@ async function requestAndRefreshCountResults(currentNode, period) {
 
 			if (params.nodes && params.nodes.length && !connectionInProcess) {
 				currentNode = networkNodes.get(params.nodes[0])
-				if (currentNode.image == "ogc.png") {
+				if (currentNode.image == "sta.png") {
 					document.getElementById("divTitleDialogSTAURL").innerHTML = "SensorThings API and STAplus";
 					if (currentNode.STAURL)
 						document.getElementById("DialogSTAURLInput").value = currentNode.STAURL;
 					document.getElementById("DialogSTAURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedSTAurls);
 					//document.getElementById("DialogSTAURLInput").readOnly = false;
 					//document.getElementById("DialogSTAURLOk").style.display = "inline-block";
+					var parentNode=GetFirstParentNode(currentNode);
+					if (parentNode) {
+						// Has de table a dataURL and a schemaURL?, then I add this to the dialogbox.
+						var data=parentNode.STAdata;
+						if (!data || !data.length) 
+							alert("Parent node has no data loaded. It will be ignored.");
+						else if (data.length>1)
+							alert("Parent node has more than one row. Please select on row first. It will be ignored.");
+						else {
+							var record=data[0];
+							if (!record.dataURL)
+								alert("Parent node has no dataURL column. It will be ignored.");
+							else 
+								document.getElementById("DialogSTAURLInput").value = record.dataURL;
+						}
+					}
 					document.getElementById("DialogSTAURL").showModal();
 				}
 				else if (currentNode.image == "ogcAPIs.png") {
@@ -5170,10 +5637,10 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					ShowUploadObservationsDialog(currentNode);
 					document.getElementById("DialogUploadObservations").showModal();
 				}
-				else if (currentNode.image == "UploadTimeAverages.png") {
+				/*else if (currentNode.image == "UploadTimeAverages.png") {
 					ShowUploadTimeAveragesDialog(currentNode.id);
 					document.getElementById("UploadTimeAverages").showModal();
-				}
+				}*/
 				else if (currentNode.image == "SaveTable.png") {
 					//ShowSaveTableDialog(currentNode.id);
 					document.getElementById("DialogSaveTable").showModal();
@@ -5184,6 +5651,14 @@ async function requestAndRefreshCountResults(currentNode, period) {
 						if (parentNodes[0].STAdata)
 							ShowScatterPlotDialog(parentNodes);
 						document.getElementById("DialogScatterPlot").showModal();
+					}
+				}
+				else if (currentNode.image == "BarPlot.png") {
+					var parentNodes=GetParentNodes(currentNode);
+					if (parentNodes && parentNodes[0]) {
+						if (parentNodes[0].STAdata)
+							ShowBarPlotDialog(parentNodes);
+						document.getElementById("DialogBarPlot").showModal();
 					}
 				}
 				else if (currentNode.image == "OneValueSTA.png") {
@@ -5274,6 +5749,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				}
 				else if (currentNode.image == "CreateColumns.png") {
 					var parentNode=GetFirstParentNode(currentNode);
+					createColumnListToAddColumns();//create columnsList including columns in the table 
 					if (parentNode.STAdata){
 						currentNode.STAdataCopy=currentNode.STAdata; //To recovery data if cancel is pressed
 						currentNode.STAdata = deapCopy(parentNode.STAdata); //Necessary to reset data taking it from parent	
@@ -5283,31 +5759,51 @@ async function requestAndRefreshCountResults(currentNode, period) {
 							currentNode.STAnewColumnsToAdd=[]; //First time: To create it. Later: To erase old values					
 						}
 						networkNodes.update(currentNode);
+						drawTableInColumnBoxTableInCreateColumns();
 						document.getElementById("DialogCreateColumns").showModal();
 					 }		
 				}
+
 				else if (currentNode.image == "AggregateColumns.png") {
 					var parentNode=GetFirstParentNode(currentNode);
-						
-
+					createColumnListToAddColumns();//create columnsList including columns in the table 
 					if (parentNode.STAdata){
 						currentNode.STAdataCopy=currentNode.STAdata; //To recovery data if cancel is pressed
 						currentNode.STAdata = deapCopy(parentNode.STAdata); //Necessary to reset data taking it from parent
 					}
 					fillAggregateColumVariablesList();
+					showCheckRadioOptions("operationsFieldSet", "operationsRadioAggrgatedColumns_", AggregationColumnsOptions, 3, "operationsRadioAggrgatedColumns", "writeColumnNameInAggregatedColumns (event)");
 					if (parentNode) {
 						if (!currentNode.STAnewColumnsToAdd){
 							currentNode.STAnewColumnsToAdd=[]; //First time: To create it. Later: To erase old values					
 						}
 						networkNodes.update(currentNode);
-						//drawTableInColumnBoxTableInAggregateColumns()
+						drawTableInColumnBoxTableInAggregateColumns()
 						document.getElementById("DialogAggregateColumns").showModal();
 					}
 				}
 				else if (currentNode.image == "ColumnsCalculator.png") {
 					var parentNode=GetFirstParentNode(currentNode);
+					
+					if (parentNode.STAdata){
+						if (currentNode.STAdata){
+							currentNode.STAdataCopy=currentNode.STAdata; //To recovery data if cancel is pressed
+							createColumnListToAddColumns();//create columnsList including columns in the table
+							currentNode.STAdata = deapCopy(parentNode.STAdata); //Necessary to reset data taking it from parent	
+						}else{
+							currentNode.STAdata = deapCopy(parentNode.STAdata); //Necessary to reset data taking it from parent	
+							createColumnListToAddColumns();//create columnsList including columns in the table
+						}						
+					}
+					
+					fillCalculatorColumVariablesList();
+					document.getElementById("textAreaFormulaColumnsCalculator").setAttribute("data-mousePosition",0);
 					if (parentNode) {
-						//ShowColumnsCalculatorsDialog();
+						if (!currentNode.STAnewColumnsToAdd){
+							currentNode.STAnewColumnsToAdd=[]; //First time: To create it. Later: To erase old values					
+						}
+						networkNodes.update(currentNode);
+						drawTableInColumnBoxTableInCalculatorColumns();
 						document.getElementById("DialogColumnsCalculator").showModal();
 					}
 				}
@@ -5448,30 +5944,20 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			var newId = (Math.random() * 1e7).toString(32);
 			var node = { id: newId, label: label, image: image, shape: "circularImage" };
 
-			if (image == "ogc.png")
-			{
+			if (image == "sta.png" || image == "ogcAPIs.png")
 				node.STAExpectedLength = 100;
+
+			if (!startingNodeContextId)
 				networkNodes.add(node);
-			}
-			else if (image == "ogcAPIs.png")
-			{
-				node.STAExpectedLength = 100;
-				networkNodes.add(node);
-			}
 			else
 			{
-				if (!startingNodeContextId)
-					networkNodes.add(node);
-				else
+				returnStart=StartCircularImage(node, networkNodes.get(startingNodeContextId), true);
+				if (returnStart==null)
+					return;
+				if (!returnStart)
 				{
-					returnStart=StartCircularImage(node, networkNodes.get(startingNodeContextId), true);
-					if (returnStart==null)
-						return;
-					if (!returnStart)
-					{
-						networkNodes.add(node);
-						networkEdges.add([{ from: startingNodeContextId, to: newId, arrows: "from" }]);
-					}
+					networkNodes.add(node);
+					networkEdges.add([{ from: startingNodeContextId, to: newId, arrows: "from" }]);
 				}
 			}
 
@@ -5493,6 +5979,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 		}
 
 		function removeCircularImage(event, dialog) {
+
 			if (event)
 				event.preventDefault(); // We don't want to submit this form
 			if (dialog)
@@ -5613,7 +6100,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			for (var i=0; i<nodesArray.length; i++)
 			{
 				var node=networkNodes._data[nodesArray[i]];
-				if (node.image=="ogc.png")
+				if (node.image=="sta.png")
 				{
 					showInfoMessage("Reload STA home page and dependencies...");
 					showInfoMessage("Requesting STA page...");
@@ -5639,88 +6126,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				}
 			}
 		}
-
-		//Create Columns
-		function addColumnToListCreateColumn(event){
-			event.preventDefault();
-			
-			var TypeOfValuesRadiobuttons= document.getElementsByName("TypeOfValues");
-			for (var i = 0; i < TypeOfValuesRadiobuttons.length; i++) {
-                if (TypeOfValuesRadiobuttons[i].checked){
-					var columnName= document.getElementById("columnNameCreateColumns").value;
-					var number= document.getElementById("inputText_"+TypeOfValuesRadiobuttons[i].value)?.value;
-					if (number=="") //to avoid undefined in column list and problems afeter
-						number=0;
-					currentNode.STAnewColumnsToAdd.push([TypeOfValuesRadiobuttons[i].value,columnName,number]);
-				}
-                 
-            }  
-			drawTColumnsInformaionInColumnBoxTableInCreateColumns();
-			
-
-
-		}
-		function drawTColumnsInformaionInColumnBoxTableInCreateColumns(){
-			var columnsBox=document.getElementById("columnsBoxCreateColumns");
-			columnsBox.innerHTML=""
-   
- 
-			for (var a=0;a<currentNode.STAnewColumnsToAdd.length;a++){
-	
-				if (currentNode.STAnewColumnsToAdd[a][0]=="constantValue" ){
-					columnsBox.innerHTML+= `<li><b>Column type:</b> Constant value, <b>Column name:</b> ${currentNode.STAnewColumnsToAdd[a][1]}, <b>value: </b>${currentNode.STAnewColumnsToAdd[a][2]}<button onclick='deleteRowInColumnsBoxTable(${a})'><img src="trash.png" alt="Remove" title="Remove"></button></li>`;
-				}else if (currentNode.STAnewColumnsToAdd[a][0]=="autoincrementalValue" ){
-					columnsBox.innerHTML+= `<li><b>Column type:</b> Autoincremental value, <b>Column name:</b> ${currentNode.STAnewColumnsToAdd[a][1]}, <b>Initial value: </b>${currentNode.STAnewColumnsToAdd[a][2]}<button onclick='deleteRowInColumnsBoxTable(${a})'><img src="trash.png" alt="Remove" title="Remove"></button></li>`
-				}else{
-					columnsBox.innerHTML+= `<li><b>Column type:</b> Empty column, <b>Column name:</b> ${currentNode.STAnewColumnsToAdd[a][1]} <button onclick='deleteRowInColumnsBoxTable(${a})'><img src="trash.png" alt="Remove" title="Remove"></button></li>`
-				}
-
-			
-			}
-		}
-
-		function deleteRowInColumnsBoxTable(number){
-			event.preventDefault(); 
-			var copyWithoutNumber=[];
-			for (var i=0;i<currentNode.STAnewColumnsToAdd.length;i++){
-				if (i!=number){
-					copyWithoutNumber.push(currentNode.STAnewColumnsToAdd[i])
-				}
-			}
-
-			currentNode.STAnewColumnsToAdd=copyWithoutNumber;
-			if (currentNode.image=="CreateColumns.png"){ //createColumn
-				drawTColumnsInformaionInColumnBoxTableInCreateColumns();
-			}else{ //aggregateTable
-				drawTableInColumnBoxTableInAggregateColumns();
-			} 
-			
-		}
-		function addColumnsToTableInCreateColumns(){
-			event.preventDefault();
-			var data;
-			for (var i=0;i<currentNode.STAnewColumnsToAdd.length;i++){
-	
-				switch(currentNode.STAnewColumnsToAdd[i][0]) {
-				case  "constantValue":
-					data=addNewColumnWithUniqueValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1], currentNode.STAnewColumnsToAdd[i][2])
-					break;
-				case  "autoincrementalValue":
-					data=addNewColumnWithAutoincrementalValues(currentNode.STAdata,currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2])
-					break;
-				case  "empty":
-					data= addNewEmptyColumn(currentNode.STAdata,currentNode.STAnewColumnsToAdd[i][1]);
-					
-					break;
-				}	
-				currentNode.STAdata=data;
-				networkNodes.update(currentNode);
-					
-			}
-			UpdateChildenTable(currentNode);
-			document.getElementById("DialogCreateColumns").close();
-			showInfoMessage("New columns have been added");
-		}
+		//General to addColumns
 		function cancelButtonRecoveryOldData(event){
 			event.preventDefault();
 			currentNode.STAdata=currentNode.STAdataCopy;
@@ -5728,151 +6134,571 @@ async function requestAndRefreshCountResults(currentNode, period) {
 
 			if (currentNode.image=="CreateColumns.png"){
 				document.getElementById("DialogCreateColumns").close();
-			}else{
+			}else if (currentNode.image=="AggregateColumns.png"){
 				document.getElementById("DialogAggregateColumns").close();
+			}else{
+				document.getElementById("DialogColumnsCalculator").close();
 			}
 		}
-		//Aggregate columns
-		
-		function fillAggregateColumVariablesList(){
-			var columnsFielset= document.getElementById("columnsFielset");
-			columnsFielset.innerHTML="<legend>Select your variables/columns:</legend>";
-			var dataKeys= Object.keys(currentNode.STAdata[0]);
-			for (var i=0;i<dataKeys.length;i++){
-				columnsFielset.innerHTML+=' <input type="checkbox" id="columnsFielset_'+dataKeys[i]+'" value="'+dataKeys[i]+'"/><label for="'+dataKeys[i]+'">'+dataKeys[i]+'</label><br>'
+		function deleteRowInColumnsBoxTable(number){
+			event.preventDefault(); 
+			var copyWithoutNumber=[],n=currentNode.STAcolumnsList.length, c=currentNode.STAnewColumnsToAdd.length,columsnListNew=[];
+			for (var i=0;i<c;i++){
+				if (i!=number){
+					copyWithoutNumber.push(currentNode.STAnewColumnsToAdd[i])
+				}else{
+					var columnToErase=currentNode.STAnewColumnsToAdd[i][1];
+				}
 			}
-		}
-		function addColumnToListAggregateColumns(event){
-			event.preventDefault();
-			var TypeOfOperation=document.getElementsByName("TypeOfOperation"); //operation
-			var STANewColumnsArray=[],variablesArray=[],variable; 
-			var dataKeys= Object.keys(currentNode.STAdata[0]);
-			var chooseNumberDecimalsInputRadio,chooseNumberDecimalsInput;
 
-			for (var i=0;i<TypeOfOperation.length;i++){ //Take operation and column name
-				if (TypeOfOperation[i].checked){
-					var columnName= document.getElementById("columnNameAggregateColumns").value;
-					STANewColumnsArray.push(TypeOfOperation[i].value,columnName);
+			//Erase attribute from the column list
+			for (var a=0;a<n;a++) {
+				if (currentNode.STAcolumnsList[a]!=columnToErase){
+					columsnListNew.push(currentNode.STAcolumnsList[a])
 				}
-			}
-			for (var a=0;a<dataKeys.length;a++ ){
-				variable=document.getElementById("columnsFielset_"+dataKeys[a]);
-				if (variable.checked){
-					variablesArray.push(dataKeys[a]);
-				}
-			}
-			STANewColumnsArray.push(variablesArray);
-			if (document.getElementById("chooseNumberDecimals_0").checked){
-				STANewColumnsArray.push(document.getElementById("chooseNumberDecimals_0_input").value)
 			}	
-						
-			currentNode.STAnewColumnsToAdd.push(STANewColumnsArray); //[typeOfOperation,columnName,[variables]]
+
+			currentNode.STAnewColumnsToAdd=copyWithoutNumber;
+			currentNode.STAcolumnsList=columsnListNew;
 			networkNodes.update(currentNode);
-			drawTableInColumnBoxTableInAggregateColumns();
+			if (currentNode.image=="CreateColumns.png"){ //createColumn
+				drawTableInColumnBoxTableInCreateColumns();
+			}else if (currentNode.image=="AggregateColumns.png"){ //aggregateTable
+				drawTableInColumnBoxTableInAggregateColumns();
+			} else{
+				drawTableInColumnBoxTableInCalculatorColumns();
+			}
+			
+		}
+		function columnExistInTheTable(columnName){
+			var columnList=	currentNode.STAcolumnsList;
+			var n= columnList.length, columnNameExist=false;
+			
+			for (var i=0;i<n;i++){
+				if (columnList[i]==columnName){
+					columnNameExist=true;
+					break;
+				}
+			}
+			if (!columnNameExist){
+				columnList.push(columnName); //Add to Column list to avoid duplicates
+				currentNode.STAcolumnsList=columnList 
+			}
+
+			return columnNameExist;
+		}
+		function createColumnListToAddColumns(){
+			var dataKeys= Object.keys(currentNode.STAdata[0]);
+			currentNode.STAcolumnsList=dataKeys;
+			networkNodes.update(currentNode);
+		}
+
+		//Create Columns
+
+		function addColumnToListCreateColumn(event){
+			event.preventDefault();
+			
+			var TypeOfValuesRadiobuttons= document.getElementsByName("TypeOfValues");
+			var columnName= document.getElementById("columnNameCreateColumns").value;
+			var n= TypeOfValuesRadiobuttons.length;
+			
+			if (columnName.length==0) columnName="noname";
+			var columnNameExist=columnExistInTheTable(columnName); //Search if name for column is not repeated
+
+			if(columnNameExist){ //It will not be added because column name already exist
+				alert("Chosen column name already exists, change it to add column to the list ");
+			}else{
+				for (var i = 0; i <n ; i++) {
+                if (TypeOfValuesRadiobuttons[i].checked){
+					var columnName= document.getElementById("columnNameCreateColumns").value;
+					var number= document.getElementById("inputText_"+TypeOfValuesRadiobuttons[i].value)?.value;
+					if (number=="") //to avoid undefined in column list and problems afeter
+							number="0";
+					currentNode.STAnewColumnsToAdd.push([TypeOfValuesRadiobuttons[i].value,columnName,number]);
+				}
+				} 
+				networkNodes.update(currentNode);
+				drawTableInColumnBoxTableInCreateColumns();
+			}
+
+		}
+
+		function drawTableInColumnBoxTableInCreateColumns(){
+			var spanColumnsListAggregateColumns=document.getElementById("spanColumnsListCreateColumns");
+			var cdns=[], tableHTML;
+
+			tableHTML='<table border=1><tr><th>Column type</th><th>Column name</th><th>Value</th><th></th></tr>';
+			if (currentNode.STAnewColumnsToAdd.length!=0){ //[columnType, columnName, value]
+				var n= currentNode.STAnewColumnsToAdd.length, columnType;
+				for (var i=0;i<n;i++){
+					switch(currentNode.STAnewColumnsToAdd[i][0]){
+						case "constantValue":
+							columnType="Constant value"
+							break;
+						case "autoincrementalValue":
+							columnType="Autoincremental value"
+							break;
+						case "empty":
+							columnType="Empty"
+							break;
+								
+					}
+						tableHTML+=`<tr><td>${columnType}</td><td>${currentNode.STAnewColumnsToAdd[i][1]}</td>`;
+					if (currentNode.STAnewColumnsToAdd[i][2]){ 
+						tableHTML+=`<td>${currentNode.STAnewColumnsToAdd[i][2]}</td>`;
+				}else{
+						tableHTML+=`<td> </td>`;
+					}
+					tableHTML+=`<td><button onclick='deleteRowInColumnsBoxTable(${i})'><img src="trash.png" alt="Remove" title="Remove"></button> </td>`;
+				}
+			}
+			else{
+				tableHTML+=`<tr style="height:20px"><td> </td><td></td><td></td><td></td></tr>`
+			}
+			tableHTML+=`</table>`;
+			cdns=[tableHTML];
+			spanColumnsListAggregateColumns.innerHTML=cdns;
+		}
+		function addColumnsToTableInCreateColumns(){
+			event.preventDefault();
+				var datan,n=currentNode.STAnewColumnsToAdd.length;
+				for (var i=0;i<n;i++){
+	
+				switch(currentNode.STAnewColumnsToAdd[i][0]) {
+				case  "constantValue":
+						addNewColumnWithUniqueValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1], currentNode.STAnewColumnsToAdd[i][2])
+					break;
+				case  "autoincrementalValue":
+						addNewColumnWithAutoincrementalValues(currentNode.STAdata,currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2])
+					break;
+				case  "empty":
+						addNewEmptyColumn(currentNode.STAdata,currentNode.STAnewColumnsToAdd[i][1]);
+					
+					break;
+				}	
+				networkNodes.update(currentNode);	
+					
+			}
+			document.getElementById("DialogCreateColumns").close();
+			showInfoMessage("New columns have been added");
+		}
+		
+
+		//Aggregate columns
+
+		function deselectColumnNameRadioButton(radiobutton){
+			if (radiobutton=="personalized"){
+				document.getElementById("columnNameAggregateColumns").disabled = false;
+			}else{
+				document.getElementById("columnNameAggregateColumns").disabled = true;
+			}
+		}
+
+		function fillAggregateColumVariablesList(){
+
+			var dataKeys= Object.keys(currentNode.STAdata[0]);
+		 //var n= dataKeys.length;
+		// var dataKeysObject=[];
+		// for (var i=0;i<n;i++){
+		// 	dataKeysObject.push({name:dataKeys[i], desc:dataKeys[i] });
+		// }
+		//showCheckRadioOptions("columnsFielset", "attributesRadioAggrgatedColumns_", dataKeysObject, 1, null, "writeColumnNameInAggregatedColumns (event)");
+		var parentNode=GetFirstParentNode(currentNode);
+		ShowTableSelectColumnsDialog("columnsFielset", parentNode, currentNode, false,"writeColumnNameInAggregatedColumns (event)" );
+
+		//Create list of columns to avoid repetitions
+		currentNode.STAcolumnsList=dataKeys;
+	
+	}
+
+	function checkRadioButtonColumName(event){
+		event.preventDefault();
+		document.getElementById("columnNameRadioAggregateColumns_personalized").setAttribute("checked", true);
+		document.getElementById("columnNameRadioAggregateColumns_suggested").setAttribute("checked", false);
+	}
+	function addColumnToListAggregateColumns(event) {
+		event.preventDefault();
+		var TypeOfOperation = document.getElementsByName("operationsRadioAggrgatedColumns"); //operation
+		var STANewColumnsArray = [], attributesArray = [], attribute;
+		var dataKeys = Object.keys(currentNode.STAdata[0]);
+		var chooseNumberDecimalsInputRadio, chooseNumberDecimalsInput, typeOfOperationLenght = TypeOfOperation.length, dataKeysLenght = dataKeys.length;
+		var columnList = currentNode.STAcolumnsList;
+		var columnName;
+
+		var typeOfOperationExist = false, atLeast2attributesSelected = false;
+		//Operation
+		for (var i = 0; i < typeOfOperationLenght; i++) { //Take operation 
+			if (TypeOfOperation[i].checked) {
+			STANewColumnsArray.push(TypeOfOperation[i].id.split("AggrgatedColumns_")[1]);
+			typeOfOperationExist = true;
+					}
+				}
+		//attributes
+		for (var a = 0; a < dataKeysLenght; a++) {
+			attribute = document.getElementById("columnsFielset_" + a);
+			if (attribute.checked) {
+			attributesArray.push(dataKeys[a]);
+			}
+		}
+		if (attributesArray.length >= 2) {
+			atLeast2attributesSelected = true;
+		}
+
+		if (typeOfOperationExist == false || atLeast2attributesSelected == false) {
+			alert("At least two attributes and one aggregation method have to be selected");
+		} else {//All is correct, new column can be added to the list
+			//columnName
+			if (document.getElementById("columnNameRadioAggregateColumns_personalized").checked) {
+			columnName = document.getElementById("columnNameAggregateColumns").value;
+			if (columnName.length == 0) columnName = "noname";
+			} else {
+			columnName = document.getElementById("columnNameAggregateColumns_span").value;
+			}
+			var columnNameExist = columnExistInTheTable(columnName); //Search if name for column is not repeated
+			
+			if (columnNameExist) { //It will not be added because column name already exist
+			alert("Chosen column name already exists, change it to add column to the list ");
+					}
+			else { //It can be added
+			STANewColumnsArray.push(columnName, attributesArray);
+			if (document.getElementById("chooseNumberDecimals_0").checked) {
+					STANewColumnsArray.push(document.getElementById("chooseNumberDecimals_0_input").value)
+				}	
+			currentNode.STAnewColumnsToAdd.push(STANewColumnsArray); //[typeOfOperation,columnName,[attributes]]
+				networkNodes.update(currentNode);
+				drawTableInColumnBoxTableInAggregateColumns();
+			}
+      }
 		}
 		function drawTableInColumnBoxTableInAggregateColumns(){
-			var columnsBox=document.getElementById("columnsBoxAggregateColumn");
-			var columns;
-			columnsBox.innerHTML="";
-			
-				for (var i=0;i<currentNode.STAnewColumnsToAdd.length;i++){
-					columns=""
-					for(var a=0;a<currentNode.STAnewColumnsToAdd[i][2].length;a++){ //unfold array with columns to put in string
+			var spanColumnsListAggregateColumns=document.getElementById("spanColumnsListAggregateColumns");
+			var cdns;
+			var tableHTML=`<table border=1><tr><th>Attributes</th><th>Operation</th><th>Column name</th><th>Number of decimals</th><th></th></tr>`;
+			if (currentNode.STAnewColumnsToAdd.length!=0){
+				var n= currentNode.STAnewColumnsToAdd.length, attributes="";
+				for (var i=0;i<n;i++){
+					attributes="";//restart
+					for (var a =0; a<currentNode.STAnewColumnsToAdd[i][2].length; a++){
 						if (a!=0){
-						columns+=", "	;
+							attributes+=", ";
 						}
-						columns+=currentNode.STAnewColumnsToAdd[i][2][a];
-					}
-					columnsBox.innerHTML+=`<li> <b>Operation: </b> ${currentNode.STAnewColumnsToAdd[i][0]}, <b> Column name: </b>${currentNode.STAnewColumnsToAdd[i][1]}, <b>Variables/columns: </b>${columns}` 
-					if (currentNode.STAnewColumnsToAdd[i][3]){
-						columnsBox.innerHTML+=`<b>Decimal number: </b> ${currentNode.STAnewColumnsToAdd[i][3]}`
-					}
+						attributes +=currentNode.STAnewColumnsToAdd[i][2][a];
 						
-					columnsBox.innerHTML+=`<button onclick="deleteRowInColumnsBoxTable(${i})"><img src="trash.png" alt="Remove" title="Remove"></button>`;
+					}
+					tableHTML+=`<tr><td>${attributes}</td><td>${currentNode.STAnewColumnsToAdd[i][0]}</td><td>${currentNode.STAnewColumnsToAdd[i][1]}</td>`;
+					if (currentNode.STAnewColumnsToAdd[i][3]){ //number of decimals
+						tableHTML+=`<td>${currentNode.STAnewColumnsToAdd[i][3]}</td><td><button onclick='deleteRowInColumnsBoxTable(${i})'><img src="trash.png" alt="Remove" title="Remove"></button></td></tr>`;
+					}else{
+						tableHTML+=`<td> </td><td><button onclick='deleteRowInColumnsBoxTable(${i})'><img src="trash.png" alt="Remove" title="Remove"></button></td></tr>`;
 				}
+				}
+			}else{
+				tableHTML+=`<tr style="height:20px"><td></td><td></td><td></td><td></td><td></td></tr>`
+			}
+			
+			tableHTML+=`</table>`;
+			cdns=[tableHTML];
+			spanColumnsListAggregateColumns.innerHTML=cdns;
 		}
 
 		function addColumnsToTableInAggregateColumns(event){
 			event.preventDefault();
 			var data;
-			var decimalNumber;
-		
-			for (var i=0;i<currentNode.STAnewColumnsToAdd.length;i++){
+			var decimalNumber,n=currentNode.STAnewColumnsToAdd.length;
+			var dataAttributes= getDataAttributes(currentNode.STAdata)
+			if (n!=0){
+				for (var i=0;i<n;i++){
 				decimalNumber=""; //Restart 
 				if (currentNode.STAnewColumnsToAdd[i][3]){
 				decimalNumber=currentNode.STAnewColumnsToAdd[i][3];
 			}
 				switch(currentNode.STAnewColumnsToAdd[i][0]) {
-					case  "sum":
+						case  "Sum":
 						if (decimalNumber!=""){
-							 addnewColumnSummingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],decimalNumber); //data, columnName,columnsToSum, decimalnumber
+								addnewColumnSummingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],decimalNumber, dataAttributes); //data, columnName,columnsToSum, decimalnumber
 
 						}else{
-							 addnewColumnSummingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]); //data, columnName,columnsToSum
+								addnewColumnSummingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes); //data, columnName,columnsToSum
 
 						}
 						break;
-					case  "product":
+						case  "Product": //(s'ha de crear)
 					if (decimalNumber!=""){
-							addnewColumnMultiplyingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],decimalNumber); //data, columnName,columnsToSum, decimalnumber
+								addnewColumnMultiplyingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],decimalNumber, dataAttributes); //data, columnName,columnsToSum, decimalnumber
 
 						}else{
-							addnewColumnMultiplyingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]); //data, columnName,columnsToSum
+								addnewColumnMultiplyingColumns(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes); //data, columnName,columnsToSum
 
 						}
 						break;
-					case  "minimalValue":
+						case  "MinValue":
 					if (decimalNumber!=""){
-						addnewColumnMinimalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber); 
+							addnewColumnMinimalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes); 
 
 					}else{
-						addnewColumnMinimalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]); 
+							addnewColumnMinimalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes); 
 					}
 						break;
-					case  "maximalValue":
+						case  "MaxValue":
 					if (decimalNumber!=""){
-						addnewColumnMaximalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber); 
-
+							addnewColumnMaximalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber,dataAttributes); 
 					}else{
-
 					}
-						addnewColumnMaximalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]); 
+							addnewColumnMaximalValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes); 
 
 						break;
-					case  "meanValue":
+						case  "Mean":
 					if (decimalNumber!=""){
-						addnewColumnMeanValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber);
+							addnewColumnMeanValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes);
 
 					}else{
-						addnewColumnMeanValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]);
+							addnewColumnMeanValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes);
 
 					}	
 						break;
-					case  "variance":
+						case  "Variance":
 					if (decimalNumber!=""){
-						addnewColumnVarianceValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber);
+								addnewColumnVarianceValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes);
 
 					}else{
-						addnewColumnVarianceValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]);
+								addnewColumnVarianceValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes);
 
 					}
 						break;
-					case  "median":
+						case  "Median":
 						if (decimalNumber!=""){
-							addnewColumnMedianValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber);
+								addnewColumnMedianValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes);
 
 						}else{
-							addnewColumnMedianValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]);
+								addnewColumnMedianValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes);
 
 						}
 						break;
-					case  "concatenate":
+						case  "Concatenate":
 						addnewColumnConcatenatingValues(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]);
 						break;
+
+						case  "Mode":
+						if (decimalNumber!=""){
+							addnewColumnModeValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes);
+						}else{
+							addnewColumnModeValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes);
+						}
+							break;
+						case  "FirstValue":
+						if (decimalNumber!=""){
+							addnewColumnFirstValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes);
+						}else{
+							addnewColumnFirstValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes);
+						}
+							break;
+
+						case  "StandardDeviation":
+						if (decimalNumber!=""){
+							addnewColumnStandardDeviationValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber,"", dataAttributes);
+						}else{
+							addnewColumnStandardDeviationValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], dataAttributes);
+						}
+							break;
+						case  "LastValue":
+						if (decimalNumber!=""){
+							addnewColumnLastValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes);
+						}else{
+							addnewColumnLastValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes);
+						}
+							break;
+						case  "Q1":
+						if (decimalNumber!=""){
+							addnewColumnQ1Value(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes);
+						}else{
+							addnewColumnQ1Value(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes);
+						}
+							break;
+						case  "Q3":
+						if (decimalNumber!=""){
+							addnewColumnQ3Value(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes);
+						}else{
+							addnewColumnQ3Value(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2],"", dataAttributes);
+						}
+							break;
+						case  "RandomValue":
+						if (decimalNumber!=""){
+							addnewColumnRandomValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber,"", dataAttributes);
+						}else{
+							addnewColumnRandomValue(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], dataAttributes);
+						}
+							break;						
+						case  "Count": //TE SENTIT?
+							addnewColumnCount(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], dataAttributes);
+							break;
+						case  "CountDefined": //Falta fer la funció que conta
+							
+							break;
+						case  "Range": 						
+							if (decimalNumber!=""){
+								addnewColumnRange(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes);
+							}else{
+								addnewColumnRange(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]),"", dataAttributes;
+							}
+								break;
+						case  "ProportionDefined": //Falta fer la funció que conta
+						if (decimalNumber!=""){
+							addnewColumnProportionDefined(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2], decimalNumber, dataAttributes);
+						}else{
+							addnewColumnProportionDefined(currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][2]),"", dataAttributes;
+						}
+							
+							break;
 				}
 			}
+			showInfoMessage("New columns have been added");
 			document.getElementById("DialogAggregateColumns").close();
+			}else{
+				alert("There are no columns in the list to add, nothing will be added to the table")
+			}
+
+			
 		}
+		function writeColumnNameInAggregatedColumns(event){
+			event.preventDefault();
+			var columnName=document.getElementById("columnNameAggregateColumns")
+			var columnNameValue=columnName.value;
+			var spanSuggested= document.getElementById("columnNameAggregateColumns_span");
+				var dataKeys= Object.keys(currentNode.STAdata[0]);
+				var dataKeysLenght=dataKeys.length, attribute, columnNameText="";
+				for (var a=0;a<dataKeysLenght;a++ ){
+						attribute=document.getElementById("columnsFielset_"+a);
+						if (attribute.checked){
+							if (columnNameText==""){
+								columnNameText+=dataKeys[a];
+							}else{ //more than one chosen
+								columnNameText+="_"+dataKeys[a];
+							}
+							
+						}
+				}
+				//
+				var TypeOfOperation=document.getElementsByName("operationsRadioAggrgatedColumns");
+				var typeOfOperationLenght=TypeOfOperation.length
+				for (var i=0;i<typeOfOperationLenght;i++){ //Take operation and column name
+					if (TypeOfOperation[i].checked){
+						columnNameText+="_"+ TypeOfOperation[i].id.split("AggrgatedColumns_")[1];
+					}
+				}
+
+				spanSuggested.innerHTML= columnNameText;
+				spanSuggested.value=columnNameText;
+				
+			/////
+			
+		}
+		//Calulator 
+		var textarea = document.getElementById("textAreaFormulaColumnsCalculator")
+		textarea.addEventListener('click', event => { //keep mouse position to add buttons information in that place
+		textarea.setAttribute("data-mousePosition", textarea.selectionStart) 
+		})
+
+		function WriteInTheFormulaButtons(character) {
+		event.preventDefault();
+		var textAreaFormulaColumnsCalculator = document.getElementById("textAreaFormulaColumnsCalculator");
+		var text = textAreaFormulaColumnsCalculator.value;
+		var mousePosition = textAreaFormulaColumnsCalculator.getAttribute("data-mousePosition");
+			if (character=="&#40;"){
+				character=="("
+			}else if (character=="&#41;"){
+				character==")"
+			}
+
+
+
+
+		if (character == "attributeSelected") {
+			var selector = document.getElementById("calculator_selectColumns");
+			character = selector.options[selector.selectedIndex].value;
+		}
+		textAreaFormulaColumnsCalculator.value = [text.slice(0, mousePosition), character, text.slice(mousePosition)].join('');
+		textAreaFormulaColumnsCalculator.setAttribute("data-mousePosition", parseInt(mousePosition) + character.length); //If there is no click, next button will be written after this.
+		}
+		
+		function addColumnToListColumnsCalculator(event){
+			event.preventDefault();
+			var columnName= document.getElementById("columnNameColumnsCalculator").value;
+			var textAreaFormulaColumnsCalculator= document.getElementById("textAreaFormulaColumnsCalculator");
+			if (columnName.length==0) columnName="noname";
+			var columnNameExist=columnExistInTheTable(columnName); //Search if name for column is not repeated
+			if(columnNameExist){ //It will not be added because column name already exist
+				alert("Chosen column name already exists, change it to add column to the list ");
+			}else{
+				var decimalNumber="";
+				if (document.getElementById("chooseNumberDecimalsCalculator_0").checked) {
+					decimalNumber=document.getElementById("chooseNumberDecimalsCalculator_0_input").value;
+				}
+				currentNode.STAnewColumnsToAdd.push([textAreaFormulaColumnsCalculator.value,columnName,decimalNumber]);
+				drawTableInColumnBoxTableInCalculatorColumns();
+			}
+			
+		}
+		function fillCalculatorColumVariablesList(){ //omplir el desplegable
+
+			// var dataKeys= Object.keys(currentNode.STAdata[0]);
+			//var n= dataKeys.length;
+			var dataAttributes= getDataAttributes(currentNode.STAdata);
+			var dataAttributesKeys=Object.keys(dataAttributes)
+			var n= dataAttributesKeys.length;
+			
+			var select = document.getElementById("calculator_selectColumns");
+			var cdns=[]
+
+			for (var i=0;i<n;i++){
+				//cdns.push(`<option value= ${dataKeys[i]}>${dataKeys[i]}</option>`);
+				if (dataAttributes[dataAttributesKeys[i]]['type']=="number") cdns.push(`<option value= ${dataAttributesKeys[i]}>${dataAttributesKeys[i]}</option>`);
+			}
+			select.innerHTML=cdns.join("");
+		
+			
+		}
+		function drawTableInColumnBoxTableInCalculatorColumns(){
+			var spanColumnsListAggregateColumns=document.getElementById("spanColumnsListCalculatorColumns");
+			var cdns;
+			var tableHTML=`<table border=1><tr><th>Formula</th><th>Column name</th><th>Number of decimals</th><th></th></tr>`;
+				if (currentNode.STAnewColumnsToAdd.length!=0){
+					var n= currentNode.STAnewColumnsToAdd.length;
+					for (var i=0;i<n;i++){
+						tableHTML+= `<tr><td>${currentNode.STAnewColumnsToAdd[i][0]}</td><td>${currentNode.STAnewColumnsToAdd[i][1]}</td><td>${currentNode.STAnewColumnsToAdd[i][2]}</td><td><button onclick='deleteRowInColumnsBoxTable(${i})'><img src="trash.png" alt="Remove" title="Remove"></button></td></tr>`
+
+					}
+				}else{
+					tableHTML+=`<tr style="height:20px"><td></td><td></td><td></td><td></td></tr>`
+			}
+				tableHTML+=`</table>`;
+				cdns=[tableHTML];
+				spanColumnsListAggregateColumns.innerHTML=cdns;
+		}
+
+		function addColumnsToTableInColumnsCalculator(){
+			event.preventDefault();
+			var decimalNumber;//decimalNumber=currentNode.STAnewColumnsToAdd[i][2];
+			var n=currentNode.STAnewColumnsToAdd.length;
+			for (var i=0;i<n;i++){
+				decimalNumber=currentNode.STAnewColumnsToAdd[i][2];
+				if (decimalNumber!=""){
+					addnewColumnWithFormula (currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][0],decimalNumber);
+				}else{
+					addnewColumnWithFormula (currentNode.STAdata, currentNode.STAnewColumnsToAdd[i][1],currentNode.STAnewColumnsToAdd[i][0]);
+				}
+			}
+			showInfoMessage("New columns have been added");
+			document.getElementById("DialogColumnsCalculator").close();
+
+		}
+			
+		/*
+		function giveMeNetworkInformation(event) {
+			if (event)
+				event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogSelectColumns").close();
+			console.log(networkNodes);
+		}*/
 	</script>
 
 </body>
