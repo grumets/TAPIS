@@ -184,6 +184,27 @@
 		</form>
 	</dialog>
 
+	<dialog id="DialogSeparateColumns">
+		<form>
+			Separate columns:
+			<fieldset>
+				<legend>Arrays as:</legend>
+				<input type="radio" id="DialogSeparateColumnsArrayAs_Columns" name="ArrayAs" value="columns" checked> 
+				<label for="DialogSeparateColumnsArrayAs_Columns">columns</label>
+				<input type="radio" id="DialogSeparateColumnsArrayAs_Records" name="ArrayAs" value="records"> 
+				<label for="DialogSeparateColumnsArrayAs_Records">records</label>
+			</fieldset>
+			<br>
+			<input type="checkbox" id="DialogSeparateColumns_RemovePresent" value="yes"> 
+			<label for="DialogSeparateColumns_RemovePresent">Remove already present elements</label>
+
+			<div class="center">
+				<button value="default" onClick="SeparateColumns(event)">OK</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+
 	<dialog id="DialogGroupBy">
 		<form>
 			<table border="0">
@@ -890,7 +911,7 @@
     				<legend>Image Sources:</legend>
 				<label>Image URL:
 					<span id="DialogImageViewerURL"></span>
-				</label>
+				</label><br>
 				<label>Label:
 					<span id="DialogImageViewerLabel"></span>
 				</label>
@@ -905,7 +926,7 @@
 			</div>
 			</form>
 		</td></tr>
-		<tr><td><div id="DialogImageViewerVisualization" style="width:700px; height:550px;"></div></td>
+		<tr><td><div id="DialogImageViewerVisualization" style="width:900px; height:550px;"></div></td>
 		</tr></table>
 	</dialog>
 
@@ -3767,7 +3788,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			for (var i = 0; i < nodeIds.length; i++) {
 				var node = networkNodes.get(nodeIds[i])
 				if (node.image == "SeparateColumns.png")
-					SeparateColumns(node, parentNode);
+					SeparateColumnsNode(node, parentNode);
 				else if (node.image == "SelectColumnsTable.png")
 				{
 					//pensar com es podria fer.
@@ -5079,8 +5100,8 @@ async function requestAndRefreshCountResults(currentNode, period) {
 
 		function ShowTableFilterRowsDialog(parentNode, node) {
 			var data = parentNode.STAdata;
-			currentNode.STAdata=data; //Put all data from parent in this node 
-			networkNodes.update(currentNode);
+			node.STAdata=data; //Put all data from parent in this node 
+			networkNodes.update(node);
 			var dataAttributes = getDataAttributes(data);
 
 			if (parentNode.image != "FilterRowsTable.png") {
@@ -5096,22 +5117,21 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			var SelectNumberOfRecordsFilterRows=document.getElementById("SelectNumberOfRecordsFilterRows");
 			var SelectNumberOfRecordsFilterRowsLabel=document.getElementById("SelectNumberOfRecordsFilterRowsLabel");
 
-			if (currentNode.image=="FilterRowsTable.png"){ //Hide number request
+			if (node.image=="FilterRowsTable.png"){ //Hide number request
 				SelectNumberOfRecordsFilterRows.style.display="none";
 				SelectNumberOfRecordsFilterRowsLabel.style.display="none";
 			}else{
 				SelectNumberOfRecordsFilterRows.style.display="inline-block";
 				SelectNumberOfRecordsFilterRowsLabel.style.display="inline-block";
 			}
-			if (currentNode.STAExpectedLength){ //"write" number of data required previously 
-				document.getElementById('SelectNumberOfRecordsFilterRows').value= currentNode.STAExpectedLength
+			if (node.STAExpectedLength){ //"write" number of data required previously 
+				document.getElementById('SelectNumberOfRecordsFilterRows').value= node.STAExpectedLength
 			}
 			
 			addNecessaryVariablesToFilterRowsSTANode(node);
-
 			
-			if (currentNode.image=="FilterRowsSTA.png" && currentNode.STAOGCAPIconformance){
-				if (currentNode.STAOGCAPIconformance.includes("filter")){ //Create Filters if the API allows to filter its information
+			if (node.image=="FilterRowsSTA.png" && node.STAOGCAPIconformance){
+				if (node.STAOGCAPIconformance.includes("filter")){ //Create Filters if the API allows to filter its information
 					ShowFilterTable();
 
 				}else{
@@ -5122,47 +5142,21 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			}
 		}
 
-		function SeparatePropertyIfNeeded(record, property, baseName)
-		{
-			if (typeof property === "object" && property!==null)  //"arrays" and 'null' are also objects. 
-			{
-				if (Array.isArray(property))
-				{
-					//Array: creating multifields
-					for (var j = 0; j<property.length; j++)
-					{
-						if (typeof property[j] === "object")
-						{
-							if (Array.isArray(property[j]))
-							{
-								for (var jj = 0; jj<property[j].length; jj++)
-									SeparatePropertyIfNeeded(record, property[j][jj], baseName + "_" + j + "_" + jj);
-							}
-							else
-							{
-								var subkeys = Object.keys(property[j]);
-								for (var kk = 0; kk < subkeys.length; kk++)
-									SeparatePropertyIfNeeded(record, property[j][subkeys[kk]], baseName + "/" + subkeys[kk] + "_" + j)
-							}
-						}
-						else
-							record[baseName + "_" + j]=property[j];
-					}
-				}
-				else
-				{
-					//Object; lets separate it.
-					var subkeys = Object.keys(property);
-					for (var kk = 0; kk < subkeys.length; kk++)
-						SeparatePropertyIfNeeded(record, property[subkeys[kk]], baseName + "/" + subkeys[kk])
-				}
-			}
-			else
-				record[baseName]=property;
+		function SeparateColumns(event) {
+			event.preventDefault(); // We don't want to submit this form
+			document.getElementById("DialogSeparateColumns").close();
+			var options={};
+			if (document.getElementById("DialogSeparateColumnsArrayAs_Records").checked)
+				options.arraysAsRecords=true;
+			if (document.getElementById("DialogSeparateColumns_RemovePresent").checked)
+			 	options.removeAlreadyPresent=true;
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode)
+				SeparateColumnsNode(currentNode, parentNode, options);
 		}
 
-		function SeparateColumns(node, parentNode) {
-			var record, recordParent, data=parentNode.STAdata;
+		function SeparateColumnsNode(node, parentNode, options) {
+			var data=parentNode.STAdata;
 
 			if (!data)
 				showInfoMessage("No data loaded in the parent node.");
@@ -5170,23 +5164,10 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				node.STAURL=parentNode.STAURL;
 
 			node.STAExpectedLength = parentNode.STAExpectedLength;
-			node.STAdata=[];
-			for (var i = 0; i < data.length; i++) {
-				record=node.STAdata[i]={};
-				recordParent=data[i]
-				var keys = Object.keys(recordParent);
-				for (var k = 0; k < keys.length; k++)
-					SeparatePropertyIfNeeded(record, recordParent[keys[k]], keys[k]);
-			}
 			if (parentNode.STAdataAttributes)
-			{
-				var dataAttributes=getDataAttributes(node.STAdata);
-				var dataAttributesArray=Object.keys(dataAttributes);
 				node.STAdataAttributes={};
-				for (var i = 0; i < dataAttributesArray.length; i++) {
-					node.STAdataAttributes[dataAttributesArray[i]]=deapCopy( (parentNode.STAdataAttributes[dataAttributesArray[i]]) ? parentNode.STAdataAttributes[dataAttributesArray[i]] : dataAttributes[dataAttributesArray[i]]);
-				}
-			}
+
+			node.STAdata=SeparateColumnsData(data, parentNode.STAdataAttributes, node.STAdataAttributes, options);
 			networkNodes.update(node);
 		}
 
@@ -5305,7 +5286,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			if (nodeTo.image == "SeparateColumns.png") {
 				if (calUnir)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
-				SeparateColumns(nodeTo, nodeFrom);
+				SeparateColumnsNode(nodeTo, nodeFrom);
 				return true;
 			}
 			if (nodeTo.image == "CreateColumns.png") {
@@ -5589,6 +5570,9 @@ async function requestAndRefreshCountResults(currentNode, period) {
 						document.getElementById("DialogSelectColumns").showModal();
 					}
 				}
+				else if (currentNode.image == "SeparateColumns.png") {
+					document.getElementById("DialogSeparateColumns").showModal();
+				}
 				else if (currentNode.image == "ExpandColumnsSTA.png") {
 					var parentNode=GetFirstParentNode(currentNode);
 					if (parentNode) {
@@ -5647,7 +5631,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 						ShowGroupByDialog(parentNode, currentNode);
 						document.getElementById("DialogGroupBy").showModal();
 					}
-				}
+				}				
 				else if (currentNode.image == "CreateColumns.png") {
 					var parentNode=GetFirstParentNode(currentNode);
 					createColumnListToAddColumns();//create columnsList including columns in the table 
