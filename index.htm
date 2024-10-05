@@ -771,7 +771,7 @@
 			Import GeoJSON
 			<br>
 
-			<! tres variants d'importacio 
+			<!-- tres variants d'importacio 
 				* As is
 				* Diferent variables in a time series as columns
                                 * A time series variable per row
@@ -1136,7 +1136,7 @@
 			Parties: { singular: "Party", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Things", required: "false" }], properties: [{ name: "description", dataType: "string", required: "false" }, { name: "authId", dataType: "string", required: "false" }, { name: "role", dataType: "PartyRoleCode", required: "true" }, { name: "displayName", dataType: "string", required: "false" }] },
 			Campaigns: { singular: "Campaign", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "License", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "classification", dataType: "string", required: "false" }, { name: "termsOfUse", dataType: "string", required: "true" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "true" }, { name: "url", dataType: "URI", required: "false" }, { name: "startTime", dataType: "isodatetime", required: "false" }, { name: "endTime", dataType: "isodatetime", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }] },
 			Licenses: { singular: "License", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "definition", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "logo", dataType: "string", required: "false" }, { name: "attributionText", dataType: "JSON", required: "false" }] },
-			ObservationGroups: { singular: "ObservationGroup", entities: [{ name: "Party", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Relations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "purpose", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "false" }, { name: "endTimecreationTime", dataType: "isodatetime", required: "false" }, { name: "termsOfUsed", dataType: "string", required: "false" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "dataQuality", dataType: "JSON", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			ObservationGroups: { singular: "ObservationGroup", entities: [{ name: "Party", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Relations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "purpose", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "false" }, { name: "endTime", dataType: "isodatetime", required: "false" }, { name: "termsOfUsed", dataType: "string", required: "false" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "dataQuality", dataType: "JSON", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }] },
 			Relations: { singular: "Relation", entities: [{ name: "Object", required: "true" }, { name: "Subject", required: "true" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "role", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "false" }, { name: "externalObject", dataType: "URI", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], entityRelations: ["Objects", "Subjects"] }
 		};
 		const STAEntitiesArray = Object.keys(STAEntities);
@@ -3227,7 +3227,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 		}
 
 		function PopulateCreateUpdateDeleteEntity(entityName, currentNode) {
-			var cdns=[];
+			var cdns=[], entitiesParentArray=[];
 
 			var parentNodes=GetParentNodes(currentNode);
 			if (parentNodes.length==0) {
@@ -3235,7 +3235,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				return false;
 			}
 
-			cdns.push('<span id="dlgCreateUpdateDeleteEntityType">',STAEntities[entityName].singular, "</span>:<br>");
+			cdns.push('<span id="dlgCreateUpdateDeleteEntityType" style="font-weight:bold">',STAEntities[entityName].singular, "</span>:<br><br>"); //Title (Entity name) 
 			for (var i=0; i<parentNodes.length; i++)
 			{
 				var parentNode=parentNodes[i];
@@ -3258,20 +3258,83 @@ async function requestAndRefreshCountResults(currentNode, period) {
 							alert("One parent node is the same as the entity " + STAEntities[entityName].singular + ". This is for update or delete the entity. In this case, only one parent node is allowed.");
 							return false;
 						}
-						var record=parentNode.STAdata[0];
+						var record=parentNode.STAdata[0]; //Info from parentNode used to complete in update
 						if (!record["@iot.id"]){
 							alert("Cannot find @iot.id. Did you removed in a select?");
 							return false;
 						}
-						cdns.push('Id: <input id="dlgCreateUpdateDeleteEntity_id" type="text" value="', record["@iot.id"], '" readonly=="readonly"><br>'); //update/delete
+						//Update or delete
+						cdns.push('<label style=" font-weight: bold;">Id: </label><input id="dlgCreateUpdateDeleteEntity_id" style="background-color:#D8DFD6" type="text" value="', record["@iot.id"], '" readonly=="readonly"><br>'); //update/delete
 					}
-					else { 
-						var record=parentNode.STAdata[0];
+					else { //CREATE
+						var record=parentNode.STAdata[0]; //Info from parentNode used to complete in update
 						if (!record["@iot.id"]){
 							alert("Cannot find @iot.id in parent node " + STAEntities[parentEntityName].singular + ". Did you removed in a select?");
 							return false;
 						}
-						cdns.push(STAEntities[parentEntityName].singular, ' id: <a href="', getUrlToId(getSTAURLRoot(parentNodes[0].STAURL), parentEntityName, record["@iot.id"]), '" target="_blank">', record["@iot.id"], '</a><br>');
+						//ENTITIES PARENTNODE
+						//cdns.push(STAEntities[parentEntityName].singular, ' id: <a href="', getUrlToId(getSTAURLRoot(parentNodes[0].STAURL), parentEntityName, record["@iot.id"]), '" target="_blank">', record["@iot.id"], '</a><br>');
+						
+						var url=getUrlToId(getSTAURLRoot(parentNodes[0].STAURL),parentEntityName,record["@iot.id"])
+						entitiesParentArray.push([STAEntities[parentEntityName].singular,record["@iot.id"],url]); //EntityName,id.url
+
+						if (i==parentNodes.length-1){ //Lastone
+							var entitiesRequired=[],entitiesNotRequired=[];
+							var currentNodeEntityPlural=getSTAEntityPlural(currentNode.label,false);
+							entitiesRequired.push('<fieldset><legend>Entities</legend>');
+							var datastream="none"; // linked
+
+							for (var e=0;e<STAEntities[currentNodeEntityPlural].entities.length;e++) {
+
+								
+								  if (STAEntities[currentNodeEntityPlural].entities[e].required =="true"){
+								  	for(var u=0;u<entitiesParentArray.length;u++){ 
+										
+								 		if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)==getSTAEntityPlural(entitiesParentArray[u][0],false)){ //If it is a parentNode 
+								 			if (getSTAEntityPlural(entitiesParentArray[u][0],false)=="Datastreams" || (getSTAEntityPlural(entitiesParentArray[u][0],false)=="MultiDatastreams"&& datastream!="linked")) {
+												datastream="linked";
+												entitiesRequired.push(`<span style=" font-weight: bold;">${entitiesParentArray[u][0]}*:<a href="${entitiesParentArray[u][2]}"> ${entitiesParentArray[u][1]}</a></span><br>`);
+											break;
+											}
+								 		}else{
+								 			if (u==entitiesParentArray.length-1){ //If there is not any 
+												if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)!="MultiDatastreams" && getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)!="Datastreams"){
+													entitiesRequired.push(`<span style=" font-weight: bold;">${STAEntities[currentNodeEntityPlural].entities[e].name}*: <span style="color: red; font-style: italic" >You need to link one</span></span> <br>`);
+												}else if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)=="MultiDatastreams" && datastream!="linked"){
+													entitiesRequired.push(`<span style=" font-weight: bold;">Datastreams/MultiDatastreams*: <span style="color: red; font-style: italic" >You need to link one</span></span> <br>`);
+												}
+											}
+								 		}
+								 	}
+								}else{
+								 	for(var u=0;u<entitiesParentArray.length;u++){ 
+								 		if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)==getSTAEntityPlural(entitiesParentArray[u][0],false)){ //If it is a parentNode
+											if (getSTAEntityPlural(entitiesParentArray[u][0],false)=="Datastreams" || (getSTAEntityPlural(entitiesParentArray[u][0],false)=="MultiDatastreams"&& datastream!="linked")) {
+												datastream="linked";
+												entitiesNotRequired.push(`<span style=" font-weight: bold;">${entitiesParentArray[u][0]}:<a href="${entitiesParentArray[u][2]}"> ${entitiesParentArray[u][1]}</a></span><br>`);
+											break;
+											}
+								 			}else{
+												if (u==entitiesParentArray.length-1){
+													if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)!="MultiDatastreams" && getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)!="Datastreams"){
+													entitiesNotRequired.push(`<span style=" font-weight: bold;">${STAEntities[currentNodeEntityPlural].entities[e].name}: <span style="color: #897F7F; font-style: italic"" >none</span></span> <br>`);
+												}else if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)=="MultiDatastreams" && datastream!="linked"){
+													entitiesNotRequired.push(`<span style=" font-weight: bold;">Datastreams/MultiDatastreams: <span style="color: #897F7F; font-style: italic" >none</span></span> <br>`);
+												}											
+											}
+								 		}
+								 	}
+								}
+							}
+
+							if (entitiesRequired.length==1)entitiesRequired.push("<br><span style='font-style:italic'><span style='color: #897F7F; font-style: italic'>none</span></span>");
+							if (entitiesNotRequired.length==1)entitiesNotRequired.push("<br><span style='color: #897F7F; font-style: italic>none</span>");
+
+							cdns.push(...entitiesRequired,...entitiesNotRequired,"<br></fieldset>"); 
+							cdns.push('<fieldset><legend>Properties</legend>');
+
+						}
+					
 					}
 				}
 			}
@@ -3280,39 +3343,77 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i].name=="observedArea" || STAEntities[entityName].properties[i].name=="phenomenonTime" || STAEntities[entityName].properties[i].name=="resultTime")))
 					continue;
 				if ((entityName=="Locations" && STAEntities[entityName].properties[i].name=="location") || 
-				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i].name=="feature"))
+				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i].name=="feature"))//Locations/Feature of Interest coordenates
 				{
 					//For the moment in supporting only a point
 					cdns.push('<fieldset>',
 						'<legend>', STAEntities[entityName].properties[i].name, ' (point):</legend>', //Volem posar que sigui required?
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude">', 'longitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" type="text"><br>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude">', 'latitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" style=" font-weight: bold;">', 'longitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude"style=" font-weight: bold;">', 'latitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude" type="text"><br>',
 						'</fieldset>',
 						'<br>');
 					continue;	
 				}
-				if (entityName=="Datastreams" && STAEntities[entityName].properties[i].name=="unitOfMeasurement") {
+				if (entityName=="Datastreams" && STAEntities[entityName].properties[i].name=="unitOfMeasurement") { //Datastream unitOfMeasurement
 					//Something similar needs to be done for MultiDataStream
 					cdns.push('<fieldset>',
 						'<legend>', STAEntities[entityName].properties[i].name, ':</legend>', //Quins volem que siguin required? perque al esquema diu que es required el unitOfMeasurement sencer, no desglosa
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name">', 'name: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" type="text"><br>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol">', 'symbol: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" type="text"><br>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition">', 'definition: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" style=" font-weight: bold;">', 'name: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" style=" font-weight: bold;">', 'symbol: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" style=" font-weight: bold;">', 'definition: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" type="text"><br>',
 						'</fieldset>',
 						'<br>');
 					continue;
 				}
-				cdns.push('<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" data-STArequired='+STAEntities[entityName].properties[i].required+'>', (STAEntities[entityName].properties[i].required=='true')? STAEntities[entityName].properties[i].name+'*':STAEntities[entityName].properties[i].name, ': </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" type="text"><br>');
-			}
 
+				cdns.push('<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" data-STArequired='+STAEntities[entityName].properties[i].required+' style=" font-weight: bold;">', (STAEntities[entityName].properties[i].required=='true')? STAEntities[entityName].properties[i].name+'*':STAEntities[entityName].properties[i].name, ': </label>');
+				
+				if (STAEntities[entityName].properties[i].name=="time"||STAEntities[entityName].properties[i].name=="creationTime"||STAEntities[entityName].properties[i].name=="startTime"||STAEntities[entityName].properties[i].name=="endTime"||(STAEntities[entityName].properties[i].name=="resultTime" && entityName=="Observations")){
+					cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar')">`);
+					cdns.push('<label>Generate with this: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}')"><br>`);
+				}else if (STAEntities[entityName].properties[i].name=="validTime"||(STAEntities[entityName].properties[i].name=="resultTime" && entityName=="Datastreams")){
+					cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar',2,'input')">`);
+					cdns.push('<label>Generate with this: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',2,'calendar')">`);
+					cdns.push('<label> and: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar2" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',2,'calendar')"><br>`);
+
+				}else if(STAEntities[entityName].properties[i].name=="phenomenonTime"){
+					cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ or YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar',3,'input')">`);
+					cdns.push('<label>Generate with this: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',3,'calendar')">`);
+					cdns.push('<label> and: </label ><label style="font-size:15px;font-style: italic">(to create a period)  </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar3" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',3,'calendar')"><br>`);
+
+				}else{
+					cdns.push('<input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" type="text" style="width:300px"><br>');
+				}
+				
+			}
+			cdns.push('</fieldset>')
 			document.getElementById("dlgCreateUpdateDeleteEntityProperties").innerHTML=cdns.join("");
 
 			if (parentNodes[0].image != "sta.png" && parentEntityName==entityName) {
 				//Edit or delete
 				for (var i=0; i<STAEntities[entityName].properties.length; i++) {
+					//Falta posar altres excepcions que estaven posades adalt.. tipu datastreams unitOfMeasuremtns
+
 					if (entityName=="Observations" ? STAEntities[entityName].properties[i].name=="parameters" : STAEntities[entityName].properties[i].name=="properties")
 						continue;
-					document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name).value=record[STAEntities[entityName].properties[i].name] ? record[STAEntities[entityName].properties[i].name] : "";
+					if ((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i].name=="observedArea" || STAEntities[entityName].properties[i].name=="phenomenonTime" || STAEntities[entityName].properties[i].name=="resultTime"))
+						continue;
+					if ((entityName=="Locations" && STAEntities[entityName].properties[i].name=="location") ||    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i].name=="feature"))//Locations/Feature of Interest coordenates
+					 {
+						// //For the moment in supporting only a point
+						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_longitude").value= record[STAEntities[entityName].properties[i].name]["coordinates"][0]?record[STAEntities[entityName].properties[i].name]["coordinates"][0]:"";
+						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_latitude").value= record[STAEntities[entityName].properties[i].name]["coordinates"][1]?record[STAEntities[entityName].properties[i].name]["coordinates"][1]:"";
+						continue;	
+					}
+					if (entityName=="Datastreams" && STAEntities[entityName].properties[i].name=="unitOfMeasurement") { //Datastream unitOfMeasurement
+					//Something similar needs to be done for MultiDataStream
+				
+						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+ "_name").value= record[STAEntities[entityName].properties[i].name]["name"]? record[STAEntities[entityName].properties[i].name]["name"]:"";
+						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_symbol").value= record[STAEntities[entityName].properties[i].name]["symbol"]?record[STAEntities[entityName].properties[i].name]["symbol"]:"";
+						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_definition").value= record[STAEntities[entityName].properties[i].name]["definition"]?record[STAEntities[entityName].properties[i].name]["definition"]:"";
+						continue;
+					}
+					document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name).value=record[STAEntities[entityName].properties[i].name] ? record[STAEntities[entityName].properties[i].name] : ""; //Properties, completed with parentNodeInfo
 				}
 				document.getElementById("dlgCreateUpdateDeleteEntityCreate").style.display="none";
 				document.getElementById("dlgCreateUpdateDeleteEntityUpdate").style.display="inline-block";
@@ -3345,6 +3446,38 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				document.getElementById("dlgCreateUpdateDeleteEntityDelete").style.display="none";
 			}
 			return true;
+		}
+
+		function addTimeToOtherInputCreateEntities (itemWritten, itemToWrite,number,origin){ //Put Date from calendar to input and vice versa 
+
+			if (number =='2'){
+				if (origin=="calendar"){
+					document.getElementById(itemToWrite).value=document.getElementById(itemWritten).value+"Z" +"/"+document.getElementById(itemWritten+"2").value+"Z" ;
+				}else{
+					var valueOfInput= document.getElementById(itemWritten).value.split ("/");
+					document.getElementById(itemToWrite).value=valueOfInput[0];
+					document.getElementById(itemToWrite+"2").value=valueOfInput[1]
+				}
+			}else if (number=='3'){
+				if (origin=="calendar"){
+					if (document.getElementById(itemWritten+"3").value ==''){
+						document.getElementById(itemToWrite).value=document.getElementById(itemWritten).value+"Z" 
+					}else{
+						if (document.getElementById(itemWritten+"3").value!=""){
+							document.getElementById(itemToWrite).value=document.getElementById(itemWritten).value+"Z"  +"/"+document.getElementById(itemWritten+"3").value+"Z"
+						}else{
+							document.getElementById(itemToWrite).value=document.getElementById(itemWritten).value+"Z";
+						}
+					}
+				}else{
+					var valueOfInput= document.getElementById(itemWritten).value.split ("/");
+					document.getElementById(itemToWrite).value=valueOfInput[0];
+					document.getElementById(itemToWrite+"3").value=valueOfInput[1];
+					
+				}
+			}else{
+				document.getElementById(itemToWrite).value=document.getElementById(itemWritten).value+"Z" ;
+			}
 		}
 
 		function GetCreateEntity(event) {
@@ -3455,29 +3588,89 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			);	
 		}
 
-		function GetUpdateEntity(event){
+		async function GetUpdateEntity(event){
 			event.preventDefault(); 
 			document.getElementById("DialogCreateUpdateDeleteEntity").close();
 			var parentNodes=GetParentNodes(currentNode);
-			var url=parentNodes[0].STAURL;
+			
+			var id = parseInt(document.getElementById("dlgCreateUpdateDeleteEntity_id").value);
+			var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNodes[0].STAURL), false);
+			var url=getUrlToId(getSTAURLRoot(parentNodes[0].STAURL),parentEntityName,id);
 			var entityName=getSTAEntityPlural(document.getElementById("dlgCreateUpdateDeleteEntityType").innerHTML)
 			
-			showInfoMessage("Updating  "+ STAEntities[entityName].singular +" "+parentNodes[0].STAURLIdSelected+" ...");
+			showInfoMessage("Updating  "+ STAEntities[entityName].singular +" "+id+" ...");
 			
-			var childrenNodes=document.getElementById("dlgCreateUpdateDeleteEntityProperties").childNodes;
-			console.log(childrenNodes)
-			var obj={}, idSplited
+			var childrenNodes=document.getElementById("dlgCreateUpdateDeleteEntityProperties").childNodes, childrenNodes2;
+			
+			var obj={}, obj2={},idSplited
 			for (var i=0;i<childrenNodes.length;i++){
-				if (childrenNodes[i].nodeName=="INPUT"){
-					//Està en reqired i al value es blanc? anulaho tot
-					idSplited=childrenNodes[i].id.split("dlgCreateUpdateDeleteEntity_")[1];
-					obj[idSplited]=childrenNodes[i].value;
+				
+				if (currentNode.label=="Location"&&  childrenNodes[i].nodeName=="FIELDSET" ){
+					childrenNodes2=childrenNodes[i].childNodes;
+					console.log(childrenNodes2.length)
+					for (var e=0;e<childrenNodes2.length;e++){
+						if (childrenNodes2[e].nodeName=="INPUT"){
+							idSplited=childrenNodes2[e].id.split("dlgCreateUpdateDeleteEntity_")[1];
+							if (idSplited=="location_longitude"){
+								obj2["coordinates"]=[childrenNodes2[e].value];
+								continue;
+							}
+
+							if (idSplited=="location_latitude"){
+							obj2["coordinates"].push(childrenNodes2[e].value);
+							obj["location"]=obj2;
+						}
+						}
+						
+					}
+					continue;
 				}
+
+				if (currentNode.label=="Datastream"&&  childrenNodes[i].nodeName=="FIELDSET" ){
+					childrenNodes2=childrenNodes[i].childNodes;
+					console.log(childrenNodes2.length)
+
+					for (var e=0;e<childrenNodes2.length;e++){
+						if (childrenNodes2[e].nodeName=="INPUT"){
+							idSplited=childrenNodes2[e].id.split("dlgCreateUpdateDeleteEntity_")[1];
+							if (idSplited=="unitOfMeasurement_name"){
+								obj2["name"]=childrenNodes2[e].value;
+								continue;
+							}
+							if (idSplited=="unitOfMeasurement_symbol"){
+								obj2["symbol"]=childrenNodes2[e].value;
+							
+							continue;
+							}
+							if (idSplited=="unitOfMeasurement_definition"){
+								obj2["definition"]=childrenNodes2[e].value;
+								obj["unitOfMeasurement"]=obj2;
+							}
+						}
+						
+					}
+					continue;
+				}
+
+
+
+				if (childrenNodes[i].nodeName=="INPUT"&&childrenNodes[i].type=="text"){
+					//Comprobar si és required abans d'enviar-ho? Et deixa enviar camps que son required true en blanc i per tant, "eliminar-los"
+					idSplited=childrenNodes[i].id.split("dlgCreateUpdateDeleteEntity_")[1];
+					if (childrenNodes[i].value!="")	{
+						obj[idSplited]=childrenNodes[i].value;
+					}
+				}
+
 			}
+			 var response= await HTTPJSONData(url,null,"PUT",obj);
+			 if (response.ok)
+			 	showInfoMessage(STAEntities[entityName].singular +" "+"<a href='"+url+"'target='_blank'>"+id+"</a> updated.");
+			 else{
+			 	showInfoMessage("Error updating "+STAEntities[entityName].singular +" "+"<a href='"+url+"'target='_blank'>"+id+"</a> updated.");
 
-			console.log(obj);
-
-			var response= HTTPJSONData(url,null,"PUT",obj);
+			 }
+			
 		}
 
 		function AskForDeleteEntity(event){
@@ -3487,25 +3680,29 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			var entityNameSingular= STAEntities[entityName].singular;
 			var id= parentNodes[0].STAURLIdSelected;
 
-			if (true==confirm("Do you want to erase "+entityNameSingular+" "+parentNodes[0].STAURLIdSelected))// {
+			if (true==confirm("Do you want to erase "+entityNameSingular+" "+parentNodes[0].STAURLIdSelected))
 				GetDeleteEntity(entityName, id)
-				/*console.log("borrar")
-			} else{
-				console.log("cancelar")
-			}*/
 		}
 
 
-		function GetDeleteEntity(entityName, id){
+		async function GetDeleteEntity(entityName, id){
 			event.preventDefault(); 
 			//console.log("borrant")
 			document.getElementById("DialogCreateUpdateDeleteEntity").close();
 			var parentNodes=GetParentNodes(currentNode);
 			var url=parentNodes[0].STAURL;
 
-			//var response= HTTPJSONData(url,null,"DELETE",null);
-
 			showInfoMessage("Deleting  "+ entityName +" "+id+" ...");
+			var id = parseInt(document.getElementById("dlgCreateUpdateDeleteEntity_id").value);
+			var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNodes[0].STAURL), false);
+			var url=getUrlToId(getSTAURLRoot(parentNodes[0].STAURL),parentEntityName,id);
+
+			var response= await HTTPJSONData(url,null,"DELETE",null);
+			console.log(response)
+			if (response?.ok)
+				showInfoMessage(STAEntities[entityName].singular +" "+id+"has been deleted.");
+			else
+				showInfoMessage("Error deleting"+ STAEntities[entityName].singular +" "+id);
 		}
 
 		function PopulateCreateUpdateDeleteRecord(currentNode, iRecord, verify) {
