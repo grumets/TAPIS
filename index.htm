@@ -1173,7 +1173,7 @@
 					SaveTable: {description: "Save Table", leafNode: true},
 					SaveLayer: {description: "Save Layer", leafNode: true},
 					OpenMap: {description: "Open Map", leafNode: true},
-					guf: {description: "Feedback", leafNode: true}};
+					guf: {description: "Feedback"}};
 		const TableOperationsArray = Object.keys(TableOperations);
 
 		//If the two nodes cannot connect it returns null. It transforms a plural to singular if needed.
@@ -1478,6 +1478,7 @@
 			}
 			return null;
 		}
+
 
 		function RemoveQueryParamFromURL(url, queryparam) {
 			var queryparams=getURLQueryParams(url);
@@ -1828,61 +1829,66 @@
 			return simpleUrlRecords; 
 		}
 
-		async function getSimplifyGUFRecord(metadatas){
-			var simpleUrlRecords=[], id, title;
-			for (var i=0; i<metadatas.length; i++)
-			{
-				var metadata=metadatas[i];
-				if (!metadata)
-					continue;
-				simpleUrlRecords.push({
+		async function getSimplifyGUFRecord(metadata){
+			var simpleUrlRecord={
 					id: metadata['id'],
 					title: metadata['title'],
-					updated: metadata['updated']});
-				var response=await HTTPJSONData(metadata['link']['@href']);
-				var wpsexecute=(response && response.text) ? response.text : null;
-				if (!wpsexecute) {
-					showInfoMessage("Error retrieving "+metadata['link']['@href']);
-					return;
-				}
-				var wpsex=JSON.parse(xml2json(parseXml(wpsexecute), false, null));
-				if (!wpsex || !wpsex['wps:ExecuteResponse'] || !wpsex['wps:ExecuteResponse']['wps:ProcessOutputs'] || !wpsex['wps:ExecuteResponse']['wps:ProcessOutputs']['wps:Output'] || !wpsex['wps:ExecuteResponse']['wps:ProcessOutputs']['wps:Output'].length) {
-					showInfoMessage("Error retrieving "+metadata['link']['@href']);
-					return;
-				}
-				var outp=wpsex['wps:ExecuteResponse']['wps:ProcessOutputs']['wps:Output'][wpsex['wps:ExecuteResponse']['wps:ProcessOutputs']['wps:Output'].length-1]
-				if (!outp || !outp['wps:Data'] || !outp['wps:Data']['wps:ComplexData'] || !outp['wps:Data']['wps:ComplexData']['guf:GUF_FeedbackItem']) {
-					showInfoMessage("Error retrieving "+metadata['link']['@href']);
-					return;
-				}
-				var feedbackItem=outp['wps:Data']['wps:ComplexData']['guf:GUF_FeedbackItem'];
-				if (!feedbackItem['guf:abstract'] || !feedbackItem['guf:abstract']['gco:CharacterString'])
-					continue;
-				simpleUrlRecords[simpleUrlRecords.length-1].abstract=feedbackItem['guf:abstract']['gco:CharacterString'];
-				if (!feedbackItem['guf:contact'] || 
-				    !feedbackItem['guf:contact']['guf:GUF_UserInformation'] || 
-				    !feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails'] || 
-				    !feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual'] || 
-				    !feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual']['cit:partyIdentifier'] || 
-				    !feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual']['cit:partyIdentifier']['mcc:MD_Identifier'] ||
-				    !feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual']['cit:partyIdentifier']['mcc:MD_Identifier']['mcc:description'] ||
-				    !feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual']['cit:partyIdentifier']['mcc:MD_Identifier']['mcc:description']['gco:CharacterString'])
-					continue;
-				simpleUrlRecords[simpleUrlRecords.length-1].owner=feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual']['cit:partyIdentifier']['mcc:MD_Identifier']['mcc:description']['gco:CharacterString']
-				if (!feedbackItem['guf:rating'] || 
-				    !feedbackItem['guf:rating']['guf:GUF_Rating'] || 
-				    !feedbackItem['guf:rating']['guf:GUF_Rating']['guf:rating'] || 
-				    !feedbackItem['guf:rating']['guf:GUF_Rating']['guf:rating']['guf:GUF_RatingCode'] || 
-				    !feedbackItem['guf:rating']['guf:GUF_Rating']['guf:rating']['guf:GUF_RatingCode']['@codeListValue'])
-					continue;
-				simpleUrlRecords[simpleUrlRecords.length-1].rating=feedbackItem['guf:rating']['guf:GUF_Rating']['guf:rating']['guf:GUF_RatingCode']['@codeListValue'];
-				if (!feedbackItem['guf:userComment'] || 
-				    !feedbackItem['guf:userComment']['guf:GUF_UserComment'] || 
-				    !feedbackItem['guf:userComment']['guf:GUF_UserComment']['guf:comment'] || 
-				    !feedbackItem['guf:userComment']['guf:GUF_UserComment']['guf:comment']['gco:CharacterString']) 
-					continue;
-				simpleUrlRecords[simpleUrlRecords.length-1].comment=feedbackItem['guf:userComment']['guf:GUF_UserComment']['guf:comment']['gco:CharacterString'];
+					updated: metadata['updated']};
+			var response=await HTTPJSONData(metadata['link']['@href']);
+			var wpsexecute=(response && response.text) ? response.text : null;
+			if (!wpsexecute) {
+				showInfoMessage("Error retrieving "+metadata['link']['@href']);
+				return simpleUrlRecord;
 			}
+			var wpsex=JSON.parse(xml2json(parseXml(wpsexecute), false, null));
+			if (!wpsex || !wpsex['wps:ExecuteResponse'] || !wpsex['wps:ExecuteResponse']['wps:ProcessOutputs'] || !wpsex['wps:ExecuteResponse']['wps:ProcessOutputs']['wps:Output'] || !wpsex['wps:ExecuteResponse']['wps:ProcessOutputs']['wps:Output'].length) {
+				showInfoMessage("Error retrieving "+metadata['link']['@href']);
+				return simpleUrlRecord;
+			}
+			var outp=wpsex['wps:ExecuteResponse']['wps:ProcessOutputs']['wps:Output'][wpsex['wps:ExecuteResponse']['wps:ProcessOutputs']['wps:Output'].length-1]
+			if (!outp || !outp['wps:Data'] || !outp['wps:Data']['wps:ComplexData'] || !outp['wps:Data']['wps:ComplexData']['guf:GUF_FeedbackItem']) {
+				showInfoMessage("Error retrieving "+metadata['link']['@href']);
+				return simpleUrlRecord;
+			}
+			var feedbackItem=outp['wps:Data']['wps:ComplexData']['guf:GUF_FeedbackItem'];
+			if (feedbackItem['guf:abstract'] && feedbackItem['guf:abstract']['gco:CharacterString'])
+				simpleUrlRecord.abstract=feedbackItem['guf:abstract']['gco:CharacterString'];
+			if (feedbackItem['guf:contact'] && 
+			    feedbackItem['guf:contact']['guf:GUF_UserInformation'] && 
+			    feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails'] && 
+			    feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual'] && 
+			    feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual']['cit:partyIdentifier'] && 
+			    feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual']['cit:partyIdentifier']['mcc:MD_Identifier'] &&
+			    feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual']['cit:partyIdentifier']['mcc:MD_Identifier']['mcc:description'] &&
+			    feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual']['cit:partyIdentifier']['mcc:MD_Identifier']['mcc:description']['gco:CharacterString'])
+				simpleUrlRecord.owner=feedbackItem['guf:contact']['guf:GUF_UserInformation']['guf:userDetails']['cit:CI_Individual']['cit:partyIdentifier']['mcc:MD_Identifier']['mcc:description']['gco:CharacterString']
+			if (feedbackItem['guf:rating'] && 
+			    feedbackItem['guf:rating']['guf:GUF_Rating'] && 
+			    feedbackItem['guf:rating']['guf:GUF_Rating']['guf:rating'] && 
+			    feedbackItem['guf:rating']['guf:GUF_Rating']['guf:rating']['guf:GUF_RatingCode'] && 
+			    feedbackItem['guf:rating']['guf:GUF_Rating']['guf:rating']['guf:GUF_RatingCode']['@codeListValue'])
+				simpleUrlRecord.rating=feedbackItem['guf:rating']['guf:GUF_Rating']['guf:rating']['guf:GUF_RatingCode']['@codeListValue'];
+			if (feedbackItem['guf:userComment'] && 
+			    feedbackItem['guf:userComment']['guf:GUF_UserComment'] && 
+			    feedbackItem['guf:userComment']['guf:GUF_UserComment']['guf:comment'] && 
+			    feedbackItem['guf:userComment']['guf:GUF_UserComment']['guf:comment']['gco:CharacterString']) 
+				simpleUrlRecord.comment=feedbackItem['guf:userComment']['guf:GUF_UserComment']['guf:comment']['gco:CharacterString'];
+			return simpleUrlRecord;
+		}
+
+		async function getSimplifyGUFRecords(metadatas){
+			var simpleUrlRecords=[], id, title;
+			if (!metadatas)
+				return null;
+			if (metadatas.length) {
+				for (var i=0; i<metadatas.length; i++) {
+					var metadata=metadatas[i];
+					if (!metadata)
+						continue;
+					simpleUrlRecords.push(await getSimplifyGUFRecord(metadata));
+				}
+			} else 
+				simpleUrlRecords.push(await getSimplifyGUFRecord(metadatas));
 			return simpleUrlRecords;
 		}
 
@@ -2053,7 +2059,7 @@
 				else if (node.OGCType=="OGCCSW")
 					node.STAdata = node.STAdata.concat(getSimplifyOGCCSWRecord(jsonData['csw:GetRecordsResponse']['csw:SearchResults']['gmd:MD_Metadata']));
 				else if (node.OGCType=="GUF")
-					node.STAdata = node.STAdata.concat(await getSimplifyGUFRecord(jsonData['feed']['entry']));
+					node.STAdata = node.STAdata.concat(await getSimplifyGUFRecords(jsonData['feed']['entry']));
 				else
 					node.STAdata = node.STAdata.concat(jsonData.value);
 					
@@ -2073,7 +2079,7 @@
 				} else if (node.OGCType=="OGCCSW") {
 					node.STAdata = getSimplifyOGCCSWRecord(jsonData['csw:GetRecordsResponse']['csw:SearchResults']['gmd:MD_Metadata']);
 				} else if (node.OGCType=="GUF") {
-					node.STAdata = await getSimplifyGUFRecord(jsonData['feed']['entry']);
+					node.STAdata = await getSimplifyGUFRecords(jsonData['feed']['entry']);
 				} else {
 					node.STAdata = (typeof jsonData.value!=="undefined") ? jsonData.value : [jsonData];
 					nextLink = jsonData["@iot.nextLink"];
@@ -5413,9 +5419,15 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			}
 		}
 
+		function makeCodespaceHttp(url) {
+			if (url.length>8 && url.substring(0, 8)=="https://")
+				return "http://" + url.substring(8);
+			return url;
+		}
+
 		function AddGUF(event) {
 			event.preventDefault(); // We don't want to submit this form
-			GUFAfegirFeedbackCapa(document.getElementById("DialogGUFTitleInput").value, document.getElementById("DialogGUFCodeInput").value, document.getElementById("DialogGUFCodespaceInput").value, "eng", "authenix", null)
+			GUFAfegirFeedbackCapa(document.getElementById("DialogGUFTitleInput").value, document.getElementById("DialogGUFCodeInput").value, makeCodespaceHttp(document.getElementById("DialogGUFCodespaceInput").value), "eng", "authenix", null)
 		}
 
 		function EditGUF(event) {
@@ -5430,13 +5442,14 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			var previousSTAURL = currentNode.STAURL;
 
 			currentNode.STAURL = ServerGUF+"?SERVICE=WPS&REQUEST=EXECUTE&IDENTIFIER=NB_RESOURCE:ENUMERATE&LANGUAGE=eng&FORMAT=text/xml&TYPE=FEEDBACK";
-			currentNode.STAURL +="&TRG_TYPE_1=CITATION&TRG_FLD_1=CODE&TRG_VL_1=" + document.getElementById("DialogGUFCodeInput").value + "&TRG_OPR_1=EQ&TRG_NXS_1=AND&TRG_TYPE_2=CITATION&TRG_FLD_2=NAMESPACE&TRG_VL_2=" + document.getElementById("DialogGUFCodespaceInput").value + "&TRG_OPR_2=EQ";			
+			currentNode.STAURL +="&TRG_TYPE_1=CITATION&TRG_FLD_1=CODE&TRG_VL_1=" + document.getElementById("DialogGUFCodeInput").value + "&TRG_OPR_1=EQ&TRG_NXS_1=AND&TRG_TYPE_2=CITATION&TRG_FLD_2=NAMESPACE&TRG_VL_2=" + makeCodespaceHttp(document.getElementById("DialogGUFCodespaceInput").value) + "&TRG_OPR_2=EQ";			
 
 			currentNode.OGCType = "GUF";
 			
 			networkNodes.update(currentNode);
 
 			UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
+			showInfoMessage("Requesting Feedback...");
 			LoadJSONNodeSTAData(currentNode);
 		}
 
@@ -5995,8 +6008,8 @@ async function requestAndRefreshCountResults(currentNode, period) {
 									document.getElementById("DialogGUFCodespaceInput").value=parentNode.STAURL;
 								else {
 									var grandParentNode=GetFirstParentNode(parentNode);
-									if (grandparentNode && grandParentNode.STAURL)
-										document.getElementById("DialogGUFCodespaceInput").value=grandParentNode.STAURL;
+									if (grandParentNode && grandParentNode.STAURL)
+										document.getElementById("DialogGUFCodespaceInput").value=(grandParentNode.OGCType=="OGCCSW") ? getURLWithoutQueryParams(grandParentNode.STAURL) : grandParentNode.STAURL;
 								}
 							}
 						}
