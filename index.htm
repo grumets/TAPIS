@@ -1727,6 +1727,26 @@
 			return simpleCollecs;
 		}
 
+		function addOnlinesDigitalTransferOption(simpleUrlRecords, digitalTransfer, id, title, schema, bbox) {
+			if (!digitalTransfer || !digitalTransfer['gmd:onLine'])
+				return;
+			var ol_len=(typeof digitalTransfer['gmd:onLine'].length==="undefined") ? 1 : digitalTransfer['gmd:onLine'].length;
+			for (var ol=0; ol<ol_len; ol++) {
+				var online=(typeof digitalTransfer['gmd:onLine'].length==="undefined") ? digitalTransfer['gmd:onLine']['gmd:CI_OnlineResource'] : digitalTransfer['gmd:onLine'][ol]['gmd:CI_OnlineResource'];
+				if (!online['gmd:linkage'] || !online['gmd:linkage']['gmd:URL'])
+					continue;
+				simpleUrlRecords.push({
+					id: id,
+					title: title,
+					dataURL: online['gmd:linkage']['gmd:URL'],
+					schemaURL: schema});
+				if (online['gmd:name'] && online['gmd:name']['gco:CharacterString'])
+					simpleUrlRecords[simpleUrlRecords.length-1].distribution=online['gmd:name']['gco:CharacterString'];
+				if (bbox.length)
+					simpleUrlRecords[simpleUrlRecords.length-1].extent=bbox;
+			}
+		}
+
 		function getSimplifyOGCCSWRecord(metadatas){
 			var simpleUrlRecords=[], id, title, bbox, schema;
 			for (var i=0; i<metadatas.length; i++)
@@ -1756,8 +1776,7 @@
 							if (extent && extent['gmd:geographicElement']) {
 								var ge_len=(typeof extent['gmd:geographicElement'].length==="undefined") ? 1 : extent['gmd:geographicElement'].length; 
 								for (var ge=0; ge<ge_len; ge++) {
-									var geoElem=(typeof extent['gmd:geographicElement'].length==="undefined") ? extent['gmd:geographicElement'] : extent['gmd:geographicElement'][ge];
-									var gbb=extent['gmd:geographicElement']['gmd:EX_GeographicBoundingBox'];
+									var gbb=(typeof extent['gmd:geographicElement'].length==="undefined") ? extent['gmd:geographicElement']['gmd:EX_GeographicBoundingBox'] : extent['gmd:geographicElement'][ge]['gmd:EX_GeographicBoundingBox'];
 									if (gbb) {
 										var n=0;
 										if (gbb['gmd:westBoundLongitude'] && gbb['gmd:westBoundLongitude']['gco:Decimal']) {
@@ -1803,27 +1822,30 @@
 				var d_len=(typeof metadata['gmd:distributionInfo'].length==="undefined") ? 1 : metadata['gmd:distributionInfo'].length
 				for (var d=0; d<d_len; d++) {
 					var distribution=(typeof metadata['gmd:distributionInfo'].length==="undefined") ? metadata['gmd:distributionInfo']['gmd:MD_Distribution'] : metadata['gmd:distributionInfo'][d]['gmd:MD_Distribution'];
-					if (!distribution || !distribution['gmd:transferOptions'])
+					if (!distribution)
 						continue;
-					var dt_len=(typeof distribution['gmd:transferOptions'].length==="undefined") ? 1 : distribution['gmd:transferOptions'].length 
-					for (var dt=0; dt<dt_len; dt++) {
-						var digitalTransfer=(typeof distribution['gmd:transferOptions'].length==="undefined") ? distribution['gmd:transferOptions']['gmd:MD_DigitalTransferOptions'] : distribution['gmd:transferOptions'][dt]['gmd:MD_DigitalTransferOptions'];
-						if (!digitalTransfer || !digitalTransfer['gmd:onLine'])
-							continue;
-						var ol_len=(typeof digitalTransfer['gmd:onLine'].length==="undefined") ? 1 : digitalTransfer['gmd:onLine'].length;
-						for (var ol=0; ol<ol_len; ol++) {
-							var online=(typeof digitalTransfer['gmd:onLine'].length==="undefined") ? digitalTransfer['gmd:onLine']['gmd:CI_OnlineResource'] : digitalTransfer['gmd:onLine'][ol]['gmd:CI_OnlineResource'];
-							if (!online['gmd:linkage'] || !online['gmd:linkage']['gmd:URL'])
+					if (distribution['gmd:transferOptions']) {
+						var dt_len=(typeof distribution['gmd:transferOptions'].length==="undefined") ? 1 : distribution['gmd:transferOptions'].length; 
+						for (var dt=0; dt<dt_len; dt++) {
+							addOnlinesDigitalTransferOption(simpleUrlRecords, 
+									(typeof distribution['gmd:transferOptions'].length==="undefined") ? distribution['gmd:transferOptions']['gmd:MD_DigitalTransferOptions'] : distribution['gmd:transferOptions'][dt]['gmd:MD_DigitalTransferOptions'], 
+									id, title, schema, bbox);
+						}
+					}
+					if (distribution['gmd:distributor']) {
+						var dtor_len=(typeof distribution['gmd:distributor'].length==="undefined") ? 1 : distribution['gmd:distributor'].length;
+						for (var dtor=0; dtor<dtor_len; dtor++) {
+							var distributor=(typeof distribution['gmd:distributor'].length==="undefined") ? distribution['gmd:distributor']['gmd:MD_Distributor'] : distribution['gmd:distributor'][dtor]['gmd:MD_Distributor'];
+							if (!distributor)
 								continue;
-							simpleUrlRecords.push({
-								id: metadata['gmd:fileIdentifier']['gco:CharacterString'],
-								title: title,
-								dataURL: online['gmd:linkage']['gmd:URL'],
-								schemaURL: schema});
-							if (online['gmd:name'] && online['gmd:name']['gco:CharacterString'])
-								simpleUrlRecords[simpleUrlRecords.length-1].distribution=online['gmd:name']['gco:CharacterString'];
-							if (bbox.length)
-								simpleUrlRecords[simpleUrlRecords.length-1].extent=bbox;
+							if (distributor['gmd:distributorTransferOptions']) {
+								var dt_len=(typeof distributor['gmd:distributorTransferOptions'].length==="undefined") ? 1 : distributor['gmd:distributorTransferOptions'].length; 
+								for (var dt=0; dt<dt_len; dt++) {
+									addOnlinesDigitalTransferOption(simpleUrlRecords, 
+											(typeof distributor['gmd:distributorTransferOptions'].length==="undefined") ? distributor['gmd:distributorTransferOptions']['gmd:MD_DigitalTransferOptions'] : distributor['gmd:distributorTransferOptions'][dt]['gmd:MD_DigitalTransferOptions'], 
+											id, title, schema, bbox);
+								}
+							}
 						}
 					}
 				}
