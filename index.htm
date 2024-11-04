@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -171,6 +171,28 @@
 				<button value="default" id="dlgCreateUpdateDeleteEntityDelete" onClick="AskForDeleteEntity(event)">Delete</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
+		</form>
+	</dialog>
+	<dialog id="DialogCreateUpdateDeleteEntity_MultiDatastreams">
+		<form>
+			<span id="dlgCreateUpdateDeleteEntityProperties_MultiDatastreams">
+			</span>
+			<div class="center">
+				<button value="default" id="dlgCreateUpdateDeleteEntityCreate_MultiDatastreams" onClick="GetCreateEntityMultiDatastream(event)">Create</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityUpdate_MultiDatastreams" onClick="GetUpdateEntityMultiDatastream(event)">Update</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityDelete_MultiDatastreams" onClick="AskForDeleteEntity(event)">Delete</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+
+
+	<dialog id="DialogCreateUpdateDeleteEntity_numberOfMultiDatastream" >
+		<form>
+			<label for ="DialogOpenMultiDatastream_input">How many multidatastreams do you want to introduce?</label>
+			<input type="number" id ="DialogOpenMultiDatastream_input" min="2" name="DialogOpenMultiDatastream_input" value=2> </input>
+			<button value="default" id="DialogOpenMultiDatastream" onClick="openMultiDatastreamDialog(event)" formmethod="dialog" value="2">OK</button>
+			<button value="cancel" formmethod="dialog">Cancel</button>
 		</form>
 	</dialog>
 
@@ -508,7 +530,52 @@
 			</div>
 		</form>
 	</dialog>
+	
+	<dialog id="DialogColumnStatistics">
+		<form >
+ 				<span>For each column, rows with the follow statistics will be created:</span><br>
+				<div style="display: inline-block;">
+					<ul type="square">
+						<li>Mean</li><li>Median</li><li>Q1</li><li>Q3</li><li>Min. value</li><li>Max value</li>
+					</ul>
+				</div>
+				<div style="display: inline-block;">
+					<ul type="square">
+						<li>Mode</li><li>Standard deviation</li><li>Variance</li><li>Sum</li><li>Range</li><li>First value</li>
+					</ul>
+				</div>
+				<div style="display: inline-block;">
+					<ul type="square">
+						<li>Last value</li><li>Random value</li><li>Count</li><!-- <li>Proportion defined</li><li>Count defined</li> -->
+					</ul>
+				</div>
 
+			<br>
+			<div  style="text-align: center">
+				<button value="default" onClick="createColumnStatistics(event)">Ok</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+	
+	<dialog id="DialogConcatenateTables">
+		<form >
+			<fieldset> 
+				<legend> Choose one option</legend>
+				<input type="radio" name="concatenationType" value="allColumns" id="concatenationType_allColumns" checked> <label for="concatenationType_allColumns">Concatenate all columns</label> 
+				<br>
+				<input type="radio" name="concatenationType" value="repeatedColumns" id="concatenationType_repeatedColumns"> <label for="concatenationType_repeatedColumns">Concatenate only repeated columns</label> 
+				
+			</fieldset>
+
+			<br>
+			<div  style="text-align: center">
+				<button value="default" onClick="concatenateTables()">Ok</button>
+				<button value="cancel" formmethod="dialog" >Cancel</button>
+			</div>			
+		</form>		
+	</dialog>
+	
 	<dialog id="DialogSelectExpands">
 		<form>
 			<fieldset id="DialogSelectExpandsHTML">
@@ -526,6 +593,7 @@
 			</div>
 		</form>
 	</dialog>
+	
 	<dialog id="DialogFilterRowEntities">
 		<form>
 			<fieldset id="DialogFilterRowEntitiesHTML">
@@ -602,6 +670,53 @@
 			</label>
 			<div class="center">
 				<button value="default" onClick="GetFilterRows(event)">OK</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+
+	<dialog id="DialogGeospatialFilterRowsByDistance">
+		
+		<form>
+			<fieldset>
+				<legend>Where do you want to apply the filter?</legend>
+				<input type="radio" id="geoDistance_FOI_Feature" name="geoDistanceRadios" value="Feature" checked> 
+			 	<label for="geoDistance_FOI_Feature">FeatureOfInterest-feature</label>
+				<span style="font-size: 10px; font-style: italic" id="geoDistance_FOI_Feature_span" >Choose the route: </span>
+				<select id="geoDistance_FOI_Feature_select" name="geoDistance_FOI_Feature_select"></select><br>
+				<input type="radio" id="geoDistance_Location" name="geoDistanceRadios" value="Location" >
+				<label for="geoDistance_Location">Locations-location</label>
+				<span style="font-size: 10px; font-style: italic" id="geoDistance_Location_span" >Choose the route: </span>
+				<select id="geoDistance_Location_select" name="geoDistance_Location_select"></select><br>
+			</fieldset>
+			<fieldset>
+				<legend>Introduce the coordenates</legend>
+			<label> Point 1:</label><select id="geoDistance_input_coordinate1_select" name="geoDistance_input_coordinate1_select" onChange="writeValueInInputGeoDistance('1')"></select><input type="text" id ="geoDistance_input_coordinate1" style="margin-left: 10px"></input><br>
+			<label> Point 2:</label><select id="geoDistance_input_coordinate2_select" name="geoDistance_input_coordinate2_select" onChange="writeValueInInputGeoDistance('2')"></select><input type="text" id ="geoDistance_input_coordinate2" style="margin-left: 10px"> </input></select><br>
+			<br>
+			<label> Use these to create an interval</label><br>
+			<label> Point 1:</label><select id="geoDistance_input_coordinate3_select" name="geoDistance_input_coordinate3_select" onChange="writeValueInInputGeoDistance('3')"></select><input type="text" id ="geoDistance_input_coordinate3" style="margin-left: 10px"></input><br>
+			<label> Point 2:</label><select id="geoDistance_input_coordinate4_select" name="geoDistance_input_coordinate4_select" onChange="writeValueInInputGeoDistance('4')"></select><input type="text" id ="geoDistance_input_coordinate4" style="margin-left: 10px"></input><br>
+			</fieldset>
+
+			<label for="geoDistance_select_operator">Choose operator:</label>
+			<select id="geoDistance_select_operator" name="geoDistance_select_operator" onChange="unableDisableSelectOperatorGeoDistance()">
+				<option value="eq"> =</option>
+				<option value="ne">  ≠ </option>
+				<option value="gt"> > </option>
+				<option value="lt"> < </option>
+				<option value="ge">  ≥  </option>
+				<option value="le">   ≤   </option>
+				<option value=" [a,b] "> [a,b] </option>
+				<option value=" (a,b] "> (a,b] </option>
+				<option value=" [a,b) "> [a,b) </option>
+				<option value=" (a,b) "> (a,b) </option>
+			</select>
+
+			<label for="geoDistance_value">Introduce value</label><input type="number" id ="geoDistance_input_value" style="width:50px" min="0" value="0">
+
+			<div class="center">
+				<button value="default" onClick="GetGeoDistanceFilter(event)">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
@@ -1043,28 +1158,6 @@
 		</form>
 	</dialog>
 
-	<!--dialog id="UploadTimeAverages">
-		<div id="UploadTimeAveragesLoginFirst" style="display: none;">
-		<form>
-			To upload data in a STA server, you should Login first.<br>
-			<div class="center">
-				<button value="cancel" formmethod="dialog">Cancel</button>
-			</div>
-		</form>
-		</div>
-		<form id="UploadTimeAveragesForm">
-			Upload Datastream as STA time averages
-			<br>
-			<label>STA target service URL:
-				<input type="text" id="DialogTimeAveragesSTAUploadURLInput" size="100"></input>
-			</label>
-			<div class="center">
-				<button value="ok" onClick="UploadTimeAveragesSTAURL(event)" formmethod="dialog">Upload</button>
-			</div>
-		</form>
-	</dialog-->
-
-
 	<!--h2 id="eventSpanHeading"></h2>
 	<pre id="eventSpanContent"></pre-->
 
@@ -1130,13 +1223,13 @@
 			Observations: { singular: "Observation", entities: [{ name: "Datastream", required: "true" }, { name: "MultiDatastream", required: "true" }, { name: "FeatureOfInterest", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Subjects", required: "false" }, { name: "Objects", required: "false" }], properties: [{ name: "phenomenonTime", dataType: "object", required: "true" }, { name: "resultTime", dataType: "isodatetime", required: "true" }, { name: "result", dataType: "", required: "true" }, { name: "resultQuality", dataType: "object", required: "false" }, { name: "validTime", dataType: "data_isoperiod", required: "false" }, { name: "parameters", dataType: "JSON", required: "false" }], entityRelations: ["Object", "Subject"] },
 			FeaturesOfInterest: { singular: "FeatureOfInterest", entities: [{ name: "Observations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "feature", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
 			Sensors: { singular: "Sensor", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "metadata", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
-			Things: { singular: "Thing", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "Locations", required: "true" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			Things: { singular: "Thing", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "Locations", required: "false" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
 			Locations: { singular: "Location", entities: [{ name: "Things", required: "false" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "location", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
 			HistoricalLocations: { singular: "HistoricalLocation", entities: [{ name: "Things", required: "true" }, { name: "Location", required: "true" }], properties: [{ name: "time", dataType: "isodatetime", required: "true" }] },
 			Datastreams: { singular: "Datastream", entities: [{ name: "Party", required: "true" }, { name: "Sensor", required: "true" }, { name: "ObservedProperty", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Thing", required: "true" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "observationType", dataType: "string", required: "true" }, { name: "unitOfMeasurement", dataType: "JSON", required: "true" }, { name: "observedArea", dataType: "object", required: "false" }, { name: "phenomenonTime", dataType: "data_isoperiod", required: "false" }, { name: "resultTime", dataType: "data_isoperiod", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }] },
 			MultiDatastreams: { singular: "MultiDatastream", entities: [{ name: "Party", required: "true" }, { name: "Sensor", required: "true" }, { name: "ObservedProperty", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Thing", required: "true" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "observationType", dataType: "string", required: "true" }, { name: "unitOfMeasurement", dataType: "JSON", required: "true" }, { name: " observedArea", dataType: "object", required: "false" }, { name: "phenomenonTime", dataType: "data_isoperiod", required: "false" }, { name: "resultTime", dataType: "data_isoperiod", required: "false" }, { name: "multiObservationDataType", dataType: "JSON", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }] },
 			Parties: { singular: "Party", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Things", required: "false" }], properties: [{ name: "description", dataType: "string", required: "false" }, { name: "authId", dataType: "string", required: "false" }, { name: "role", dataType: "PartyRoleCode", required: "true" }, { name: "displayName", dataType: "string", required: "false" }] },
-			Campaigns: { singular: "Campaign", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "License", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "classification", dataType: "string", required: "false" }, { name: "termsOfUse", dataType: "string", required: "true" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "true" }, { name: "url", dataType: "URI", required: "false" }, { name: "startTime", dataType: "isodatetime", required: "false" }, { name: "endTime", dataType: "isodatetime", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }] },
+			Campaigns: { singular: "Campaign", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "License", required: "false" }, {name:"ObservationGroups", required:"false"}], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "classification", dataType: "string", required: "false" }, { name: "termsOfUse", dataType: "string", required: "true" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "true" }, { name: "url", dataType: "URI", required: "false" }, { name: "startTime", dataType: "isodatetime", required: "false" }, { name: "endTime", dataType: "isodatetime", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }] },
 			Licenses: { singular: "License", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "definition", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "logo", dataType: "string", required: "false" }, { name: "attributionText", dataType: "JSON", required: "false" }] },
 			ObservationGroups: { singular: "ObservationGroup", entities: [{ name: "Party", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Relations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "purpose", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "false" }, { name: "endTime", dataType: "isodatetime", required: "false" }, { name: "termsOfUsed", dataType: "string", required: "false" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "dataQuality", dataType: "JSON", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }] },
 			Relations: { singular: "Relation", entities: [{ name: "Object", required: "true" }, { name: "Subject", required: "true" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "role", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "false" }, { name: "externalObject", dataType: "URI", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], entityRelations: ["Objects", "Subjects"] }
@@ -1148,10 +1241,10 @@
 					ExpandColumnsSTA: {description: "Expand Columns", callSTALoad: true},
 					SelectRowSTA: {description: "Select Row", callSTALoad: true},
 					FilterRowsSTA: {description: "Filter Rows", callSTALoad: true},
-					GeoFilterRowsSTA: {description: "Geospatial Filter Rows", callSTALoad: true},
+					GeoFilterPolSTA: {description: "Filter Rows by Polygon", callSTALoad: true},
+					GeoFilterPntSTA: {description: "Filter Rows by Distance", callSTALoad: true},
 					SortBySTA: {description: "Sort by", callSTALoad: true},
 					UploadObservations: {description: "Upload in STA", leafNode: true},
-					//UploadTimeAverages: {description: "Upload time averages", leafNode: true},
 					OneValueSTA: {description: "One Value", leafNode: true},
 					CountResultsSTA: { description: "Count results", leafNode: true }};
 		const STAOperationsArray = Object.keys(STAOperations);
@@ -1162,12 +1255,14 @@
 					Meaning: {description: "Column meaning"}, 
 					SelectColumnsTable: {description: "Select Columns"},
 					SelectRowTable: {description: "Select Row"},
-					JoinTables: {description: "Join Tables"},
 					FilterRowsTable: {description: "Filter Rows"},
+					JoinTables: {description: "Join Tables"},
+					ConcatenateTables:{description: "Concatenate Columns"},
 					GroupBy: {description: "GroupBy"},
 					AggregateColumns:{description: "Aggregate Columns"},
 					CreateColumns:{description: "Create Columns"},
 					ColumnsCalculator:{description: "Columns calculator"},
+					ColumnStatistics:{description:"Columns statistics"},
 					SeparateColumns: {description: "Separate Columns"},
 					ScatterPlot: {description: "Scatter Plot", leafNode: true},
 					BarPlot: {description: "Bar Plot", leafNode: true},
@@ -1274,7 +1369,7 @@
 
 		//Return null if there is no reason (and there is a "fit").
 		function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
-			if (parentNode.image == "sta.png" && (node.image == "FilterRowsSTA.png" || node.image == "SelectRowSTA.png" || node.image == "GeoFilterRowsSTA.png" || node.image == "SelectColumnsSTA.png" || node.image == "ExpandColumnsSTA.png" || node.image == "SortBySTA.png" || node.image == "OneValueSTA.png" || node.image == "CountResultsSTA.png" ) )
+			if (parentNode.image == "sta.png" && (node.image == "FilterRowsSTA.png" || node.image == "SelectRowSTA.png" || node.image == "GeoFilterPolSTA.png" || node.image == "SelectColumnsSTA.png" || node.image == "ExpandColumnsSTA.png" || node.image == "SortBySTA.png" || node.image == "OneValueSTA.png" || node.image == "CountResultsSTA.png" ) )
 				return "The operation cannot be applied to the root of an STA. (Suggestion: connect a STA Entity first)";
 			if (parentNode.image=="sta.png" || parentNode.image=="ogcAPIs.png" || parentNode.image=="csw.png")
 				return null;
@@ -1826,7 +1921,7 @@
 						continue;
 					if (distribution['gmd:transferOptions']) {
 						var dt_len=(typeof distribution['gmd:transferOptions'].length==="undefined") ? 1 : distribution['gmd:transferOptions'].length; 
-						for (var dt=0; dt<dt_len; dt++) {
+					for (var dt=0; dt<dt_len; dt++) {
 							addOnlinesDigitalTransferOption(simpleUrlRecords, 
 									(typeof distribution['gmd:transferOptions'].length==="undefined") ? distribution['gmd:transferOptions']['gmd:MD_DigitalTransferOptions'] : distribution['gmd:transferOptions'][dt]['gmd:MD_DigitalTransferOptions'], 
 									id, title, schema, bbox);
@@ -2330,7 +2425,11 @@
 				record=data[r];
 				var keys = Object.keys(data[r]);
 				for (var k = 0; k < keys.length; k++) {
-					if (record[keys[k]].getMonth && record[keys[k]].toISOString) {
+					if (record[keys[k]]===null) {
+						delete record[keys[k]];
+						continue;
+					}
+					if (record[keys[k]] && record[keys[k]].getMonth && record[keys[k]].toISOString) {
 						s=record[keys[k]].toISOString();
 						if (s.length==24 && s.endsWith(".000Z"))
 							record[keys[k]]=s.substring(0,19)+"Z";
@@ -3028,8 +3127,24 @@ async function requestAndRefreshCountResults(currentNode, period) {
 		async function GetObjectId(url, objsName, obj){
 			if (objsName=="Parties")
 				var response=await HTTPJSONData(url+"/"+objsName+ "?$filter=authId eq '" + obj.authId + "'");
+			else if (objsName=="MultiDatastreams"){
+				var observedProperties= obj["ObservedProperties"];
+				var observationType= obj["observationType"];
+				delete obj["ObservedProperties"]; //To separate manually without AddKeysToFilter function 
+				delete obj["observationType"]; //to avoid error: "Illegal operation: No property called observationType for class de.fraunhofer.iosb.ilt.frostserver.plugin.multidatastream.TableImpMultiDatastreams"
+				var toAddToFilter="";
+				for (var i=0;i<observedProperties.length;i++){
+				 	toAddToFilter+= "and ObservedProperties/@iot.id eq '"+ observedProperties[i]["@iot.id"]+"'";
+				}
+				var url2=url+"/"+objsName+ "?$filter=" + encodeURIComponent(AddKeysToFilter("", obj)) + toAddToFilter;
+				console.log(url2)
+				var response=await HTTPJSONData(url2);
+				obj["ObservedProperties"]=observedProperties;
+				obj["observationType"]=observationType;
+			}
 			else
 				var response=await HTTPJSONData(url+"/"+objsName+ "?$filter=" + encodeURIComponent(AddKeysToFilter("", obj)));
+
 			if (!response || (!response.obj && !response.ok && response.status!=404))
 				throw {name: "Error requesting resource existance.", message: "Status: "+ response.status, at: "", text: url+"/"+objsName+ "?$filter=" + AddKeysToFilter("", obj)};
 			var data=response.obj;
@@ -3281,6 +3396,202 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			return -1;
 		}
 
+		function openMultiDatastreamDialog(event){
+			var number= document.getElementById("DialogOpenMultiDatastream_input").value;
+			if (PopulateCreateUpdateDeleteEntityMultiDatastreams("MultiDatastreams", currentNode,number))
+			document.getElementById("DialogCreateUpdateDeleteEntity_MultiDatastreams").setAttribute("data-stanumber", number);
+			document.getElementById("DialogCreateUpdateDeleteEntity_MultiDatastreams").showModal();
+		}
+		
+		function PopulateCreateUpdateDeleteEntityMultiDatastreams(entityName, currentNode, number) {
+			var cdns = [], entitiesParentArray = [], entitiesParentArrayObservedProperties = [];
+			var parentNodes = GetParentNodes(currentNode);
+			if (parentNodes.length == 0) {
+				alert("Parent(s) node(s) are needed to know about the STA root url");
+				return false;
+			}
+			cdns.push('<span id="dlgCreateUpdateDeleteEntityType" style="font-weight:bold">MultiDatastream</span>:<br><br>'); //Title (Entity name) 
+			var actionToDo = "";
+			for (var i = 0; i < parentNodes.length; i++) {
+				var parentNode = parentNodes[i];
+				//console.log(parentNode.STAdata[0]["@iot.id"])
+				var parentEntityName = getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), false);
+				if (!parentNode.STAdata || parentNode.STAdata.length == 0) {
+					alert("Parent node has no STA data associated");
+					return false;
+				}
+				if (parentNode.image != "sta.png") {
+					if (parentNode.STAdata.length > 1) {
+						alert("Parent node has more than a single record. Please select a record first.");
+						return false;
+					}
+					if (parentEntityName != entityName && returnIndexEntityRelatedInSTAEntity(entityName, parentEntityName) == -1 && returnIndexEntityRelatedInSTAEntity(entityName, STAEntities[parentEntityName].singular) == -1) {
+						alert("Parent node (" + STAEntities[parentEntityName].singular + ") is not a/an Multidatastream or is directly related to a/an Multidatastream");
+						return false;
+					}
+					if (parentEntityName == entityName) { //Update or delete
+						actionToDo = "update_delete";
+						if (i > 1) {
+							alert("One parent node is the same as the entity Multidatastream. This is for update or delete the entity. In this case, only one parent node is allowed.");
+							return false;
+						}
+						var record = parentNode.STAdata[0]; //Info from parentNode used to complete in update
+						if (!record["@iot.id"]) {
+							alert("Cannot find @iot.id. Did you removed in a select?");
+							return false;
+						}
+						//Update or delete
+						cdns.push('<label style=" font-weight: bold;">Id: </label><input id="dlgCreateUpdateDeleteEntity_id" style="background-color:#D8DFD6" type="text" value="', record["@iot.id"], '" readonly=="readonly"><br>'); //update/delete
+					}
+					else {
+						actionToDo = "create" //CREATE
+						var record = parentNode.STAdata[0]; //Info from parentNode used to complete in update
+						if (!record["@iot.id"]) {
+							alert("Cannot find @iot.id in parent node " + STAEntities[parentEntityName].singular + ". Did you removed in a select?");
+							return false;
+						}
+
+						//ENTITIES PARENTNODE
+						var url = getUrlToId(getSTAURLRoot(parentNodes[0].STAURL), parentEntityName, record["@iot.id"]);
+						if (STAEntities[parentEntityName].singular == "ObservedProperty") {
+							entitiesParentArrayObservedProperties.push([STAEntities[parentEntityName].singular, record["@iot.id"], url, record["name"]])
+
+						} else {
+							entitiesParentArray.push([STAEntities[parentEntityName].singular, record["@iot.id"], url]); //EntityName,id.url
+						}
+
+					}
+				}
+				else if (parentNodes.length == 1 && parentNodes[0].image == "sta.png") {
+					alert("You have to connect MultiDatastreams node with a compatible node STA \n Required nodes: Party,Sensor,ObservedProperty,Thing.\n Optional nodes: Campaigns, License,Observations");
+					return false;
+
+				} else if (parentNodes.length > 1 && parentNodes[0].image == "sta.png") {
+					actionToDo = "create" //CREATE
+				}
+			}
+			if (actionToDo == "create") {
+				var currentNodeEntityPlural = getSTAEntityPlural(currentNode.label, false);
+				var entitiesLinked = STAEntities[currentNodeEntityPlural].entities;
+				var entitiesRequiedNotLinked = [], observedPropertiesArray = [], entitiesRequired = [], entitiesNotRequired = [], entitiesObject={};
+
+				//Creating dialog
+				//ENTITIES			
+				if (entitiesParentArray.length != 0) {
+					var isRequired;
+					for (var e = 0; e < entitiesLinked.length; e++) {
+						if (entitiesLinked[e].name == "Party" || entitiesLinked[e].name == "Sensor" || entitiesLinked[e].name == "ObservedProperty" || entitiesLinked[e].name == "Thing") { //required
+							isRequired=true;
+						}
+						else{
+							isRequired=false;
+						}
+						for (var u = 0; u < entitiesParentArray.length; u++) {
+
+							if ((getSTAEntityPlural(entitiesLinked[e].name, false) == getSTAEntityPlural(entitiesParentArray[u][0], false)) && entitiesParentArray[u][0] != "ObservedProperty") { //If it is a parentNode 
+								entitiesNotRequired.push(`<span style=" font-weight: bold;">${entitiesParentArray[u][0]}`,(isRequired)?'*': '',`: <a href="${entitiesParentArray[u][2]}"> ${entitiesParentArray[u][1]}</a></span><br>`);
+								entitiesObject[entitiesParentArray[u][0]]={"@iot.id":entitiesParentArray[u][1]};
+								break;
+							} else if (getSTAEntityPlural(entitiesLinked[e].name, false) == "ObservedProperties") {
+								break;
+							}
+							else {
+								if (u == entitiesParentArray.length - 1) { //If there is not any 
+									entitiesRequired.push(`<span style=" font-weight: bold;">${entitiesLinked[e].name} `,(isRequired)?'*: <span style="color: red; font-style: italic" >You need to link one</span></span>':': <span style="color: #897F7F; font-style: italic">none</span></span>','<br>');
+									entitiesRequiedNotLinked.push(entitiesLinked[e].name);
+								}
+							}
+						}
+					}
+				}
+				cdns.push('<fieldset id="fieldsetModificateEntities_Entities"><legend>Entities</legend>');
+				if (entitiesParentArrayObservedProperties.length != 0) {
+					var observedPropertiesArrayofObjects=[];
+					cdns.push('<span style=" font-weight: bold;">observedProperties*:');
+					for (var e = 0; e < entitiesParentArrayObservedProperties.length; e++) {
+						cdns.push(`<a href="${entitiesParentArrayObservedProperties[e][2]}"> ${entitiesParentArrayObservedProperties[e][1]}</a>, `);
+						observedPropertiesArrayofObjects.push({"@iot.id":entitiesParentArrayObservedProperties[e][1]})
+					}
+				} else {
+					cdns.push(`<span style=" font-weight: bold;">ObservedProperties*: <span style="color: red; font-style: italic" >You need to link one</span>`);
+				}
+
+				cdns.push(`</span><br>`);
+				cdns.push(...entitiesRequired, ...entitiesNotRequired, "<br></fieldset>");
+				cdns.push('<fieldset id="fieldsetModificateEntities_Properties"><legend>Properties</legend>');
+				currentNode.STAEntitiesRequiredNotLinked = entitiesRequiedNotLinked;
+				currentNode.STAentitiesObject= entitiesObject;
+			}
+
+			//PROPERTIES (create + fill ->update/delete)
+			cdns.push('<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_name" data-STArequired="true" style=" font-weight: bold;">name*:</label>',
+				'<input id="dlgCreateUpdateDeleteEntity_MultiDatastreams_name" type="text" style="width:300px" data-STArequired="true"><br>', //name
+				'<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_description" data-STArequired="true" style=" font-weight: bold;">description*:</label>',
+				'<input id="dlgCreateUpdateDeleteEntity_MultiDatastreams_description" type="text" style="width:300px" data-STArequired="true"><br>', //description
+				'<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_observationType" data-STArequired="true" style=" font-weight: bold;">observationType*:</label>',
+				'<input id="dlgCreateUpdateDeleteEntity_MultiDatastreams_observationType" type="text" style="width:510px" data-STArequired="true" readonly value="http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_ComplexObservation"><br>');//observationType
+
+			for (var a = 0; a < number; a++) { //Parts to be repeated: (ObservedProperties,unitOfmeasurement,multiobservationDataType)
+
+				cdns.push('<div style="background-color:#F0F0F2; padding:10px; margin-top:15px"><span style="margin-top:5px; margin-bottom:5px; font-weight: bold; font-style: italic; ">multidatastream ' + (a + 1) + '</span><br><br>');
+				if (actionToDo == "create"){
+					cdns.push('<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_observedPropertiesSelect' + a + '">Select the <b>observedProperty </b>corresponding*:</label>',
+					'<select id="dlgCreateUpdateDeleteEntity_MultiDatastreams_observedPropertiesSelect' + a + '">');
+				}
+				for (var e = 0; e < entitiesParentArrayObservedProperties.length; e++) { //ObservedProperties
+					if (e == 0) {
+						cdns.push(`<option value="${entitiesParentArrayObservedProperties[e][1]}"selected >id: ${entitiesParentArrayObservedProperties[e][1]}, result: ${entitiesParentArrayObservedProperties[e][3]}</option>`)
+					} else {
+						cdns.push(`<option value="${entitiesParentArrayObservedProperties[e][1]}">id: ${entitiesParentArrayObservedProperties[e][1]}, result: ${entitiesParentArrayObservedProperties[e][3]}</option>`)
+					}
+				}
+				cdns.push('</select><br>');
+				cdns.push('<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_multiobservationDataType' + a + '" data-STArequired="true" style="font-weight: bold;">multiobservationDataType*:</label>',
+					'<input id="dlgCreateUpdateDeleteEntity_MultiDatastreams_multiobservationDataType' + a + '" type="text" style="width:300px" data-STArequired="true"><br>'); //multiobservationDataType
+				cdns.push('<fieldset>', //unitOfmeasurement
+					'<legend> unitOfmeasurement:</legend>',
+					'<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_name_' + a + '" style="font-weight: bold;">name:</label>',
+					'<input id="dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_name_' + a + '" type="text"><br>',
+					'<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_definition_' + a + '"style="font-weight: bold;">definition:</label>',
+					'<input id="dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_definition_' + a + '" type="text"><br>',
+					'<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_symbol_' + a + '" style="font-weight: bold;">symbol:</label>',
+					'<input id="dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_symbol_' + a + '" type="text"><br>',		
+					'</fieldset>',
+					'<br>');
+				cdns.push('</div>');
+			}
+			cdns.push('</fieldset>')
+			document.getElementById("dlgCreateUpdateDeleteEntityProperties_MultiDatastreams").innerHTML = cdns.join("");
+			
+			//Fill Inputs with information in update/delete
+			if (actionToDo!="create"){
+				document.getElementById("DialogCreateUpdateDeleteEntity_MultiDatastreams").setAttribute("data-stanumber", number);
+				var STAdata= parentNodes[0].STAdata[0];
+				document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_name").value= STAdata.name;
+				document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_description").value= STAdata.description;
+				
+				for (var i=0;i<number;i++){
+					document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_name_"+i).value= (STAdata.unitOfMeasurements[i].name)?STAdata.unitOfMeasurements[i].name:"";
+					document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_definition_"+i).value= (STAdata.unitOfMeasurements[i].definition)?STAdata.unitOfMeasurements[i].definition:"";
+					document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_symbol_"+i).value= (STAdata.unitOfMeasurements[i].symbol)?STAdata.unitOfMeasurements[i].symbol:"";
+					
+					document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_multiobservationDataType"+i).value= (STAdata.multiObservationDataTypes[i])?STAdata.multiObservationDataTypes[i]:"";
+				}
+
+			}
+			//Show/hide buttons 
+			if (actionToDo == "create") {
+			 	document.getElementById("dlgCreateUpdateDeleteEntityCreate_MultiDatastreams").style.display = "inline-block";
+			 	document.getElementById("dlgCreateUpdateDeleteEntityUpdate_MultiDatastreams").style.display = "none";
+			 	document.getElementById("dlgCreateUpdateDeleteEntityDelete_MultiDatastreams").style.display = "none";
+			}else {
+			 	document.getElementById("dlgCreateUpdateDeleteEntityCreate_MultiDatastreams").style.display = "none";
+			 	document.getElementById("dlgCreateUpdateDeleteEntityUpdate_MultiDatastreams").style.display = "inline-block";
+			 	document.getElementById("dlgCreateUpdateDeleteEntityDelete_MultiDatastreams").style.display = "inline-block";
+			}
+			return true;
+		}
+
 		function PopulateCreateUpdateDeleteEntity(entityName, currentNode) {
 			var cdns=[], entitiesParentArray=[];
 
@@ -3291,9 +3602,12 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			}
 
 			cdns.push('<span id="dlgCreateUpdateDeleteEntityType" style="font-weight:bold">',STAEntities[entityName].singular, "</span>:<br><br>"); //Title (Entity name) 
+			var actionToDo="";
+			//ENTITIES
 			for (var i=0; i<parentNodes.length; i++)
 			{
 				var parentNode=parentNodes[i];
+				var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), false);
 				if (!parentNode.STAdata || parentNode.STAdata.length==0){
 					alert("Parent node has no STA data associated");
 					return false;
@@ -3302,13 +3616,13 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					if (parentNode.STAdata.length>1){
 						alert("Parent node has more than a single record. Please select a record first.");
 						return false;
-					}
-					var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), false);
+					}				
 					if (parentEntityName!=entityName && returnIndexEntityRelatedInSTAEntity(entityName, parentEntityName)==-1 && returnIndexEntityRelatedInSTAEntity(entityName, STAEntities[parentEntityName].singular)==-1) {
 						alert("Parent node ("+STAEntities[parentEntityName].singular+") is not a/an " + STAEntities[entityName].singular + " or is directly related to a/an " +  STAEntities[entityName].singular);
 						return false;
 					}
-					if (parentEntityName==entityName) { 
+					if (parentEntityName==entityName) { //Update or delete
+						actionToDo="update_delete";
 						if (i>1) {
 							alert("One parent node is the same as the entity " + STAEntities[entityName].singular + ". This is for update or delete the entity. In this case, only one parent node is allowed.");
 							return false;
@@ -3321,138 +3635,97 @@ async function requestAndRefreshCountResults(currentNode, period) {
 						//Update or delete
 						cdns.push('<label style=" font-weight: bold;">Id: </label><input id="dlgCreateUpdateDeleteEntity_id" style="background-color:#D8DFD6" type="text" value="', record["@iot.id"], '" readonly=="readonly"><br>'); //update/delete
 					}
-					else { //CREATE
+					else {
+						actionToDo="create" //CREATE
 						var record=parentNode.STAdata[0]; //Info from parentNode used to complete in update
 						if (!record["@iot.id"]){
 							alert("Cannot find @iot.id in parent node " + STAEntities[parentEntityName].singular + ". Did you removed in a select?");
 							return false;
 						}
-						//ENTITIES PARENTNODE
-						//cdns.push(STAEntities[parentEntityName].singular, ' id: <a href="', getUrlToId(getSTAURLRoot(parentNodes[0].STAURL), parentEntityName, record["@iot.id"]), '" target="_blank">', record["@iot.id"], '</a><br>');
-						
+						//Prepare entities linked to be added to Dialog						
 						var url=getUrlToId(getSTAURLRoot(parentNodes[0].STAURL),parentEntityName,record["@iot.id"])
 						entitiesParentArray.push([STAEntities[parentEntityName].singular,record["@iot.id"],url]); //EntityName,id.url
-
-						if (i==parentNodes.length-1){ //Lastone
-							var entitiesRequired=[],entitiesNotRequired=[];
-							var currentNodeEntityPlural=getSTAEntityPlural(currentNode.label,false);
-							entitiesRequired.push('<fieldset><legend>Entities</legend>');
-							var datastream="none"; // linked
-
-							for (var e=0;e<STAEntities[currentNodeEntityPlural].entities.length;e++) {
-
-								
-								  if (STAEntities[currentNodeEntityPlural].entities[e].required =="true"){
-								  	for(var u=0;u<entitiesParentArray.length;u++){ 
-										
-								 		if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)==getSTAEntityPlural(entitiesParentArray[u][0],false)){ //If it is a parentNode 
-								 			if (getSTAEntityPlural(entitiesParentArray[u][0],false)=="Datastreams" || (getSTAEntityPlural(entitiesParentArray[u][0],false)=="MultiDatastreams"&& datastream!="linked")) {
-												datastream="linked";
-												entitiesRequired.push(`<span style=" font-weight: bold;">${entitiesParentArray[u][0]}*:<a href="${entitiesParentArray[u][2]}"> ${entitiesParentArray[u][1]}</a></span><br>`);
-											break;
-											}
-								 		}else{
-								 			if (u==entitiesParentArray.length-1){ //If there is not any 
-												if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)!="MultiDatastreams" && getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)!="Datastreams"){
-													entitiesRequired.push(`<span style=" font-weight: bold;">${STAEntities[currentNodeEntityPlural].entities[e].name}*: <span style="color: red; font-style: italic" >You need to link one</span></span> <br>`);
-												}else if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)=="MultiDatastreams" && datastream!="linked"){
-													entitiesRequired.push(`<span style=" font-weight: bold;">Datastreams/MultiDatastreams*: <span style="color: red; font-style: italic" >You need to link one</span></span> <br>`);
-												}
-											}
-								 		}
-								 	}
-								}else{
-								 	for(var u=0;u<entitiesParentArray.length;u++){ 
-								 		if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)==getSTAEntityPlural(entitiesParentArray[u][0],false)){ //If it is a parentNode
-											if (getSTAEntityPlural(entitiesParentArray[u][0],false)=="Datastreams" || (getSTAEntityPlural(entitiesParentArray[u][0],false)=="MultiDatastreams"&& datastream!="linked")) {
-												datastream="linked";
-												entitiesNotRequired.push(`<span style=" font-weight: bold;">${entitiesParentArray[u][0]}:<a href="${entitiesParentArray[u][2]}"> ${entitiesParentArray[u][1]}</a></span><br>`);
-											break;
-											}
-								 			}else{
-												if (u==entitiesParentArray.length-1){
-													if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)!="MultiDatastreams" && getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)!="Datastreams"){
-													entitiesNotRequired.push(`<span style=" font-weight: bold;">${STAEntities[currentNodeEntityPlural].entities[e].name}: <span style="color: #897F7F; font-style: italic"" >none</span></span> <br>`);
-												}else if (getSTAEntityPlural(STAEntities[currentNodeEntityPlural].entities[e].name,false)=="MultiDatastreams" && datastream!="linked"){
-													entitiesNotRequired.push(`<span style=" font-weight: bold;">Datastreams/MultiDatastreams: <span style="color: #897F7F; font-style: italic" >none</span></span> <br>`);
-												}											
-											}
-								 		}
-								 	}
-								}
-							}
-
-							if (entitiesRequired.length==1)entitiesRequired.push("<br><span style='font-style:italic'><span style='color: #897F7F; font-style: italic'>none</span></span>");
-							if (entitiesNotRequired.length==1)entitiesNotRequired.push("<br><span style='color: #897F7F; font-style: italic>none</span>");
-
-							cdns.push(...entitiesRequired,...entitiesNotRequired,"<br></fieldset>"); 
-							cdns.push('<fieldset><legend>Properties</legend>');
-
-						}
 					
 					}
 				}
+				else if (parentNodes.length==1&& parentNodes[0].image == "sta.png"){
+					actionToDo="create" //CREATE
+				}		
+			}			
+			
+			if(actionToDo=="create")  { //adding Entities to Dialog
+				cdns.push(...createEntitiesInCreateEntity(currentNode,entitiesParentArray)); //only with create, not needed to update
 			}
+
+			//PROPERTIES (create + Fill --> Update/delete)
 			for (var i=0; i<STAEntities[entityName].properties.length; i++){
+				//Properties not added in dialog
 				if ((entityName=="Observations" ? STAEntities[entityName].properties[i].name=="parameters" : STAEntities[entityName].properties[i].name=="properties") || 
 					((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i].name=="observedArea" || STAEntities[entityName].properties[i].name=="phenomenonTime" || STAEntities[entityName].properties[i].name=="resultTime")))
 					continue;
+				//special properties (Locations: location, FeatureOfInterests: feature, Datastreams: unitOfMeasurement)
 				if ((entityName=="Locations" && STAEntities[entityName].properties[i].name=="location") || 
 				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i].name=="feature"))//Locations/Feature of Interest coordenates
 				{
 					//For the moment in supporting only a point
 					cdns.push('<fieldset>',
-						'<legend>', STAEntities[entityName].properties[i].name, ' (point):</legend>', //Volem posar que sigui required?
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" style=" font-weight: bold;">', 'longitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" type="text"><br>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude"style=" font-weight: bold;">', 'latitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude" type="text"><br>',
+						'<legend>', STAEntities[entityName].properties[i].name, ' (point):</legend>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" style=" font-weight: bold;">', 'longitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" type="text" data-STArequired="'+STAEntities[entityName].properties[i].required+'"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude"style=" font-weight: bold;">', 'latitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude" type="text" data-STArequired="'+STAEntities[entityName].properties[i].required+'"><br>',
 						'</fieldset>',
 						'<br>');
 					continue;	
 				}
-				if (entityName=="Datastreams" && STAEntities[entityName].properties[i].name=="unitOfMeasurement") { //Datastream unitOfMeasurement
-					//Something similar needs to be done for MultiDataStream
+				if (entityName=="Datastreams"  && STAEntities[entityName].properties[i].name=="unitOfMeasurement") { //Datastream unitOfMeasurement
 					cdns.push('<fieldset>',
 						'<legend>', STAEntities[entityName].properties[i].name, ':</legend>', //Quins volem que siguin required? perque al esquema diu que es required el unitOfMeasurement sencer, no desglosa
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" style=" font-weight: bold;">', 'name: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" type="text"><br>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" style=" font-weight: bold;">', 'symbol: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" type="text"><br>',
-						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" style=" font-weight: bold;">', 'definition: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" style=" font-weight: bold;" data-STArequired="'+STAEntities[entityName].properties[i].required+'">', 'name: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" type="text"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" style=" font-weight: bold;">', 'symbol: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" type="text" data-STArequired="'+STAEntities[entityName].properties[i].required+'"><br>',
+						'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" style=" font-weight: bold;">', 'definition: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" type="text" data-STArequired="'+STAEntities[entityName].properties[i].required+'"><br>',
 						'</fieldset>',
 						'<br>');
 					continue;
 				}
-
+				//Properties in general
 				cdns.push('<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" data-STArequired='+STAEntities[entityName].properties[i].required+' style=" font-weight: bold;">', (STAEntities[entityName].properties[i].required=='true')? STAEntities[entityName].properties[i].name+'*':STAEntities[entityName].properties[i].name, ': </label>');
-				
+
+
+				//Special inputs with calendar
 				if (STAEntities[entityName].properties[i].name=="time"||STAEntities[entityName].properties[i].name=="creationTime"||STAEntities[entityName].properties[i].name=="startTime"||STAEntities[entityName].properties[i].name=="endTime"||(STAEntities[entityName].properties[i].name=="resultTime" && entityName=="Observations")){
-					cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar')">`);
+					cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar')" data-STArequired="${STAEntities[entityName].properties[i].required}">`);
 					cdns.push('<label>Generate with this: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}')"><br>`);
 				}else if (STAEntities[entityName].properties[i].name=="validTime"||(STAEntities[entityName].properties[i].name=="resultTime" && entityName=="Datastreams")){
-					cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar',2,'input')">`);
+					cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar',2,'input')" data-STArequired="${STAEntities[entityName].properties[i].required}">`);
 					cdns.push('<label>Generate with this: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',2,'calendar')">`);
 					cdns.push('<label> and: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar2" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',2,'calendar')"><br>`);
 
 				}else if(STAEntities[entityName].properties[i].name=="phenomenonTime"){
-					cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ or YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar',3,'input')">`);
+					cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ or YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar',3,'input')" data-STArequired="${STAEntities[entityName].properties[i].required}">`);
 					cdns.push('<label>Generate with this: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',3,'calendar')">`);
 					cdns.push('<label> and: </label ><label style="font-size:15px;font-style: italic">(to create a period)  </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar3" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',3,'calendar')"><br>`);
 
-				}else{
-					cdns.push('<input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" type="text" style="width:300px"><br>');
+				}else if (STAEntities[entityName].properties[i].name!="multiObservationDataType"){
+					cdns.push('<input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" type="text" style="width:300px" data-STArequired="'+STAEntities[entityName].properties[i].required+'"><br>');
 				}
+
+				if (entityName=="MultiDatastreams" && STAEntities[entityName].properties[i].name=="multiObservationDataType") { //Multidatastream, multiObservationDataType
+					cdns.push(`<span style= "font-style: italic"> (separate them with ; )</span><br><textarea  id= "dlgCreateUpdateDeleteEntity_multiObservationDataType_textAreaList" rows="4" cols="50" style= "font-family: Arial;" data-starequired="${STAEntities[entityName].properties[i].required}"></textarea>`);
 				
+				}
 			}
 			cdns.push('</fieldset>')
 			document.getElementById("dlgCreateUpdateDeleteEntityProperties").innerHTML=cdns.join("");
 
+			//Fill properties in update and delete
 			if (parentNodes[0].image != "sta.png" && parentEntityName==entityName) {
-				//Edit or delete
 				for (var i=0; i<STAEntities[entityName].properties.length; i++) {
-					//Falta posar altres excepcions que estaven posades adalt.. tipu datastreams unitOfMeasuremtns
-
+					//properties to avoid
 					if (entityName=="Observations" ? STAEntities[entityName].properties[i].name=="parameters" : STAEntities[entityName].properties[i].name=="properties")
 						continue;
 					if ((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i].name=="observedArea" || STAEntities[entityName].properties[i].name=="phenomenonTime" || STAEntities[entityName].properties[i].name=="resultTime"))
 						continue;
+
+					//special properties (Locations: location, FeatureOfInterests: feature, Datastreams: unitOfMeasurement)
 					if ((entityName=="Locations" && STAEntities[entityName].properties[i].name=="location") ||    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i].name=="feature"))//Locations/Feature of Interest coordenates
 					 {
 						// //For the moment in supporting only a point
@@ -3461,27 +3734,28 @@ async function requestAndRefreshCountResults(currentNode, period) {
 						continue;	
 					}
 					if (entityName=="Datastreams" && STAEntities[entityName].properties[i].name=="unitOfMeasurement") { //Datastream unitOfMeasurement
-					//Something similar needs to be done for MultiDataStream
 				
 						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+ "_name").value= record[STAEntities[entityName].properties[i].name]["name"]? record[STAEntities[entityName].properties[i].name]["name"]:"";
 						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_symbol").value= record[STAEntities[entityName].properties[i].name]["symbol"]?record[STAEntities[entityName].properties[i].name]["symbol"]:"";
 						document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_definition").value= record[STAEntities[entityName].properties[i].name]["definition"]?record[STAEntities[entityName].properties[i].name]["definition"]:"";
 						continue;
 					}
+					//Properties in general
 					document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name).value=record[STAEntities[entityName].properties[i].name] ? record[STAEntities[entityName].properties[i].name] : ""; //Properties, completed with parentNodeInfo
 				}
+				//buttons to hide/show
 				document.getElementById("dlgCreateUpdateDeleteEntityCreate").style.display="none";
 				document.getElementById("dlgCreateUpdateDeleteEntityUpdate").style.display="inline-block";
 				document.getElementById("dlgCreateUpdateDeleteEntityDelete").style.display="inline-block";
 				return true;
 			}
 			else {
-				//Create
+				//Filling properties with "mandatory" data in CREATE mode
 				if (entityName=="Parties") {
 					if (CriptoName && CriptoName!="Anonymous")
 						document.getElementById("dlgCreateUpdateDeleteEntity_authId").value=CriptoName;
 					else {
-						alert("To create a STA Pa·rty, you should login first.");
+						alert("To create a STA Party, you should login first.");
 						return false;
 					}
 					document.getElementById("dlgCreateUpdateDeleteEntity_authId").readOnly=true;
@@ -3494,15 +3768,70 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					document.getElementById("dlgCreateUpdateDeleteEntity_encodingType").readOnly=true;	
 				}
 				else if (entityName=="Datastreams")	
-					document.getElementById("dlgCreateUpdateDeleteEntity_observationType").value="http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement";
+					document.getElementById("dlgCreateUpdateDeleteEntity_observationType").value="http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_Measurement"; //suggested
 
+				//butons in create mode
 				document.getElementById("dlgCreateUpdateDeleteEntityCreate").style.display="inline-block";
 				document.getElementById("dlgCreateUpdateDeleteEntityUpdate").style.display="none";
 				document.getElementById("dlgCreateUpdateDeleteEntityDelete").style.display="none";
 			}
 			return true;
 		}
+		function createEntitiesInCreateEntity(currentNode,entitiesParentArray){
+			var entitiesRequired=[],entitiesNotRequired=[];
+			var currentNodeEntityPlural=getSTAEntityPlural(currentNode.label,false);
+			var entitiesLinked=STAEntities[currentNodeEntityPlural].entities;
+			var datastream="none"; // linked
+			var entitiesRequiedNotLinked=[];
+			var entitiesObject={}
+			
+			if (entitiesParentArray.length!=0) {
+				entitiesRequired.push('<fieldset id="fieldsetModificateEntities_Entities"><legend>Entities</legend>');
+				for (var e = 0; e < entitiesLinked.length; e++) {
+					for (var u = 0; u < entitiesParentArray.length; u++) {
 
+						if (getSTAEntityPlural(entitiesLinked[e].name, false) == getSTAEntityPlural(entitiesParentArray[u][0], false)) { //If it is a parentNode 
+							if (getSTAEntityPlural(entitiesParentArray[u][0], false) == "Datastreams" || (getSTAEntityPlural(entitiesParentArray[u][0], false) == "MultiDatastreams" && datastream != "linked")) {
+								datastream = "linked";
+							}
+							entitiesRequired.push(`<span style=" font-weight: bold;">${entitiesParentArray[u][0]}`,(entitiesLinked[e].required == "true")?'* ':'',`: <a href="${entitiesParentArray[u][2]}"> ${entitiesParentArray[u][1]}</a></span><br>`);
+							if (entitiesLinked[e].name==getSTAEntityPlural(entitiesLinked[e].name, false)){ //Plural
+								entitiesObject[entitiesLinked[e].name]=[{"@iot.id":entitiesParentArray[u][1]}];
+							}else{
+								entitiesObject[entitiesLinked[e].name]={"@iot.id":entitiesParentArray[u][1]};
+							}
+							
+							break;
+
+						} 
+						else {
+							if (u == entitiesParentArray.length - 1) { //If there is not any 
+								if (getSTAEntityPlural(entitiesLinked[e].name, false) != "MultiDatastreams" && getSTAEntityPlural(entitiesLinked[e].name, false) != "Datastreams") {
+									entitiesRequired.push(`<span style=" font-weight: bold;">${entitiesLinked[e].name}`,(entitiesLinked[e].required == "true")? '*: <span style="color: red; font-style: italic" >You need to link one</span>':  `: <span style="color: #897F7F; font-style: italic">none</span>`,'</span><br>');
+									if (entitiesLinked[e].required == "true"){
+										entitiesRequiedNotLinked.push(entitiesLinked[e].name);
+									}
+
+								} else if (getSTAEntityPlural(entitiesLinked[e].name, false) == "MultiDatastreams" && datastream != "linked") {
+									entitiesRequired.push(`<span style="font-weight: bold;">Datastreams/MultiDatastreams`, (entitiesLinked[e].required == "true")?'*: <span style="color: red; font-style: italic" >You need to link one</span></span>':': <span style="color: #897F7F; font-style: italic" >none</span>', '</span> <br>');
+									if (entitiesLinked[e].required == "true")entitiesRequiedNotLinked.push("Datastream or Multidatastream");
+								}
+							}
+						}
+					}
+				}
+			}
+		
+			currentNode.STAentitiesObject= entitiesObject;
+			var cdns=[]
+			cdns.push(...entitiesRequired,...entitiesNotRequired,"<br></fieldset>"); 
+			cdns.push('<fieldset id="fieldsetModificateEntities_Properties"><legend>Properties</legend>');
+			currentNode.STAEntitiesRequiredNotLinked=entitiesRequiedNotLinked;
+
+			return cdns;
+
+		}
+		
 		function addTimeToOtherInputCreateEntities (itemWritten, itemToWrite,number,origin){ //Put Date from calendar to input and vice versa 
 
 			if (number =='2'){
@@ -3528,106 +3857,168 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					var valueOfInput= document.getElementById(itemWritten).value.split ("/");
 					document.getElementById(itemToWrite).value=valueOfInput[0];
 					document.getElementById(itemToWrite+"3").value=valueOfInput[1];
-					
 				}
 			}else{
 				document.getElementById(itemToWrite).value=document.getElementById(itemWritten).value+"Z" ;
 			}
 		}
+		
+		function obtainDataInEntitiesCreationAndUpdate(operation,entityName){
 
-		function GetCreateEntity(event) {
-			event.preventDefault(); // We don't want to submit this form
-			document.getElementById("DialogCreateUpdateDeleteEntity").close();
-			var node=currentNode;
-
-			var parentNodes=GetParentNodes(node);
-			if (parentNodes.length==0)
-				return;
-
-			var entityName=getSTAEntityPlural(document.getElementById("dlgCreateUpdateDeleteEntityType").innerHTML)
-			var url=getSTAURLRoot(parentNodes[0].STAURL);
-			var obj={};
-			showInfoMessage("Creating a/an "+ STAEntities[entityName].singular +"...");
-
-			for (var i=0; i<parentNodes.length; i++) {
-				var parentNode=parentNodes[i];
-				if (parentNode.image == "sta.png")
-					continue;
-				if (i!=0 && getSTAURLRoot(parentNode.STAURL)!=url) {
-					alert("Not all parent nodes are from the same root URL: " + getSTAURLRoot(parentNode.STAURL) + ", " + url);
-					continue;
-				}
-			
-				var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), true);
-				var entity;
-				if (returnIndexEntityRelatedInSTAEntity(entityName, parentEntityName)!=-1)
-					entity=parentEntityName;
-				else if (returnIndexEntityRelatedInSTAEntity(entityName, STAEntities[parentEntityName].singular)!=-1)
-					entity=STAEntities[parentEntityName].singular;
-				else {
-					alert("Parent node ("+STAEntities[parentEntityName].singular+") is not directly related to a/an " +  STAEntities[entityName].singular);
-					continue;
-				}
-
-				if (!parentNode.STAdata || parentNode.STAdata.length==0){
-					alert("Parent node has no STA data associated");
-					return;
-				}
-				if (parentNode.STAdata.length>1){
-					alert("Parent node '"+STAEntities[parentEntityName].singular+"' has more than a single record. Please select a record first.");
-					return;
-				}
-				var record=parentNode.STAdata[0];
-				if (!record["@iot.id"]){
-					alert("Cannot find @iot.id. Did you removed in a select?");
-					return;
-				}
-				if (obj[entity]){  //add to a plural array
-					if (entity==STAEntities[parentEntityName].singular){
-						alert("An element '"+STAEntities[entityName].singular+"' can not have more than one '"+parentEntityName+"' Associated. One the first will be considered.");
-						continue;
-					}					
-					obj[parentEntityName].push({"@iot.id": record["@iot.id"]});
-				}
-				else if (entity==STAEntities[parentEntityName].singular)
-					obj[STAEntities[parentEntityName].singular] = {"@iot.id": record["@iot.id"]}
-				else  //Add to a plural element
-					obj[parentEntityName]=[{"@iot.id": record["@iot.id"]}];
-	
+			if (operation=="create"){
+				var obj= currentNode.STAentitiesObject;
+			}else{
+				var obj={}
 			}
-			var prop;
+
+			var prop, allowToSend=true;
 			for (var i=0; i<STAEntities[entityName].properties.length; i++) {
+				//avoid properties
 				if ((entityName=="Observations" ? STAEntities[entityName].properties[i].name=="parameters" : STAEntities[entityName].properties[i].name=="properties") || 
 					((entityName=="Datastreams" || entityName=="MultiDatastreams") && (STAEntities[entityName].properties[i].name=="observedArea" || STAEntities[entityName].properties[i].name=="phenomenonTime" || STAEntities[entityName].properties[i].name=="resultTime")))
 					continue;
+				//special properties (Locations: location, FeatureOfInterests: feature, Datastreams: unitOfMeasurement)
 				if ((entityName=="Locations" && STAEntities[entityName].properties[i].name=="location") || 
 				    (entityName=="FeaturesOfInterest" && STAEntities[entityName].properties[i].name=="feature"))
 				{
 					//For the moment in supporting only a point
 					obj[STAEntities[entityName].properties[i].name]={"type": "Point", "coordinates": []};
+						if (document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_longitude").value==""&& document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_longitude").getAttribute("data-starequired")=="true"){
+							alert("Longitude parameter is required, please fill in the box before send");
+							allowToSend=false;
+						}else{
 					obj[STAEntities[entityName].properties[i].name].coordinates[0]=parseFloat(document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_longitude").value);
+						}
+
+						if (document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_latitude").value==""&& document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_latitude").getAttribute("data-starequired")=="true"){
+							alert("Latitude parameter is required, please fill in the box before send");
+							allowToSend=false;
+						}else{
 					obj[STAEntities[entityName].properties[i].name].coordinates[1]=parseFloat(document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name+"_latitude").value);
+						}
+
 					continue;	
 				}
-				if (entityName=="Datastreams" && STAEntities[entityName].properties[i].name=="unitOfMeasurement")
+					if (entityName=="Datastreams" && STAEntities[entityName].properties[i].name=="unitOfMeasurement")
 				{
-					//Something similar needs to be done for MultiDataStream
-					obj[STAEntities[entityName].properties[i].name]={};
-					obj[STAEntities[entityName].properties[i].name].name=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_name").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_name").value : null;
-					obj[STAEntities[entityName].properties[i].name].symbol=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_symbol").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_symbol").value : null; 
-					obj[STAEntities[entityName].properties[i].name].definition=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_definition").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_definition").value : null;
+						obj[STAEntities[entityName].properties[i].name]={};
+						obj[STAEntities[entityName].properties[i].name].name=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_name").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_name").value : null;
+						obj[STAEntities[entityName].properties[i].name].name=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_symbol").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_symbol").value : null;					
+						obj[STAEntities[entityName].properties[i].name].name=document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_definition").value ? document.getElementById("dlgCreateUpdateDeleteEntity_" + STAEntities[entityName].properties[i].name + "_definition").value : null;					
 					continue;
 				}
-				prop=document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name).value;
-				if (prop!=="")
-					obj[STAEntities[entityName].properties[i].name]=(entityName=="Observations" && STAEntities[entityName].properties[i].name=="result" && !isNaN(prop)) ? parseFloat(prop) : prop;
+					if (STAEntities[entityName].properties[i].name=="multiObservationDataType"){
+						var textArea=document.getElementById("dlgCreateUpdateDeleteEntity_multiObservationDataType_textAreaList");
+						if (textArea.value==""&& textArea.getAttribute("data-starequired")=="true"){
+							alert("multiObservationDataType parameter is required, please fill in the box before send");
+							allowToSend=false;
+						
+						}else{
+							var valueSplited= textArea.value.split(";")
+							obj[STAEntities[entityName].properties[i].name]=valueSplited;
+						}
+						continue;
+					}
+					//Properties in general	
+					prop=document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name).value;
+					if (prop!=="") 	obj[STAEntities[entityName].properties[i].name]=(entityName=="Observations" && STAEntities[entityName].properties[i].name=="result" && !isNaN(prop)) ? parseFloat(prop) : prop;
+					else if (prop=="" && document.getElementById("dlgCreateUpdateDeleteEntity_"+STAEntities[entityName].properties[i].name).getAttribute("data-starequired")=="true") {
+						alert( STAEntities[entityName].properties[i].name+" parameter is required, please fill in the box before send");
+						allowToSend=false;
+						break;
+					}
+				}
+				if (allowToSend==true){
+						return obj;
+					}else{
+						return false;
+					}
+		}
+		function obtainDataInMultidatastreamsCreationAndUpdate(operation){
+			if (operation=="create"){
+				var obj= currentNode.STAentitiesObject;
+			}else{
+				var obj={}
 			}
+			var prop, allowToSend=true;
+			if (document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_name").value!=""){
+				obj["name"]=document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_name").value;
+
+			}else{
+				alert("Name parameter is required, please fill in the box before send")
+				allowToSend=false;
+			}
+			if (document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_description").value!=""){
+				obj["description"]=document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_description").value;
+
+			}else{
+				alert("Description parameter is required, please fill in the box before send")
+				allowToSend=false;
+			}
+			if (document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_observationType").value!=""){
+				obj["observationType"]=document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_observationType").value;
+
+			}else{
+				alert("ObservationType parameter is required, please fill in the box before send")
+				allowToSend=false;
+			}
+			
+			var multiDatastreamsNumber=document.getElementById("DialogCreateUpdateDeleteEntity_MultiDatastreams").getAttribute("data-stanumber");
+			var observedProperties=[], multiObservationDataTypes=[],unitOfMeasurements=[];
+			var select;
+			for (var i=0;i<multiDatastreamsNumber;i++){
+				if(operation=="create"){
+					select=document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_observedPropertiesSelect"+i);
+					observedProperties.push({"@iot.id":select.options[select.selectedIndex].value});
+				}
+				
+
+				multiObservationDataTypes.push(document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_multiobservationDataType"+i).value)
+				
+				unitOfMeasurements.push({"name":document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_name_"+i).value,
+										"definition":document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_definition_"+i).value,
+										"symbol":document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_symbol_"+i).value}
+				);
+				
+			}
+			obj["ObservedProperties"]=observedProperties;
+			obj["multiObservationDataTypes"]=multiObservationDataTypes;
+			obj["unitOfMeasurements"]=unitOfMeasurements;	
+
+			if (allowToSend==true){
+				return obj;
+			}else{
+				return false;
+			}
+		}
+		function GetCreateEntityMultiDatastream(event){
+	
+			event.preventDefault(); // We don't want to submit this form
+			var node=currentNode;
+			var parentNodes=GetParentNodes(node);
+			var entityName="MultiDatastreams";
+			var url=getSTAURLRoot(parentNodes[0].STAURL);
+
+			if (currentNode.STAEntitiesRequiredNotLinked.length==0){
+				for (var i=0; i<parentNodes.length; i++) {
+					var parentNode=parentNodes[i];
+					if (parentNode.image == "sta.png")
+						continue;
+					if (i!=0 && getSTAURLRoot(parentNode.STAURL)!=url) {
+						alert("Not all parent nodes are from the same root URL: " + getSTAURLRoot(parentNode.STAURL) + ", " + url);
+						continue;
+					}
+			}
+			var obj = obtainDataInMultidatastreamsCreationAndUpdate("create");
+		
+			if (obj!=false){
+				showInfoMessage("Creating a/an "+ STAEntities[entityName].singular +"...");
 
 			GetObjectId(url, entityName, obj).then(
 				function(value) {
 					if (value)
 					{ 
-						document.getElementById("DialogCreateUpdateDeleteEntity").close();
+						document.getElementById("DialogCreateUpdateDeleteEntity_MultiDatastreams").close();
 						showInfoMessage('Available at: <a href="' + getUrlToId(url, entityName, value) + '" target="_blank">' + value + '</a>');
 						node.STAURL=getUrlToId(url, entityName, value);
 						node.STAdata=[];
@@ -3641,11 +4032,92 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					console.log(error) ;
 				}
 			);	
+				}
+			
+			}else{
+				alert("You need to Link entities required to create the new entity") 
+			}	
 		}
 
+
+		function GetCreateEntity(event) {
+			event.preventDefault(); // We don't want to submit this form
+
+			var node = currentNode;
+
+			var parentNodes = GetParentNodes(node);
+			if (parentNodes.length == 0)
+				return;
+
+			var entityName = getSTAEntityPlural(document.getElementById("dlgCreateUpdateDeleteEntityType").innerHTML)
+			var url = getSTAURLRoot(parentNodes[0].STAURL);
+
+			//Entities
+			if (currentNode.STAEntitiesRequiredNotLinked.length == 0) {
+				for (var i = 0; i < parentNodes.length; i++) {
+					var parentNode = parentNodes[i];
+					if (parentNode.image == "sta.png")
+						continue;
+					if (i != 0 && getSTAURLRoot(parentNode.STAURL) != url) {
+						alert("Not all parent nodes are from the same root URL: " + getSTAURLRoot(parentNode.STAURL) + ", " + url);
+						continue;
+					}
+
+					var parentEntityName = getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), true);
+					var entity;
+					if (returnIndexEntityRelatedInSTAEntity(entityName, parentEntityName) != -1)
+						entity = parentEntityName;
+					else if (returnIndexEntityRelatedInSTAEntity(entityName, STAEntities[parentEntityName].singular) != -1)
+						entity = STAEntities[parentEntityName].singular;
+					else {
+						alert("Parent node (" + STAEntities[parentEntityName].singular + ") is not directly related to a/an " + STAEntities[entityName].singular);
+						continue;
+					}
+
+					if (!parentNode.STAdata || parentNode.STAdata.length == 0) {
+						alert("Parent node has no STA data associated");
+						return;
+					}
+					if (parentNode.STAdata.length > 1) {
+						alert("Parent node '" + STAEntities[parentEntityName].singular + "' has more than a single record. Please select a record first.");
+						return;
+					}
+					
+				}
+				
+
+				//Properties
+				var obj = obtainDataInEntitiesCreationAndUpdate("create",entityName); //Entities already added when dialog was created
+				
+				if (obj != false) {
+					document.getElementById("DialogCreateUpdateDeleteEntity").close();
+					showInfoMessage("Creating a/an " + STAEntities[entityName].singular + "...");
+					GetObjectId(url, entityName, obj).then(
+						function (value) {
+							if (value) {
+								document.getElementById("DialogCreateUpdateDeleteEntity").close();
+								showInfoMessage('Available at: <a href="' + getUrlToId(url, entityName, value) + '" target="_blank">' + value + '</a>');
+								node.STAURL = getUrlToId(url, entityName, value);
+								node.STAdata = [];
+								node.STAdata.push(obj);
+								node.STAdata[0]["@iot.id"] = isNaN(value) ? value : parseInt(value);
+								networkNodes.update(node);
+							}
+						},
+						function (error) {
+							showInfoMessage('Error creating entity. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
+							console.log(error);
+						}
+					);
+				}
+
+			} else {
+				alert("You need to Link entities required to create the new entity")
+			}
+		}
 		async function GetUpdateEntity(event){
 			event.preventDefault(); 
-			document.getElementById("DialogCreateUpdateDeleteEntity").close();
+			
 			var parentNodes=GetParentNodes(currentNode);
 			
 			var id = parseInt(document.getElementById("dlgCreateUpdateDeleteEntity_id").value);
@@ -3653,11 +4125,11 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			var url=getUrlToId(getSTAURLRoot(parentNodes[0].STAURL),parentEntityName,id);
 			var entityName=getSTAEntityPlural(document.getElementById("dlgCreateUpdateDeleteEntityType").innerHTML)
 			
-			showInfoMessage("Updating  "+ STAEntities[entityName].singular +" "+id+" ...");
 			
-			var childrenNodes=document.getElementById("dlgCreateUpdateDeleteEntityProperties").childNodes, childrenNodes2;
 			
-			var obj={}, obj2={},idSplited
+			var childrenNodes=document.getElementById("fieldsetModificateEntities_Properties").childNodes, childrenNodes2;
+			
+			var obj={}, obj2={},idSplited, allowToSend=true;
 			for (var i=0;i<childrenNodes.length;i++){
 				
 				if (currentNode.label=="Location"&&  childrenNodes[i].nodeName=="FIELDSET" ){
@@ -3667,13 +4139,27 @@ async function requestAndRefreshCountResults(currentNode, period) {
 						if (childrenNodes2[e].nodeName=="INPUT"){
 							idSplited=childrenNodes2[e].id.split("dlgCreateUpdateDeleteEntity_")[1];
 							if (idSplited=="location_longitude"){
+								if (childrenNodes2[e].value=="" && childrenNodes2[e].dataset.starequired=="true"){
+									alert("Longitude parameter is required, please fill in the box before send");
+									allowToSend=false;
+									break;
+								}else{
 								obj2["coordinates"]=[childrenNodes2[e].value];
+								}
+								
 								continue;
 							}
 
 							if (idSplited=="location_latitude"){
+								if (childrenNodes2[e].value=="" && childrenNodes2[e].dataset.starequired=="true"){
+									alert("Latitude parameter is required, please fill in the box before send");
+									allowToSend=false;
+									break;
+								}else{
 							obj2["coordinates"].push(childrenNodes2[e].value);
 							obj["location"]=obj2;
+								}
+							
 						}
 						}
 						
@@ -3689,17 +4175,37 @@ async function requestAndRefreshCountResults(currentNode, period) {
 						if (childrenNodes2[e].nodeName=="INPUT"){
 							idSplited=childrenNodes2[e].id.split("dlgCreateUpdateDeleteEntity_")[1];
 							if (idSplited=="unitOfMeasurement_name"){
+								if (childrenNodes2[e].value=="" && childrenNodes2[e].dataset.starequired=="true"){
+									alert("Name parameter is required, please fill in the box before send");
+									allowToSend=false;
+									break;
+								}else{
 								obj2["name"]=childrenNodes2[e].value;
 								continue;
+								}
+
 							}
 							if (idSplited=="unitOfMeasurement_symbol"){
+								if (childrenNodes2[e].value=="" && childrenNodes2[e].dataset.starequired=="true"){
+									alert("Symbol parameter is required, please fill in the box before send");
+									allowToSend=false;
+									break;
+								}else{
 								obj2["symbol"]=childrenNodes2[e].value;
-							
+									continue;						
+								}
 							continue;
 							}
 							if (idSplited=="unitOfMeasurement_definition"){
+								if (childrenNodes2[e].value=="" && childrenNodes2[e].dataset.starequired=="true"){
+									alert("Definition (unitOfMeasurements) parameter is required, please fill in the box before send");
+									allowToSend=false;
+									break;
+								}else{
 								obj2["definition"]=childrenNodes2[e].value;
 								obj["unitOfMeasurement"]=obj2;
+									continue;						
+								}
 							}
 						}
 						
@@ -3707,25 +4213,52 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					continue;
 				}
 
-
-
 				if (childrenNodes[i].nodeName=="INPUT"&&childrenNodes[i].type=="text"){
-					//Comprobar si és required abans d'enviar-ho? Et deixa enviar camps que son required true en blanc i per tant, "eliminar-los"
 					idSplited=childrenNodes[i].id.split("dlgCreateUpdateDeleteEntity_")[1];
+					 if (childrenNodes[i].value=="" && childrenNodes[i].dataset.starequired=="true"){
+					 //document.getElementById(childrenNodes[i].id).getAttribute("dataset-starequired")=="true"
+						alert(idSplited +" parameter is required, please fill in the box before send");
+						allowToSend=false;
+						break;
+					}else{
 					if (childrenNodes[i].value!="")	{
 						obj[idSplited]=childrenNodes[i].value;
 					}
 				}
 
 			}
+
+			}
+			if (allowToSend==true){
+				showInfoMessage("Updating  "+ STAEntities[entityName].singular +" "+id+" ...");
 			 var response= await HTTPJSONData(url,null,"PUT",obj);
+				 document.getElementById("DialogCreateUpdateDeleteEntity").close();
 			 if (response.ok)
 			 	showInfoMessage(STAEntities[entityName].singular +" "+"<a href='"+url+"'target='_blank'>"+id+"</a> updated.");
 			 else{
 			 	showInfoMessage("Error updating "+STAEntities[entityName].singular +" "+"<a href='"+url+"'target='_blank'>"+id+"</a> updated.");
 
 			 }
-			
+			}			
+		}
+
+		async function GetUpdateEntityMultiDatastream(event){
+			event.preventDefault(); 
+			var obj = obtainDataInMultidatastreamsCreationAndUpdate("update");
+			var id = parseInt(document.getElementById("dlgCreateUpdateDeleteEntity_id").value);
+			var parentNodes=GetParentNodes(currentNode);
+			var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNodes[0].STAURL), false);
+			var url=getUrlToId(getSTAURLRoot(parentNodes[0].STAURL),parentEntityName,id);
+
+			if (obj != false) {
+				showInfoMessage("Updating MultiDatastream " + id + " ...");
+				var response = await HTTPJSONData(url, null, "PUT", obj);
+				document.getElementById("DialogCreateUpdateDeleteEntity_MultiDatastreams").close();
+				if (response.ok)
+					showInfoMessage("MultiDatastream <a href='" + url + "'target='_blank'>" + id + "</a> updated.");
+				else
+					showInfoMessage("Error updating MultiDatastream <a href='" + url + "'target='_blank'>" + id + "</a> updated.");
+			}
 		}
 
 		function AskForDeleteEntity(event){
@@ -3743,7 +4276,12 @@ async function requestAndRefreshCountResults(currentNode, period) {
 		async function GetDeleteEntity(entityName, id){
 			event.preventDefault(); 
 			//console.log("borrant")
-			document.getElementById("DialogCreateUpdateDeleteEntity").close();
+			if (entityName=="MultiDatastreams"){
+				document.getElementById("DialogCreateUpdateDeleteEntity_MultiDatastreams").close();
+			}else{
+				document.getElementById("DialogCreateUpdateDeleteEntity").close();
+			}
+			
 			var parentNodes=GetParentNodes(currentNode);
 			var url=parentNodes[0].STAURL;
 
@@ -3755,7 +4293,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			var response= await HTTPJSONData(url,null,"DELETE",null);
 			console.log(response)
 			if (response?.ok)
-				showInfoMessage(STAEntities[entityName].singular +" "+id+"has been deleted.");
+				showInfoMessage(STAEntities[entityName].singular +" "+id+" has been deleted.");
 			else
 				showInfoMessage("Error deleting"+ STAEntities[entityName].singular +" "+id);
 		}
@@ -4322,10 +4860,21 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			return t;
 		}
 
+		//Taking this into consideration: https://www.w3.org/TR/tabular-data-primer
 		function getAttributeTypeFromCSVWType(t)
 		{
+			if (typeof t==="object" && t.base)
+				t=t.base;
 			if (t=="json")
 				return "object";
+			if (t=="decimal" || t=="long" || t=="int" || t=="short" || t=="byte" || t=="nonNegativeInteger"  || t=="positiveInteger" || t=="unsignedLong" || t=="unsignedInt" || t=="unsignedShort" || t=="unsignedByte" || t=="nonPositiveInteger"  || t=="negativeInteger")
+				return "number";
+			if (t=="double" || t=="float")
+				return "number";
+			if (t=="date" || t=="time")
+				return "isodatetime";
+			if (t=="normalizedString" || t=="token" || t=="Name" || t=="NMTOKEN" || t=="xml" || t=="html")
+				return "string";
 			return t;
 		}
 
@@ -5852,7 +6401,7 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				//LoadJSONNodeSTAData(nodeTo);
 				return true;
 			}
-			if (nodeTo.image == "GeoFilterRowsSTA.png") {
+			if (nodeTo.image == "GeoFilterPolSTA.png") {
 				if (!GetFirstParentNode(nodeTo)){
 					nodeTo.STAURL = nodeFrom.STAURL;
 					nodeTo.STAExpectedLength = nodeFrom.STAExpectedLength;
@@ -6081,10 +6630,6 @@ async function requestAndRefreshCountResults(currentNode, period) {
 					ShowUploadObservationsDialog(currentNode);
 					document.getElementById("DialogUploadObservations").showModal();
 				}
-				/*else if (currentNode.image == "UploadTimeAverages.png") {
-					ShowUploadTimeAveragesDialog(currentNode.id);
-					document.getElementById("UploadTimeAverages").showModal();
-				}*/
 				else if (currentNode.image == "SaveTable.png") {
 					//ShowSaveTableDialog(currentNode.id);
 					document.getElementById("DialogSaveTable").showModal();
@@ -6293,22 +6838,42 @@ async function requestAndRefreshCountResults(currentNode, period) {
 				else if (currentNode.image == "SeparateColumns.png") {
 					;
 				}
-				else if (currentNode.image == "GeoFilterRowsSTA.png" || 
+				else if (currentNode.image =="ConcatenateTables.png") {
+					document.getElementById("DialogConcatenateTables").showModal();
+				}
+				else if (currentNode.image =="ColumnStatistics.png") {
+					document.getElementById("DialogColumnStatistics").showModal();
+				}
+				
+				else if (currentNode.image == "GeoFilterPolSTA.png" || 
 					IdOfSTAEntity(currentNode) != -1 ||
 					IdOfSTASpecialQueries(currentNode) != -1) {
 					document.getElementById("DialogSelectNRecords").showModal();
+				}
+				else if (currentNode.image == "GeoFilterPntSTA.png" &&
+					takeParentsInformationInGeoDistance()==true) {
+					document.getElementById("DialogGeospatialFilterRowsByDistance").showModal();
 				}
 				else if (currentNode.image == "ObservedProperty.png" || currentNode.image == "Observation.png" || 
 					currentNode.image == "FeatureOfInterest.png" || currentNode.image == "Sensor.png" || 
 					currentNode.image == "Thing.png" || currentNode.image == "Location.png" || 
 					currentNode.image == "HistoricalLocation.png" || currentNode.image == "Datastream.png" || 
-					currentNode.image == "MultiDatastream.png" || currentNode.image == "Party.png" || 
+					currentNode.image == "Party.png" || 
 					currentNode.image == "Campaign.png" || currentNode.image == "License.png" || 
 					currentNode.image == "ObservationGroup.png" || currentNode.image == "Relation.png") {
 					startingNodeContextId=currentNode.id;
 					if (GetFirstParentNode(currentNode)) {
 						if (PopulateCreateUpdateDeleteEntity(getSTAEntityPlural(removeExtension(currentNode.image), true), currentNode))
 							document.getElementById("DialogCreateUpdateDeleteEntity").showModal();
+					}
+				}else if (currentNode.image == "MultiDatastream.png"){
+					var firstparentNode=GetFirstParentNode(currentNode);
+					if (firstparentNode&& (getSTAURLLastEntity(firstparentNode.STAURL)!="MultiDatastreams")) {
+						document.getElementById("DialogCreateUpdateDeleteEntity_numberOfMultiDatastream").showModal();
+					}else {
+						var number =firstparentNode.STAdata[0].multiObservationDataTypes.length;
+						PopulateCreateUpdateDeleteEntityMultiDatastreams("MultiDatastreams", currentNode,number); //S'ha de calcular el numero
+						document.getElementById("DialogCreateUpdateDeleteEntity_MultiDatastreams").showModal();
 					}
 				}
 				else if (currentNode.image == "EditRecord.png") {
@@ -7181,9 +7746,322 @@ async function requestAndRefreshCountResults(currentNode, period) {
 			document.getElementById("DialogColumnsCalculator").close();
 
 		}
+		function createColumnStatistics(event){
+			event.preventDefault();
+			var parentNodes= GetParentNodes(currentNode);
+			var staData= parentNodes[0].STAdata;
+			var dataAttributes= getDataAttributes(staData);
+			var keys = Object.keys(staData[0]);
+			var collectedData,obj, finallyArray=[],dataType;
+
+			for (var i=0;i<keys.length;i++){
+				obj={};
+				collectedData=[];
+				dataType=dataAttributes[keys[i]]["type"];
+				for (var e=0;e<staData.length;e++){
+					collectedData.push(staData[e][keys[i]]);
+				}
+
+				obj["ColumnName"]= keys[i];
+				obj["DataType"]= dataType;
+				obj["Mean"]= (dataType=="number")?aggrFuncMean(collectedData):"";
+				obj["Median"]= (dataType=="number")?aggrFuncMedian(collectedData):"";
+				obj["Q1"]= (dataType=="number")?aggrFuncQ1(collectedData):"";
+				obj["Q3"]= (dataType=="number")?aggrFuncQ3(collectedData):"";
+				obj["Min.value"]= (dataType=="number")?aggrFuncMinValue(collectedData):"";
+				obj["Max.value"]= (dataType=="number")?aggrFuncMaxValue(collectedData):"";
+				obj["Mode"]= aggrFuncMode(collectedData); //he triat la funció que només et dóna una moda (tenim la que et dóna totes, com prefereixis)
+				obj["StandardDeviation"]= (dataType=="number")?aggrFuncStandardDeviation(collectedData):"";
+				obj["Variance"]= (dataType=="number")?aggrFuncVariance(collectedData):"";
+				obj["Range"]= (dataType=="number")?aggrFuncRange(collectedData):"";
+				obj["FirstValue"]=(dataType=="number")? aggrFuncFirstValue(collectedData):"";
+				obj["LastValue"]= (dataType=="number")?aggrFuncLastValue(collectedData):"";
+				obj["RandomValue"]= aggrFuncRandomValue(collectedData);
+				//obj["CountDefined"]= aggrFuncCountDefined(collectedData);
+				obj["Count"]= aggrFuncCount(collectedData);
+				//obj["ProportionDefined"]= aggrFuncProportionDefined(collectedData); 
+
+				finallyArray.push(obj);
+			}
+
+			currentNode.STAdata=finallyArray;
+			networkNodes.update(currentNode);
+			document.getElementById("DialogColumnStatistics").close();
+
 			
-		/*
-		function giveMeNetworkInformation(event) {
+		}
+
+
+		function concatenateTables(){
+			event.preventDefault();
+			var selected= (document.getElementById("concatenationType_allColumns").checked ==true)?"allColumns":"repeatedColumns";			//agafar les data de tots els pares i juntar
+			var parentNodes= GetParentNodes(currentNode);
+			var parentNodesArrayData=[], parentNodesArrayKeys=[];
+
+			for(var i=0;i<parentNodes.length;i++){
+				parentNodesArrayData.push(...parentNodes[i].STAdata);
+				parentNodesArrayKeys.push(Object.keys(parentNodes[i].STAdata[0]));
+			}
+			//llista de les keys
+			var allkeysWithOutRepetitions=parentNodesArrayKeys[0];
+			var repitedKeys=[];
+
+			for (var i=1;i<parentNodesArrayKeys.length;i++){
+				for (var e=0;e<parentNodesArrayKeys[i].length;e++){
+					if (allkeysWithOutRepetitions.indexOf(parentNodesArrayKeys[i][e])==-1){ //All different keys
+						allkeysWithOutRepetitions.push(parentNodesArrayKeys[i][e]); 
+						
+					}else{
+						repitedKeys.push(parentNodesArrayKeys[i][e]); //only repeated keys
+					}
+				}
+			}
+			var necessaryRepetitions= parentNodes.length-1;// repitedKeys shan de repetir un cop menys q elements hi ha
+			repitedKeys=repitedKeys.sort();
+			var count=1, lastKey=repitedKeys[0], repitedKeysDefinitive=[];
+			for (var i=0;i<repitedKeys.length;i++){
+
+				if (lastKey==repitedKeys[i]){
+					count+=1;
+					lastKey=repitedKeys[i];
+				}else{
+					if(count==necessaryRepetitions){repitedKeysDefinitive.push(repitedKeys[i])};
+					count=0;
+					lastKey=repitedKeys[i];
+				}
+			}
+
+			var keysToNewTable;
+			if (selected=="allColumns"){
+				keysToNewTable= allkeysWithOutRepetitions;
+
+			}else{ //repeatedColumns
+				keysToNewTable= repitedKeysDefinitive;
+			}
+
+			var resultData=[], obj;
+			for (var i=0;i<parentNodesArrayData.length;i++){
+				obj={}
+				for (var e=0;e<keysToNewTable.length;e++){
+					if(parentNodesArrayData[i].hasOwnProperty(keysToNewTable[e])){
+						obj[keysToNewTable[e]]= parentNodesArrayData[i][keysToNewTable[e]];
+					}else{
+						obj[keysToNewTable[e]]= "";
+					}
+				}
+				resultData.push(obj);
+				
+			}
+			currentNode.STAdata=resultData;
+			networkNodes.update(currentNode);
+			document.getElementById("DialogConcatenateTables").close();
+	}
+		
+		const RouteToLocation={
+		Parties: ["Things/Locations/location", "Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location" ],
+		Sensors: ["Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location"],
+		ObservedProperties: ["Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location"],
+		Things: ["Locations/location"], 
+		Observations:["Datastream/Thing/Locations/location", "MultiDatastream/Thing/Locations/location"],
+		Locations:["location"],
+		FeaturesOfInterest:["Observations/Datastream/Thing/Locations/location", "Observations/multiDatastream/Thing/Locations/location"],
+		HistoricalLocations: ["Location/location", "Things/Locations/location"],
+		Datastreams:["Thing/Locations/location"],
+		MultiDatastreams:["Thing/Locations/location"],
+		Campaigns: ["Datastreams/Thing/Locations/location","MultiDatastreams/Thing/Locations/location", "License/Datastreams/Thing/Locations/location", "License/MultiDatastreams/Thing/Locations/location","ObservationGroups/Observations/Datastream/Thing/Locations/location","ObservationGroups/License/Datastreams/Thing/Locations/location","ObservationGroups/License/MultiDatastreams/Thing/Locations/location", "ObservationGroups/Observations/MultiDatastream/Thing/Locations/location"],
+		Licenses: [ "Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location"],
+		ObservationGroups: ["Campaigns/Datastreams/Thing/Locations/location","Campaigns/MultiDatastreams/Thing/Locations/location", "Campaigns/License/Datastreams/Thing/Locations/location", "Campaigns/License/MultiDatastreams/Thing/Locations/location", "Observations/Datastream/Thing/Locations/location", "Observations/MultiDatastream/Thing/Locations/location"] 
+		//Relations: []
+		}
+		const RouteToFeature={
+			Parties: ["Datastreams/Observations/FeatureOfInterest/feature","MultiDatastreams/Observations/FeatureOfInterest/feature","Things/Datastreams/Observations/FeatureOfInterest/feature","Things/MultiDatastreams/Observations/FeatureOfInterest/feature"],
+			Sensors: ["Datastreams/Observations/FeatureOfInterest/feature", "MultiDatastreams/Observations/FeatureOfInterest/feature"], 
+			ObservedProperties: ["Datastreams/Observations/FeatureOfInterest/feature", "MultiDatastreams/Observations/FeatureOfInterest/feature"], 
+			Things: ["Datastreams/Observations/FeatureOfInterest/feature","MultiDatastreams/Observations/FeatureOfInterest/feature"], 
+			Observations:["FeatureOfInterest/feature"],
+			Locations:["Things/Datastreams/Observations/FeatureOfInterest/feature", "Things/MultiDatastreams/Observations/FeatureOfInterest/feature"],
+			FeaturesOfInterest:["feature"],
+			HistoricalLocations: ["Things/Datastreams/Observations/FeatureOfInterest/feature","Things/MultiDatastreams/Observations/FeatureOfInterest/feature"],
+			Datastreams: ["Observations/FeatureOfInterest/feature"],
+			MultiDatastreams:["Observations/FeatureOfInterest/feature"],
+			Campaigns:["License/ObservationGroups/Observations/FeatureOfInterest/feature",	"License/Datastreams/Observations/FeatureOfInterest/feature","License/MultiDatastreams/Observations/FeatureOfInterest/feature","ObservationGroups/Observations/FeatureOfInterest/feature"],
+			Licenses:["Datastreams/Observations/FeatureOfInterest/feature","MultiDatastreams/Observations/FeatureOfInterest/feature", "ObservationGroups/Observations/FeatureOfInterest/feature" ], 
+			ObservationGroups:[	"Campaigns/License/Datastreams/Observations/FeatureOfInterest/feature","Campaigns/License/MultiDatastreams/Observations/FeatureOfInterest/feature",	"Campaigns/Datastreams/Observations/FeatureOfInterest/feature", "Campaigns/MultiDatastreams/Observations/FeatureOfInterest/feature","License/Datastreams/Observations/FeatureOfInterest/feature", "License/MultiDatastreams/Observations/FeatureOfInterest/feature","Observations/Datastream/Observations/FeatureOfInterest/feature", "Observations/MultiDatastream/Observations/FeatureOfInterest/feature"]
+			//Relations: []
+		}
+
+		function takeParentsInformationInGeoDistance(){
+			var parentNodes= GetParentNodes(currentNode);
+			var nodeWithUniqueRow=false, columns=[], columnsValues={}, parentNodeSTAEntity, nodeSTA=false;
+
+			for (var i=0;i<parentNodes.length;i++){
+				
+				if (parentNodes[i].STAURL && parentNodes[i].STAdata.length>1){ //STA to apply filter
+					var url=parentNodes[i].STAURL, finalURL; 
+					nodeSTA=true;
+					parentNodeSTAEntity= getSTAURLLastEntity(parentNodes[i].STAURL);
+					var prevFilter = GetQueryParamFromURL(url, "$filter"); //Same way that in filterRows
+					if  (prevFilter) {
+					 	finalURL = RemoveQueryParamFromURL(url, "$filter");
+						finalURL = AddQueryParamsToURL(finalURL, "$filter=" + prevFilter + " and ");
+					}
+					 else
+						finalURL = AddQueryParamsToURL(url, "$filter=");
+
+					currentNode.STAURL= finalURL;	
+				}else if (!parentNodes[i].STAURL &&parentNodes[i].STAdata.length>1){
+					alert ("There is a node linked not STA with more than one register, if you want to use it, apply a select row to choose your register")
+					
+					return false;
+				}else { //1 register
+					if (nodeWithUniqueRow==true){
+						alert ("There is more than one node with only one register linked. Link only one node with one register to use to take the coordenates")
+						return false;
+					}
+					nodeWithUniqueRow=true;
+					var dataAttributes= getDataAttributes(parentNodes[i].STAdata);
+					var dataAttributesKeys=Object.keys(dataAttributes)
+
+					for (var a=0;a<dataAttributesKeys.length;a++){
+				
+						if (dataAttributes[dataAttributesKeys[a]]['type']=="number") {
+							
+							if (dataAttributesKeys[a]!="geometry"){
+								columnsValues[dataAttributesKeys[a]]=parentNodes[i].STAdata[0][dataAttributesKeys[a]];
+								columns.push(dataAttributesKeys[a]);
+							}else{
+								columnsValues["geometry-coordinates"]=parentNodes[i].STAdata[0]["geometry"]["coordinates"];
+								columns.push("geometry-coordinates");
+							}
+						}
+					}			
+					unableDisableSelectOperatorGeoDistance();
+						
+					currentNode.STAcolumnsValuesGeoDistance= columnsValues;
+					networkNodes.update(currentNode);
+					console.log(columns)
+				}
+			}
+			if (parentNodes.length==1 && nodeSTA){ //only node STA write point
+				document.getElementById("geoDistance_input_coordinate1_select").style.display="none";
+				document.getElementById("geoDistance_input_coordinate2_select").style.display="none";
+				document.getElementById("geoDistance_input_coordinate3_select").style.display="none";
+				document.getElementById("geoDistance_input_coordinate4_select").style.display="none";
+
+				document.getElementById("geoDistance_input_coordinate3").disabled=true;;
+				document.getElementById("geoDistance_input_coordinate4").disabled=true;;
+
+			}else{
+				var select,cdns=[];
+				for (var e=0;e<columns.length;e++){
+					cdns.push(`<option value="${columns[e]}">${columns[e]}</option>`);
+
+				}			
+				for (var i=1;i<5;i++){
+					select=document.getElementById("geoDistance_input_coordinate"+i+"_select");
+					select.innerHTML=cdns.join("");
+					document.getElementById("geoDistance_input_coordinate"+i).value=columnsValues[Object.keys(columnsValues)[0]];
+				}
+			}
+			
+
+
+			var entityRouteToLocation=RouteToLocation[parentNodeSTAEntity];
+			var entityRouteToFeature=RouteToFeature[parentNodeSTAEntity];
+			var entityRouteToLocationSelect= document.getElementById("geoDistance_Location_select");
+			var entityRouteToFeatureSelect= document.getElementById("geoDistance_FOI_Feature_select");
+			cdns=[];
+			for (var i=0;i<entityRouteToLocation.length;i++){
+				cdns.push(`<option value="${entityRouteToLocation[i]}">${entityRouteToLocation[i]}</option>`);
+			}
+			entityRouteToLocationSelect.innerHTML=cdns.join(""); 
+
+			cdns=[];
+			for (var i=0;i<entityRouteToFeature.length;i++){
+				cdns.push(`<option value="${entityRouteToFeature[i]}">${entityRouteToFeature[i]}</option>`);
+			}
+			entityRouteToFeatureSelect.innerHTML=cdns.join(""); 
+
+
+			
+			return true;
+		}
+		async function GetGeoDistanceFilter(event){
+			event.preventDefault(); 
+			var distanceValue= document.getElementById("geoDistance_input_value").value;
+			var selectOperator= document.getElementById("geoDistance_select_operator");
+			var selectedValueOperator= selectOperator.options[selectOperator.selectedIndex].value;
+			var coordinatesValues=[];
+			var selectRoute, selectedRouteValue;
+			//Route to feature or location
+			if  (document.getElementById("geoDistance_FOI_Feature").checked){
+				selectRoute= document.getElementById("geoDistance_FOI_Feature_select");
+				selectedRouteValue= selectRoute.options[selectRoute.selectedIndex].value;
+				
+			}else{
+				selectRoute= document.getElementById("geoDistance_Location_select");
+				selectedRouteValue= selectRoute.options[selectRoute.selectedIndex].value;
+			}
+			
+			//Take Coordenates
+			coordinatesValues.push(document.getElementById("geoDistance_input_coordinate1").value,document.getElementById("geoDistance_input_coordinate2").value);
+			if (selectedValueOperator== " [a,b] "|| selectedValueOperator== " (a,b] "||selectedValueOperator== " [a,b) "|| selectedValueOperator== " (a,b) "){ //interval
+				coordinatesValues.push(document.getElementById("geoDistance_input_coordinate3").value,document.getElementById("geoDistance_input_coordinate4").value)
+			}
+
+			//make url
+			var url=currentNode.STAURL;
+			if (selectedValueOperator!= " [a,b] "|| selectedValueOperator!= " (a,b] "||selectedValueOperator!= " [a,b) "|| selectedValueOperator!= " (a,b) "){
+				
+				url+=`geo.distance( ${selectedRouteValue}, geography'POINT (${coordinatesValues[0]} ${coordinatesValues[1]})') ${selectedValueOperator}  ${distanceValue} `
+				
+			}else{
+				if (selectedValueOperator!= " [a,b] "){
+					url+=`geo.distance( ${selectedRouteValue}, geography'POINT (${coordinatesValues[0]} ${coordinatesValues[1]})') ge  ${distanceValue} and `
+					url+=`geo.distance( ${selectedRouteValue}, geography'POINT (${coordinatesValues[0]} ${coordinatesValues[1]})') le  ${distanceValue} `
+
+				}else if(selectedValueOperator!= " (a,b] "){
+					url+=`geo.distance( ${selectedRouteValue}, geography'POINT (${coordinatesValues[0]} ${coordinatesValues[1]})') gt  ${distanceValue} and `
+					url+=`geo.distance( ${selectedRouteValue}, geography'POINT (${coordinatesValues[0]} ${coordinatesValues[1]})') le  ${distanceValue} ` 
+				}else if(selectedValueOperator!= " [a,b) "){
+					url+=`geo.distance( ${selectedRouteValue}, geography'POINT (${coordinatesValues[0]} ${coordinatesValues[1]})') ge  ${distanceValue} and `
+					url+=`geo.distance( ${selectedRouteValue}, geography'POINT (${coordinatesValues[0]} ${coordinatesValues[1]})') lt  ${distanceValue} `
+				}else { //selectedValueOperator!= " (a,b) "
+					url+=`geo.distance( ${selectedRouteValue}, geography'POINT (${coordinatesValues[0]} ${coordinatesValues[1]})') gt  ${distanceValue} and `
+					url+=`geo.distance( ${selectedRouteValue}, geography'POINT (${coordinatesValues[0]} ${coordinatesValues[1]})') lt  ${distanceValue} `
+				}
+			}
+			currentNode.STAURL= url;
+			currentNode.STAdata= await loadAPIDataWithReturn(url,"EntitiesFilterRow") 
+			networkNodes.update(currentNode);
+			document.getElementById("DialogGeospatialFilterRowsByDistance").close();
+		}
+
+		function writeValueInInputGeoDistance(value){
+			var select=document.getElementById("geoDistance_input_coordinate"+value+"_select");
+			var selectValue= select.options[select.selectedIndex].value;
+			document.getElementById("geoDistance_input_coordinate"+value).value= currentNode.STAcolumnsValuesGeoDistance[selectValue]
+		}
+
+		function unableDisableSelectOperatorGeoDistance(){
+			var select=document.getElementById("geoDistance_select_operator");
+			var selectValue= select.options[select.selectedIndex].value;
+
+			if (selectValue== " [a,b] "|| selectValue== " (a,b] "||selectValue== " [a,b) "|| selectValue== " (a,b) "){ //interval
+				document.getElementById("geoDistance_input_coordinate3_select").disabled=false;
+				document.getElementById("geoDistance_input_coordinate4_select").disabled=false;
+				document.getElementById("geoDistance_input_coordinate3").disabled=false;
+				document.getElementById("geoDistance_input_coordinate4").disabled=false;
+
+			}else{
+				document.getElementById("geoDistance_input_coordinate3_select").disabled=true;
+				document.getElementById("geoDistance_input_coordinate4_select").disabled=true;
+				document.getElementById("geoDistance_input_coordinate3").disabled=true;
+				document.getElementById("geoDistance_input_coordinate4").disabled=true;
+			}
+		}
+
+		/*function giveMeNetworkInformation(event) {
 			if (event)
 				event.preventDefault(); // We don't want to submit this form
 			document.getElementById("DialogSelectColumns").close();
