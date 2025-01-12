@@ -54,7 +54,7 @@
 <li><a href="#recipe05b">Recipe 5b: Selecting temperatures whose distance from a certain point is greater or lower than an established distance</a></li>
 <li><a href="#recipe06">Recipe 6: Creating a new stream of observations</a></li>
 <li><a href="#recipe07">Recipe 7: Connecting to a data catalogue and giving user feedback about a dataset</a></li>
-
+<li><a href="#recipe08">Recipe 8: Connecting to a S3 service and retreive and view a CSV file in a S3 bucket</a></li>
 </ul>
 </ul>
 
@@ -1049,6 +1049,44 @@ To verify that the feedback is collected and recorded, we can use the button [Ge
 To read the record better, we can use the [Edit record] to see the item as a record in a form.<br>
 <img src="recipe07_GUFFeedbackItem.png" width="600" class="center">
 <p>
+
+<br><br><br>
+<br>
+<hr width="30%">
+<a id="recipe08"></a>
+<h3>Recipe 8: Connecting to a S3 service and retreive and view a CSV file in a S3 bucket</h3>
+In this example, we illustrate how to connect to a S3 service. Then we can select a S3 bucket, load the content of the S3 bucket, select a CSV file in it and show its content.
+
+<p>
+First we connect to the S3 service.<br>
+<img src="recipe08_s3Service.png" width="600" class="center">
+<p>
+
+The result is a table with a list of buckets offered.<br>
+<img src="recipe08_backetsTable.png" width="600" class="center">
+<p>
+
+We can select one of these records with the [select row] tool.<br>
+<img src="recipe08_backetsSelectRow.png" width="600" class="center">
+<p>
+
+<p>
+Now we need to load the bucket with the [S3 bucket] tool.<br>
+<img src="recipe08_s3backet.png" width="600" class="center">
+<p>
+
+The result is a table with a list of files offered. Note that the folder structure has been flattened and the name of the files contain the name of the folder directly.<br>
+<img src="recipe08_filesTable.png" width="600" class="center">
+<p>
+
+We can select one of these files with the [select row] tool.<br>
+<img src="recipe08_filesSelectRow.png" width="800" class="center">
+<p>
+
+Now, depending on the format we can select a tool to open the file. In this case we use the [ImportCSV]. By double-clicking in the tool, we can immediately open the resource without having to write the URL of the resource. We only need to press the two [load] buttons next to the URLs.<br>
+<img src="recipe08_importCSVTable.png" width="1000" class="center">
+<p>
+
 
 </body>
 </html>
