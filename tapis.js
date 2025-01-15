@@ -47,9 +47,9 @@
 
 var config;
 
-const ServicesAndAPIs = {sta: {name: "STA plus", description: "STA service", startNode: true},
-			ogcAPICols: {name: "OGC API cols", description: "OGC API collections", startNode: true},
-			ogcAPIItems: {name: "OGC API items", description: "OGC API items", startNode: true},
+const ServicesAndAPIs = {sta: {name: "STA plus", description: "STA service", startNode: true, help: "Connects to a SensorThings API or a STAplus instance and returns a table with the list of entities suported"},
+			ogcAPICols: {name: "OGC API cols", description: "OGC API collections", startNode: true, help: "Connects to the root of a OGC Web API and returns a table with the list collections available"},
+			ogcAPIItems: {name: "OGC API items", description: "OGC API items", startNode: true, help: "Connects to a collection on an OGC Web API Features or derivatives and returns a table with the items available. On of the columns in the table will be the geometry object as a GeoJSON"},
 			csw: {name: "Catalogue", description: "OGC CSW", startNode: true},
 			s3Service: {name: "S3 Service", description: "S3 Service", startNode: true},
 			s3Bucket: {name: "S3 Bucket", description: "S3 Bucket", startNode: true},
@@ -552,32 +552,70 @@ function PlaceButtonsSTAEntities() {
 	var s = "";
 	if (!document.getElementById("DialogConfigurationOnlyStartNodeButtons").checked) {
 		for (var i = 0; i < ServicesAndAPIsArray.length; i++)
-			s += "<button onclick='addCircularImage(null, null, \"" + ServicesAndAPIs[ServicesAndAPIsArray[i]].name + "\", \"" + ServicesAndAPIsArray[i] + ".png\");'><img src='" + ServicesAndAPIsArray[i] + ".png' height='20' valign='middle'> " + ServicesAndAPIs[ServicesAndAPIsArray[i]].description + "</button> ";
+			s += textOperationButton(null, "", ServicesAndAPIsArray[i], ServicesAndAPIs[ServicesAndAPIsArray[i]].name, ServicesAndAPIs[ServicesAndAPIsArray[i]].description, ServicesAndAPIs[ServicesAndAPIsArray[i]].help);
 		s += "<br>";
 		for (var i = 0; i < STAEntitiesArray.length; i++)
-			s += "<button onclick='addCircularImage(null, null, \"" + STAEntitiesArray[i] + "\", \"" + STAEntitiesArray[i] + ".png\");'><img src='" + STAEntitiesArray[i] + ".png' height='20' valign='middle'> " + STAEntitiesArray[i] + "</button> ";
+			s += textOperationButton(null, "", STAEntitiesArray[i], STAEntitiesArray[i], STAEntitiesArray[i], STAEntities[STAEntitiesArray[i]].help);
 		s += "<br>";
 		/*for (var i = 0; i < STAEntitiesArray.length; i++)
-			s += "<button onclick='addCircularImage(null, null, \"" + STAEntities[STAEntitiesArray[i]].singular + "\", \"" + STAEntities[STAEntitiesArray[i]].singular + ".png\");'><img src='" + STAEntities[STAEntitiesArray[i]].singular + ".png' height='20' valign='middle'> " + STAEntities[STAEntitiesArray[i]].singular + "</button> ";
+			s += textOperationButton(null, "", STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].helpEdit);
 		s += "<br>";*/
 		for (var i = 0; i < STASpecialQueriesArray.length; i++)
-			s += "<button onclick='addCircularImage(null, null, \"" + STASpecialQueriesArray[i] + "\", \"" + STASpecialQueriesArray[i] + ".png\");'><img src='" + STASpecialQueriesArray[i] + ".png' height='20' valign='middle'> " + STASpecialQueries[STASpecialQueriesArray[i]].description + "</button> ";
+			s += textOperationButton(null, "", STASpecialQueriesArray[i], STASpecialQueriesArray[i], STASpecialQueries[STASpecialQueriesArray[i]].description, STASpecialQueries[STASpecialQueriesArray[i]].help);
 		s += "<br>";
 	}
 
 	for (var i = 0; i < STAOperationsArray.length; i++) {
 		if (!document.getElementById("DialogConfigurationOnlyStartNodeButtons").checked || STAOperations[STAOperationsArray[i]].startNode)
-			s += "<button onclick='addCircularImage(null, null, \"" + STAOperations[STAOperationsArray[i]].description + "\", \"" + STAOperationsArray[i] + ".png\");'><img src='" + STAOperationsArray[i] + ".png' height='20' valign='middle'> " + STAOperations[STAOperationsArray[i]].description + "</button> ";
+			s += textOperationButton(null, "", STAOperationsArray[i], STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].help);
 	}
 	s += "<br>";
 	for (var i = 0; i < TableOperationsArray.length; i++) {
 		if (!document.getElementById("DialogConfigurationOnlyStartNodeButtons").checked || TableOperations[TableOperationsArray[i]].startNode)
-			s += "<button onclick='addCircularImage(null, null, \"" + TableOperations[TableOperationsArray[i]].description + "\", \"" + TableOperationsArray[i] + ".png\");'><img src='" + TableOperationsArray[i] + ".png' height='20' valign='middle'> " + TableOperations[TableOperationsArray[i]].description + "</button> ";
+			s += textOperationButton(null, "", TableOperationsArray[i], TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].help);
 	}
 	if (!document.getElementById("DialogConfigurationOnlyStartNodeButtons").checked)
 		s += "<br>";
 
 	document.getElementById("ButtonsSTAEntities").innerHTML = s;
+}
+
+var timeoutHelpToolTip=null;
+
+function timeoutShowHelpToolTip(div) {
+	div.style.display="block";
+	timeoutHelpToolTip=null;
+}
+
+function showHelpToolTip(event, prefix, text) {
+	var div=document.getElementById(prefix+"HelpToolTip");
+	div.innerHTML=text;
+	moveHelpToolTip(event, prefix);
+	timeoutHelpToolTip=setTimeout(timeoutShowHelpToolTip, 1000, div);
+	return false;
+}
+
+function moveHelpToolTip(event, prefix) {
+	var div=document.getElementById(prefix+"HelpToolTip");
+	div.style.left=(event.clientX+2) + "px";
+	div.style.top=(event.clientY-div.offsetHeight+2) + "px";
+	return false;
+}
+
+function hideHelpToolTip(event, prefix) {
+	document.getElementById(prefix+"HelpToolTip").style.display="none";
+	if (timeoutHelpToolTip) {
+		clearTimeout(timeoutHelpToolTip);
+		timeoutHelpToolTip=null;
+	}
+	return false;
+}
+
+function textOperationButton(parentDivId, prefixDivId, operation, name, description, help) {
+	var s = "<button ";
+	if (help)
+		s+="onmouseover='showHelpToolTip(event, \"" + (prefixDivId ? prefixDivId : "") +"\", \"" + help +"\")' onmousemove='moveHelpToolTip(event, \"" + (prefixDivId ? prefixDivId : "") +"\")' onmouseout='hideHelpToolTip(event, \"" + (prefixDivId ? prefixDivId : "") +"\")' "
+	return s + "onclick='addCircularImage(" + (parentDivId ? "event" : "null") + ", "+ (parentDivId ? ("\""+parentDivId+"\"") : "null") +", \"" + name + "\", \"" + operation + ".png\");'><img src='" + operation + ".png' height='20' valign='middle'> " + description + "</button> ";
 }
 
 async function InitSTAPage() {
@@ -593,36 +631,36 @@ async function InitSTAPage() {
 	PlaceButtonsSTAEntities();
 	var s = "Data Inputs:<br>";
 	for (var i = 0; i < ServicesAndAPIsArray.length; i++) {
-		s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + ServicesAndAPIs[ServicesAndAPIsArray[i]].name + "\", \"" + ServicesAndAPIsArray[i] + ".png\");'><img src='" + ServicesAndAPIsArray[i] + ".png' height='20' valign='middle'> " + ServicesAndAPIs[ServicesAndAPIsArray[i]].description + "</button> ";
+		s += textOperationButton("DialogContextMenu", "ContextMenu", ServicesAndAPIsArray[i], ServicesAndAPIs[ServicesAndAPIsArray[i]].name, ServicesAndAPIs[ServicesAndAPIsArray[i]].description, ServicesAndAPIs[ServicesAndAPIsArray[i]].help);
 		s += (i+1)%nCol==0 || i == ServicesAndAPIsArray.length-1 ? "<br>" : " ";
 	}
 	s += "<small><br></small>Read STA entities:<br>";
 	for (var i = 0; i < STAEntitiesArray.length; i++) {
-		s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + STAEntitiesArray[i] + "\", \"" + STAEntitiesArray[i] + ".png\");'><img src='" + STAEntitiesArray[i] + ".png' height='20' valign='middle'> " + STAEntitiesArray[i] + "</button>";
+		s += textOperationButton("DialogContextMenu", "ContextMenu", STAEntitiesArray[i], STAEntitiesArray[i], STAEntitiesArray[i], STAEntities[STAEntitiesArray[i]].help);
 		s += (i+1)%nCol==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
 	}
 	s += "<small><br></small>Create, edit or delete STA entities:<br>";
 	for (var i = 0; i < STAEntitiesArray.length; i++)
 	{
-		s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + STAEntities[STAEntitiesArray[i]].singular + "\", \"" + STAEntities[STAEntitiesArray[i]].singular + ".png\");'><img src='" + STAEntities[STAEntitiesArray[i]].singular + ".png' height='20' valign='middle'> " + STAEntities[STAEntitiesArray[i]].singular + "</button>";
+		s += textOperationButton("DialogContextMenu", "ContextMenu", STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].helpEdit);
 		s += (i+1)%nCol==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
 	}
 	s += "<small><br></small>Complex queries:<br>";
 	for (var i = 0; i < STASpecialQueriesArray.length; i++)
 	{
-		s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + STASpecialQueriesArray[i] + "\", \"" + STASpecialQueriesArray[i] + ".png\");'><img src='" + STASpecialQueriesArray[i] + ".png' height='20' valign='middle'> " + STASpecialQueries[STASpecialQueriesArray[i]].description + "</button>";
+		s += textOperationButton("DialogContextMenu", "ContextMenu", STASpecialQueriesArray[i], STASpecialQueriesArray[i], STASpecialQueries[STASpecialQueriesArray[i]].description, STASpecialQueries[STASpecialQueriesArray[i]].help);
 		s += (i+1)%nCol==0 || i == STASpecialQueriesArray.length-1 ? "<br>" : " ";
 	}
 	s += "<small><br></small>STA tools:<br>";
 	for (var i = 0; i < STAOperationsArray.length; i++)
 	{
-		s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + STAOperations[STAOperationsArray[i]].description + "\", \"" + STAOperationsArray[i] + ".png\");'><img src='" + STAOperationsArray[i] + ".png' height='20' valign='middle'> " + STAOperations[STAOperationsArray[i]].description + "</button>";
+		s += textOperationButton("DialogContextMenu", "ContextMenu", STAOperationsArray[i], STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].help);
 		s += (i+1)%nCol==0 || i == STAOperationsArray.length-1 ? "<br>" : " ";
 	}
 	s += "<small><br></small>Table tools:<br>";
 	for (var i = 0; i < TableOperationsArray.length; i++)
 	{
-		s += "<button onclick='addCircularImage(event, \"DialogContextMenu\", \"" + TableOperations[TableOperationsArray[i]].description + "\", \"" + TableOperationsArray[i] + ".png\");'><img src='" + TableOperationsArray[i] + ".png' height='20' valign='middle'> " + TableOperations[TableOperationsArray[i]].description + "</button>";
+		s += textOperationButton("DialogContextMenu", "ContextMenu", TableOperationsArray[i], TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].help);
 		s += (i+1)%nCol==0 || i == TableOperationsArray.length-1 ? "<br>" : " ";
 	}
 
@@ -7508,7 +7546,7 @@ function calculateMinMaxMeanDesvest(aggregatedData){
 
 function createAndLoadImportGeoJSONNode(data,url){
 	
-	addCircularImage(null, null, "GeoJSON", "ImportGeoJSON.png");
+	addCircularImage(null, "GeoJSON", "ImportGeoJSON.png");
 
 	currentNode = networkNodes.get(network.getSelectedNodes()[0]);
 	document.getElementById("DialogImportGeoJSONSourceExternalData").disabled= false;
