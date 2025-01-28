@@ -56,6 +56,7 @@ const ServicesAndAPIs = {sta: {name: "STA plus", description: "STA service", sta
 			edc: {name: "DataSpace cat.", description: "DataSpace cat.", startNode: true, help: "Connects an Eclipse Data Connector (EDC) Catalogue and returns the list of assets available as a table. This is work in process"},
 			ImportCSV: {name: "CSV", description: "Import CSV", startNode: true, help: "Imports data from a CSV file and returns a table with them"},
 			ImportDBF: {name: "DBF", description: "Import DBF", startNode: true, help: "Imports data from a DBASE III+ or IV file and returns a table with them"},
+			ImportJSONLD: {name: "JSON-LD", description: "Import JSON-LD", startNode: true, help: "Imports data from a JSON-LD file and returns a table with them"},
 			ImportGeoJSON: {name: "GeoJSON", description: "Import GeoJSON", startNode: true, help: "Imports the features of a GeoJSON and returns a table where each feature is a record. One of the columns contains the geometry JSON object"},
 			staRoot: {name: "STA root", description: "STA root", help:"Returns to the root of the SensorThings API or STSTAplus service in use. In other words, removes the path and query parameters of the previous node"}};
 const ServicesAndAPIsArray = Object.keys(ServicesAndAPIs);
@@ -1210,7 +1211,7 @@ function MakeHrefData(data, mediatype)
 	return savedFile;
 }
 
-//type should be "CSV", "DBF" or "GeoJSON"
+//type should be "CSV", "DBF", "JSONLD" or "GeoJSON"
 function SelectImportFileSource(event, type) {
 	if (document.getElementById("DialogImport"+type+"SourceFile").checked) {
 		document.getElementById("DialogImport"+type+"SourceFileText").disabled=false;
@@ -1223,7 +1224,7 @@ function SelectImportFileSource(event, type) {
 	}
 }
 
-//type should be "CSV" or "GeoJSON"
+//type should be "CSV", "DBF", "JSONLD" or "GeoJSON"
 function SelectImportMeaningFileSource(event, type) {
 	if (document.getElementById("DialogImportMeaning"+type+"SourceFile").checked) {
 		document.getElementById("DialogImportMeaning"+type+"SourceFileText").disabled=false;
@@ -1416,7 +1417,7 @@ function TransformTextCSVToTable(csvText, url) {
 	}
 	catch (e) 
 	{
-		showInfoMessage("CSV parse error: " + e + " The file content is:\n" + csvText);
+		showInfoMessage("CSV parse error: " + e + " The file content fragment:\n" + csvText.substring(0, 1000));
 		currentNode.STAdata=null;
 		networkNodes.update(currentNode);
 		return;
@@ -1460,7 +1461,7 @@ function ReadURLImportCSV() {
 			);	
 }
 
-function TransformBinaryBDFToTable(buffer, url) {
+function TransformBinaryDBFToTable(buffer, url) {
 	var dbf=ParseDBF(buffer)
 	currentNode.STAdata=dbf.records;
 	currentNode.STAdataAttributes=getDataAttributesDBF(dbf);
@@ -1475,7 +1476,7 @@ function TransformBinaryBDFToTable(buffer, url) {
 		updateQueryAndTableArea(currentNode);
 		UpdateChildenTable(currentNode);
 	} else {
-		showInfoMessage("CSV parse error: " + e + " The file content is:\n" + csvText);
+		showInfoMessage("DBF parse error: " + e);
 		currentNode.STAdata=null;
 		networkNodes.update(currentNode);
 		return;
@@ -1487,7 +1488,7 @@ function ReadFileImportDBF(event) {
 
 	var reader = new FileReader();
 	reader.onload = function() {
-		TransformBinaryBDFToTable(reader.result, null);
+		TransformBinaryDBFToTable(reader.result, null);
 	};
 	reader.readAsArrayBuffer(input.files[0]);
 }
@@ -1506,6 +1507,79 @@ function ReadURLImportDBF() {
 			);	
 }
 
+function TransformTextJSONLDToTable(jsonldText, url) {
+	try
+	{
+		var jsonld = JSON.parse(jsonldText);
+	}
+	catch (e) 
+	{
+		showInfoMessage("JSONLD parse error: " + e + "\n File content fragment:\n" + jsonldText.substring(0, 1000));
+		currentNode.STAdata=null;
+		networkNodes.update(currentNode);
+		return;
+	}
+	var result=ParseJSONLD(jsonld)
+	if (result.error) {
+		showInfoMessage("JSONLD parse error: " + result.error + "\n File content fragment:\n" + jsonldText.substring(0,1000));
+		return;
+	}
+	currentNode.STAdata=result.data;
+	currentNode.STAdataAttributes=result.dataAttributes;
+	if (currentNode.STAdata.length==0)
+		showInfoMessage("JSON-LD resulted in no records.");
+	else
+		showInfoMessage("JSON-LD has been loaded.");
+	if (currentNode.STAdata) {
+		if (url)
+			currentNode.STAfileUrl=url;
+		networkNodes.update(currentNode);
+		updateQueryAndTableArea(currentNode);
+		UpdateChildenTable(currentNode);
+	} else {
+		showInfoMessage("JSONLD parse error: " + e + "\n File content fragment:\n" + jsonldText.substring(0,1000));
+		currentNode.STAdata=null;
+		networkNodes.update(currentNode);
+		return;
+	}
+}
+
+function ReadFileImportJSONLD(event) {
+	var input = event.target;
+
+	var reader = new FileReader();
+	reader.onload = function() {
+		TransformTextJSONLDToTable(reader.result, null);
+	};
+	reader.readAsText(input.files[0]);   //By default it assumes "UTF8" as encoding
+}
+
+function ReadURLImportJSONLD() {
+	var locationSTAURL;
+	var parentNode=GetFirstParentNode(currentNode);
+	currentNode.STAURL = document.getElementById("DialogImportJSONLDSourceURLInput").value;
+	if (parentNode && parentNode.OGCType=="S3Bucket" && parentNode.STAdata && parentNode.STAdata[0].href==currentNode.STAURL) {
+		currentNode.STAAccessKey = parentNode.STAAccessKey;
+		currentNode.STASecretKey = parentNode.STASecretKey;
+		currentNode.STAS3Service = parentNode.STAS3Service;
+		locationSTAURL=transformStringIntoLocation(currentNode.STAURL);
+	} else {
+		currentNode.STAAccessKey = null;
+		currentNode.STASecretKey = null;
+		currentNode.STAS3Service = null;
+		locationSTAURL=null;
+	}
+	HTTPJSONData(currentNode.STAURL, null, null, null, locationSTAURL ? getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAAccessKey, currentNode.STASecretKey, currentNode.STAS3Service, "us-east-1") : null).then(
+				function(value) { 
+					showInfoMessage('Download JSONLD completed.'); 
+					TransformTextJSONLDToTable(value.text, document.getElementById("DialogImportJSONLDSourceURLInput").value);
+				},
+				function(error) { 
+					showInfoMessage('Error downloading JSONLD. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
+					console.log(error) ;
+				}
+			);	
+}
 
 function TransformGeoJSONToTable(geojson) {
 	if (!geojson.type || geojson.type!="FeatureCollection")
@@ -1527,7 +1601,7 @@ function TransformTextGeoJSONToTable(jsonText, url) {
 	}
 	catch (e) 
 	{
-		showInfoMessage("GeoJSON parse error: " + e + " The file content is:\n" + jsonText);
+		showInfoMessage("GeoJSON parse error: " + e + " The file content fragment:\n" + jsonText.substring(0, 1000));
 		currentNode.STAdata=null;
 		networkNodes.update(currentNode);
 		return;
@@ -5830,6 +5904,30 @@ function networkDoubleClick(params) {
 			}
 			document.getElementById("DialogImportCSV").showModal();
 		}
+		else if (currentNode.image == "ImportJSONLD.png") {
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				// Has de table a dataURL and a schemaURL?, then I add this to the dialogbox.
+				var data=parentNode.STAdata;
+				if (!data || !data.length) 
+					alert("Parent node has no data loaded. It will be ignored.");
+				else if (data.length>1)
+					alert("Parent node has more than one row. Please select on row first. It will be ignored.");
+				else {
+					var record=data[0];
+					var href=record.dataURL ? record.dataURL : record.href;
+					if (!href)
+						alert("Parent node has no 'dataURL' or 'href' column. It will be ignored.");
+					else {
+						document.getElementById("DialogImportJSONLDSourceFile").checked=false;
+						document.getElementById("DialogImportJSONLDSourceURL").checked=true;
+						document.getElementById("DialogImportJSONLDSourceURLInput").value=href;
+						document.getElementById("DialogImportJSONLDSourceURLButton").disabled=false;
+					}
+				}
+			}
+			document.getElementById("DialogImportJSONLD").showModal();
+		}
 		else if (currentNode.image == "ImportDBF.png") {
 			var parentNode=GetFirstParentNode(currentNode);
 			if (parentNode) {
@@ -5848,15 +5946,6 @@ function networkDoubleClick(params) {
 						document.getElementById("DialogImportDBFSourceURL").checked=true;
 						document.getElementById("DialogImportDBFSourceURLInput").value=record.dataURL;
 						document.getElementById("DialogImportDBFSourceURLButton").disabled=false;
-						
-						/*if (record.schemaURL)
-						{
-							document.getElementById("DialogImportMeaningDBFSourceFile").checked=false;
-							document.getElementById("DialogImportMeaningDBFSourceURL").checked=true;
-							document.getElementById("DialogImportMeaningDBFSourceAuto").checked=false;
-							document.getElementById("DialogImportMeaningDBFSourceURLInput").value=record.schemaURL;
-							document.getElementById("DialogImportMeaningDBFSourceURLButton").disabled=false;
-						}*/
 					}
 				}
 			}
