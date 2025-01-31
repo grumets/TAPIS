@@ -10,6 +10,7 @@
         <script type="text/javascript" src="chartjs-plugin-labels.js" async defer></script>
 	<script type="text/javascript" src="papaparse.min.js" async defer></script>
 	<script type="text/javascript" src="crypto-js.min.js" async defer></script>
+	<script type="text/javascript" src="wicket.js" async defer></script>
 	<script type="text/javascript" src="hello.all.min.js"></script>
 	<script type="text/javascript" src="authenix.js" async defer></script>
 	<script type="text/javascript" src="mmn_postmessage.js" async defer></script>
@@ -1037,6 +1038,11 @@
 			Import JSON-LD
 			<br>
 			
+			<fieldset>
+				<legend>Include</legend>
+				<label><input type="checkbox" id="DialogImportJSONLDAddGeo" checked="chacked"></input>Add geometry</label> <small>(Sometimes is too big to be imported)</small><br>
+				<label><input type="checkbox" id="DialogImportJSONLDAddObs" checked="chacked"></input>Add observations</label> <small>(Forces to duplicate the geometry, if included)</small><br>
+			</fieldset>
 			<fieldset>
 				<legend>JSON-LD source</legend>
 				<label><input type="radio" id="DialogImportJSONLDSourceFile" name="DialogImportJSONLDSource" value="file" checked="checked" onClick='SelectImportFileSource(event, "JSONLD")'>

@@ -1507,7 +1507,7 @@ function ReadURLImportDBF() {
 			);	
 }
 
-function TransformTextJSONLDToTable(jsonldText, url) {
+function TransformTextJSONLDToTable(jsonldText, addGeo, addObs, url) {
 	try
 	{
 		var jsonld = JSON.parse(jsonldText);
@@ -1519,7 +1519,7 @@ function TransformTextJSONLDToTable(jsonldText, url) {
 		networkNodes.update(currentNode);
 		return;
 	}
-	var result=ParseJSONLD(jsonld)
+	var result=ParseJSONLD(jsonld, addGeo, addObs)
 	if (result.error) {
 		showInfoMessage("JSONLD parse error: " + result.error + "\n File content fragment:\n" + jsonldText.substring(0,1000));
 		return;
@@ -1549,7 +1549,7 @@ function ReadFileImportJSONLD(event) {
 
 	var reader = new FileReader();
 	reader.onload = function() {
-		TransformTextJSONLDToTable(reader.result, null);
+		TransformTextJSONLDToTable(reader.result, document.getElementById("DialogImportJSONLDAddGeo").checked, document.getElementById("DialogImportJSONLDAddObs").checked, null);
 	};
 	reader.readAsText(input.files[0]);   //By default it assumes "UTF8" as encoding
 }
@@ -1572,7 +1572,7 @@ function ReadURLImportJSONLD() {
 	HTTPJSONData(currentNode.STAURL, null, null, null, locationSTAURL ? getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAAccessKey, currentNode.STASecretKey, currentNode.STAS3Service, "us-east-1") : null).then(
 				function(value) { 
 					showInfoMessage('Download JSONLD completed.'); 
-					TransformTextJSONLDToTable(value.text, document.getElementById("DialogImportJSONLDSourceURLInput").value);
+					TransformTextJSONLDToTable(value.text, document.getElementById("DialogImportJSONLDAddGeo").checked, document.getElementById("DialogImportJSONLDAddObs").checked, document.getElementById("DialogImportJSONLDSourceURLInput").value);
 				},
 				function(error) { 
 					showInfoMessage('Error downloading JSONLD. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);

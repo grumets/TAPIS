@@ -54,28 +54,71 @@ objects. See a json schema and examples in /schemas/data_*.json
 */
 
 "use strict"
-function ParseJSONLD(jsonld) {
+function ParseJSONLD(jsonld, addGeo, addObs) {
 	if (!jsonld["@graph"])
 		return {"error": "Encoding not supported. Expected element '@graph' missing"};
 	var dataAttributes={}, records=[], record, item, members, member;
+	var wkt = new Wkt.Wkt(), wkt2 = new Wkt.Wkt();
 	for (var i=0; i<(jsonld["@graph"].length ? jsonld["@graph"].length : 1) ; i++) {
 		item=jsonld["@graph"].length ? jsonld["@graph"][i] : jsonld["@graph"];
 		if (!item.hasFeatureOfInterest)
 			return {"error": "Encoding not supported. '@graph' item without 'hasFeatureOfInterest'"};
 		var foi=item.hasFeatureOfInterest;
-		if (typeof foi.lat === "undefined" || foi.lang === "undefined")
-			continue;   //return {"error": "Encoding not supported. 'hasFeatureOfInterest' item without 'lat' or 'long"};
-
-		if (!dataAttributes.lat)
-			dataAttributes.lat={type: "number", description: "Latitude", definition: "http://www.opengis.net/def/sensor-model-param/BODC/ALATZZ01", 
-					"UoM": "degree", "UoMSymbol": "°", "UoMDefinition": "https://qudt.org/vocab/unit/DEG"};
-		if (!dataAttributes.long)		
-			dataAttributes.long={type: "number", description: "Longtitude", definition: "http://www.opengis.net/def/sensor-model-param/BODC/ALONZZ01", 
-						"UoM": "degree", "UoMSymbol": "°", "UoMDefinition": "https://qudt.org/vocab/unit/DEG"};				
-		if (!item.hasMember) {
+		var lat=null, long=null, hasWKT=false;
+		if (addGeo)
+		{
+			if (typeof foi.lat !== "undefined" && typeof foi.lang !== "undefined") {
+				if (!dataAttributes.lat)
+					dataAttributes.lat={type: "number", description: "Latitude", definition: "http://www.opengis.net/def/sensor-model-param/BODC/ALATZZ01", 
+							"UoM": "degree", "UoMSymbol": "°", "UoMDefinition": "https://qudt.org/vocab/unit/DEG"};
+				if (!dataAttributes.long)		
+					dataAttributes.long={type: "number", description: "Longtitude", definition: "http://www.opengis.net/def/sensor-model-param/BODC/ALONZZ01", 
+								"UoM": "degree", "UoMSymbol": "°", "UoMDefinition": "https://qudt.org/vocab/unit/DEG"};
+				lat=foi.lat;
+				long=foi.long;			
+			} else if (foi.hasGeometry || foi["http://www.opengis.net/ont/geosparql#hasGeometry"]) {
+				var geom=foi.hasGeometry ? foi.hasGeometry : foi["http://www.opengis.net/ont/geosparql#hasGeometry"];
+				if (geom.asWKT || geom["http://www.opengis.net/ont/geosparql#asWKT"]) {
+					var asWKTs=geom.asWKT ? geom.asWKT : geom["http://www.opengis.net/ont/geosparql#asWKT"];
+					for (var g=0; g<(typeof asWKTs !== "string" && asWKTs.length ? asWKTs.length : 1); g++) {
+						hasWKT=true;
+						var asWKT=typeof asWKTs !== "string" && asWKTs.length ? asWKTs[g] : asWKTs;
+						if (typeof asWKT === "string") {
+							if (g==0)
+								wkt.read(asWKT);
+							else
+								wkt.merge(wkt2.read(asWKT));
+						} else if (typeof asWKT === "object" && asWKT["@value"]) {
+							if (g==0)
+								wkt.read(asWKT["@value"]);
+							else
+								wkt.merge(wkt2.read(asWKT["@value"]));
+						}
+					}
+					if (!dataAttributes.geometry)
+						dataAttributes.geometry={type: "object", description: "Geometry"};
+	
+				} else {
+					continue  //return {"error": "Encoding not supported. 'hasGeometry' item without 'asWKT'"};
+				}	
+			}
+			else
+				continue;   //return {"error": "Encoding not supported. 'hasFeatureOfInterest' item without 'lat' or 'long" or geometry"};
+		}
+			
+		if (foi.identifier && !dataAttributes.id)
+			dataAttributes.id={type: "string", description: "Identifier"}
+					
+		if (!item.hasMember || !addObs) {
 			record={};
-			record.lat=foi.lat;
-			record.long=foi.long;
+			if (lat)
+				record.lat=lat;
+			if (long)
+				record.long=long;
+			if (hasWKT)
+				record.geometry=wkt.toJson();
+			if (typeof foi.identifier !== "undefined")
+				record.id=foi.identifier;
 			records.push(record);
 			continue;
 		}
@@ -87,8 +130,15 @@ function ParseJSONLD(jsonld) {
 			if (typeof member.hasResult.numericValue === "undefined")
 				continue;
 			record={};
-			record.lat=foi.lat;
-			record.long=foi.long;
+			if (lat)
+				record.lat=lat;
+			if (long)
+				record.long=long;
+			if (hasWKT)
+				record.geometry=wkt.toJson();
+			if (typeof foi.identifier !== "undefined")
+				record.id=foi.identifier;
+
 			record.value=member.hasResult.numericValue;
 			if (!dataAttributes.value)
 				dataAttributes.value={type: "number", description: "Value", definition: "http://www.opengis.net/def/docs/15-078r6/Observation/result"};
