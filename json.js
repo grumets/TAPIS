@@ -74,4 +74,3 @@ function ParseJSON(json) {
 		records=[];
 	return records;		
 }
-

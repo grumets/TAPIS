@@ -173,4 +173,3 @@ function ParseJSONLD(jsonld, addGeo, addObs) {
 	}
 	return {data: records, dataAttributes: dataAttributes};
 }
-

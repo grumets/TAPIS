@@ -5,11 +5,12 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<title>TAPIS: Tables from APIs for Sensors (Sensor Things API plus Explorer)</title>
 	<link rel="icon" type="image/x-icon" href="favicon.ico">
-	<script type="text/javascript" src="vis.min.js"></script>
-	<script type="text/javascript" src="Chart.bundle.min.js" async defer></script>
-        <script type="text/javascript" src="chartjs-plugin-labels.js" async defer></script>
+	<script type="text/javascript" src="Chart.bundle.min.js" async defer></script> 
+	<script	type="text/javascript" src="vis-network.min.js"></script>
+	<script type="text/javascript" src="vis-timeline-graph2d.min.js"></script>
+	<script type="text/javascript" src="chartjs-plugin-labels.js" async defer></script>
 	<script type="text/javascript" src="papaparse.min.js" async defer></script>
-	<script type="text/javascript" src="crypto-js.min.js" async defer></script>
+	<script type="text/javascript" src="crypto-js.min.js" async defer></script> 
 	<script type="text/javascript" src="wicket.js" async defer></script>
 	<script type="text/javascript" src="hello.all.min.js"></script>
 	<script type="text/javascript" src="authenix.js" async defer></script>
@@ -31,8 +32,8 @@
 	<script type="text/javascript" src="tapis.js"></script>
 
 	<link rel="stylesheet" href="tapis.css">
-	<link rel="stylesheet" href="vis.min.css">
-
+	<link rel="stylesheet" href="vis.network.css">
+	<link rel="stylesheet" href="vis-timeline-graph2d.min.css">
 </head>
 
 <body onLoad="StartSTAPage();" onkeydown="KeySTAPage(event);">
@@ -53,16 +54,16 @@
 			</td>
 			<td align="right" valign="top">
 				<span id="UserInfoText"></span>
-				<button id="buttonReloadSTA" onclick='reloadSTA(event);'><img src="reload.png" height="20" valign="middle"> Refresh</button>
-				<label class=labelbotton><img src="OpenNetwork.png" height="20" valign="middle"> Open
+				<button id="buttonReloadSTA" onclick='reloadSTA(event);'onmouseover='showHelpToolTip(event, "", "Reload all schema to upload the data" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="reload.png" height="20" valign="middle"> Refresh</button>
+				<label class=labelbotton onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="OpenNetwork.png" height="20" valign="middle" > Open
 				<input type="file" id="openNetworkFileName" hidden onchange='openFileNetwork(event);'/>
 				</label> <!-- https://dev.to/faddalibrahim/how-to-create-a-custom-file-upload-button-using-html-css-and-javascript-1c03 -->
-				<button onclick='document.getElementById("DialogOpenURLNetwork").showModal();'><img src="OpenURLNetwork.png" height="20" valign="middle"> Open URL</button>
-				<button onclick='saveNetwork(event);'><img src="SaveNetwork.png" height="20" valign="middle"> Save</button>
-				<button id="buttonOpenLogin" onclick='OpenLogin(event);'><img src="login.png" height="20" valign="middle"> Login</button>
-				<button id="buttonOpenLogout" onclick='OpenLogout(event);' style="display: none");'><img src="login.png" height="20" valign="middle"> Logout</button>
-				<button onclick='OpenConfiguration(event);'><img src="config.png" height="20" valign="middle">Configuration</button>
-				<button onclick='OpenHelp(event);'><img src="help.png" height="20" valign="middle">Help</button>
+				<button onclick='document.getElementById("DialogOpenURLNetwork").showModal();' onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data from a webside or from Help examples" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="OpenURLNetwork.png" height="20" valign="middle"> Open URL</button>
+				<button onclick='saveNetwork(event);'onmouseover='showHelpToolTip(event, "", "Save your Tapis schema with nodes and data as a JSON to be able to open it later" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="SaveNetwork.png" height="20" valign="middle"> Save</button>
+				<button id="buttonOpenLogin" onclick='OpenLogin(event);' onmouseover='showHelpToolTip(event, "", "Login to be able to have access to certain places")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="login.png" height="20" valign="middle"> Login</button>
+				<button id="buttonOpenLogout" onclick='OpenLogout(event);' style="display: none");' onmouseover='showHelpToolTip(event, "", "Close your sesion")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="login.png" height="20" valign="middle"> Logout</button>
+				<button onclick='OpenConfiguration(event);'onmouseover='showHelpToolTip(event, "", "To modify display configurations")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )' ><img src="config.png" height="20" valign="middle">Configuration</button>
+				<button onclick='OpenHelp(event);' onmouseover='showHelpToolTip(event, "", "Explanations of how to use TAPIS and Examples")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="help.png" height="20" valign="middle">Help</button>
 				<br>
 				<span style="font-size: 10px;"><a href="TermsOfUse.htm">Terms of Use</a><br>
 					<a href="PrivacyStatement.htm">Privacy Statement</a><br>
@@ -86,7 +87,7 @@
 		<div id="showTable"</div>
 	</div>
 
-	<div id="HelpToolTip" style="min-height: 1px; overflow: hidden; display:none; position: fixed; background-color: yellow; width:300px; border-style: groove; padding: 5px;">help</div>
+	<div id="HelpToolTip" style="min-height: 1px; overflow: hidden; display:none; position: fixed; background-color: #f6eba3; width:300px; border-style: ridge; padding: 5px; text-align:left">help</div>
 
 	<dialog id="DialogConfiguration">
 		<form>
@@ -298,12 +299,22 @@
 	<dialog id="DialogSeparateColumns">
 		<form>
 			Separate columns:
+			<br><br>
 			<fieldset>
-				<legend>Arrays as:</legend>
-				<input type="radio" id="DialogSeparateColumnsArrayAs_Columns" name="ArrayAs" value="columns" checked> 
-				<label for="DialogSeparateColumnsArrayAs_Columns">columns</label>
-				<input type="radio" id="DialogSeparateColumnsArrayAs_Records" name="ArrayAs" value="records"> 
-				<label for="DialogSeparateColumnsArrayAs_Records">records</label>
+				<legend>Columns to separate:</legend>
+				<input type="radio" id="DialogSeparateColumnsJSON" name="Origin" value="JSON" checked> 
+				<label for="DialogSeparateColumnsJSON">Columns with JSON objects</label><br>
+				<input type="radio" id="DialogSeparateColumnsLists" name="Origin" value="Lists" > 
+				<label for="DialogSeparateColumnsLists">Lists in columns: </label>
+				<select id="SeparateColumsSelect_column"></select></select>
+                <label >delimited by:</label> <input type="text" id="SeparateColumsInput_column" style="width: 50px;" value=",">
+			</fieldset>
+			<fieldset>
+				<legend>Result</legend>
+				<input type="radio" id="DialogSeparateColumnsAs_Records" name="SeparedBy" value="Records" > 
+				<label for="DialogSeparateColumnsAs_Records">separed into new records</label><br>
+				<input type="radio" id="DialogSeparateColumnsAs_Columns" name="SeparedBy" value="Columns" checked> 
+				<label for="DialogSeparateColumnsAs_Columns">separed into new columns</label><br>
 			</fieldset>
 			<br>
 			<input type="checkbox" id="DialogSeparateColumns_RemovePresent" value="yes"> 
@@ -330,7 +341,6 @@
 			<fieldset>
 				<legend>GroupBy date rounding:</legend>
 				<label>Column with date:</label>
-				<select id= "GroupByDateRoundingSelect"></select>
 				<span id="DialogGroupByDateTimeOptionsHTML">
 				</span>
 			</fieldset>
@@ -843,7 +853,6 @@
 				Node operations:<br>
 				<button onclick='removeCircularImage(event, "DialogContextMenu")'>Remove</button>
 				<button onclick='renameCircularImage(event, "DialogContextMenu")'>Rename</button><br>
-				<!--button onclick='giveMeNetworkInformation(event, "DialogContextMenu")'>Network Info</button><br><br-->
 			</p>
 			<div class="center">
 				<button value="cancel" onClick="startingNodeContextId=null;" formmethod="dialog">Cancel</button>
@@ -1078,7 +1087,7 @@
 			</div>
 		</form>
 	</dialog>
-
+	
 	<dialog id="DialogSaveLayer">
 		<form>
 			<span id="DialogSaveLayerTitle"></span>
@@ -1129,6 +1138,14 @@
 	</dialog>
 
 	<dialog id="DialogScatterPlot">
+		<!-- <form>
+			<div id="ScatterPlotTableDiv">
+
+			</div>
+			<div class="center">
+				<button value="ok" onClick="CloseDialogScatterPlot(event)" formmethod="dialog">Close</button>
+			</div>
+		</form> -->
 		<table border="0"><tr><td>
 			<span id="DialogScatterPlotTitle"></span>
 			<form>
@@ -1161,7 +1178,7 @@
 			</form>
 		</td>
 		<td><div id="DialogScatterPlotVisualization" style="width:600px; height:500px;"></div></td>
-		</tr></table>
+		</tr></table> 
 	</dialog>
 
 	<dialog id="DialogBarPlot">

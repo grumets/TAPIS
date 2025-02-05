@@ -234,7 +234,7 @@ function SeparatePropertyIfNeeded(record, property, baseName, removeAlreadyPrese
 		record[baseName]=property;
 }
 
-function SeparateColumnsData(data, dataAttributesNull, dataResultAttributes, options) {
+function SeparateColumnsData(data, dataAttributesNull, dataResultAttributes, options) { //JSON
 	var resultData=[], record, iResultData;
 	var removeAlreadyPresent=options && options.removeAlreadyPresent ? options.removeAlreadyPresent : false
 
@@ -261,7 +261,8 @@ function SeparateColumnsData(data, dataAttributesNull, dataResultAttributes, opt
 		for (var i = 0; i < dataAttributesArray.length; i++)
 			dataResultAttributes[dataAttributesArray[i]]=deapCopy( (dataAttributesNull[dataAttributesArray[i]]) ? dataAttributesNull[dataAttributesArray[i]] : dataAttributes[dataAttributesArray[i]]);
 	}
-	return resultData;
+	
+	 return resultData;
 }
 
 //options={RowMatching: [{left: "", right: ""}], NotMatch: "LeftTable"}
@@ -892,7 +893,7 @@ function addNewColumnWithAutoincrementalValues(data,columnName,firstValue){
 	//return data;
 }
 
-function addnewColumnSummingColumns(data, columnName,columnsToSum, decimalNumber, dataAttributes){
+function addnewColumnSummingColumns(data, columnName,columnsToSum, decimalNumber){
 	var sum,n=columnsToSum.length; 
 	for (var i=0;i<data.length;i++){
 		sum=0;
@@ -1020,7 +1021,7 @@ function addnewColumnMedianValue(data, columnName,columnsToEvaluate, decimalNumb
 	return addnewColumnAggr(data, columnName,columnsToEvaluate, aggrFuncMedian, decimalNumber);
 }
 
-function addnewColumnAggr(data, columnName, columnsToEvaluate, aggrFunc, decimalNumber, dataAttributes) { //To pass dataAttributes without decimalNumber put "" to decimalnumber
+function addnewColumnAggr(data, columnName, columnsToEvaluate, aggrFunc, decimalNumber) {
 	var values, aggr;
 	for (var i=0; i<data.length; i++){
 		values=[];

@@ -195,6 +195,10 @@
 			{
 				"desc": "Amount of water in Catalan reservoires",
 				"url": "https://analisi.transparenciacatalunya.cat/resource/gn9e-3qhr.csv"
+			},
+			{
+				"desc": "G-reqs complete table",
+				"url": "https://discomap.eea.europa.eu/EuroGEO/G-reqs-api/GeneralExports/csvAllPublic"
 			}
 			]
 		}
