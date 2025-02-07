@@ -234,7 +234,7 @@ function SeparatePropertyIfNeeded(record, property, baseName, removeAlreadyPrese
 		record[baseName]=property;
 }
 
-function SeparateColumnsData(data, dataAttributesNull, dataResultAttributes, options) { //JSON
+function separateObjectColumns(data, dataAttributesNull, options) { //JSON
 	var resultData=[], record, iResultData;
 	var removeAlreadyPresent=options && options.removeAlreadyPresent ? options.removeAlreadyPresent : false
 
@@ -254,15 +254,59 @@ function SeparateColumnsData(data, dataAttributesNull, dataResultAttributes, opt
 				SeparatePropertyIfNeeded(resultData[resultData.length-1], record[keys[k]], keys[k], removeAlreadyPresent);
 		}
 	}
-	if (dataAttributesNull)
-	{
-		var dataAttributes=getDataAttributes(resultData);
-		var dataAttributesArray=Object.keys(dataAttributes);
-		for (var i = 0; i < dataAttributesArray.length; i++)
-			dataResultAttributes[dataAttributesArray[i]]=deapCopy( (dataAttributesNull[dataAttributesArray[i]]) ? dataAttributesNull[dataAttributesArray[i]] : dataAttributes[dataAttributesArray[i]]);
+	var dataAttributes=getDataAttributes(resultData);
+	var dataAttributesArray=Object.keys(dataAttributes);
+	var resultDataAttributes={};
+	for (var i = 0; i < dataAttributesArray.length; i++)
+		resultDataAttributes[dataAttributesArray[i]]=deapCopy( (dataAttributesNull && dataAttributesNull[dataAttributesArray[i]]) ? dataAttributesNull[dataAttributesArray[i]] : dataAttributes[dataAttributesArray[i]]);
+	return {data: resultData, dataAttributes: resultDataAttributes};
+}
+
+function separateColumnArrayColumns(data, dataAttributes, columnName, delimiter) {
+	var n=data.length, separateDataArray, resultData, resultDataAttributes;
+
+	if (dataAttributes[columnName].type!="string"){
+		alert("The content of column selected to separate must be 'string' type");
+		return;
 	}
-	
-	 return resultData;
+
+	resultData=[];
+	for (var i=0; i<n; i++) {
+		resultData[i]=deapCopy(data[i]);
+		delete resultData[i][columnName];
+		if (typeof data[i][columnName] === "undefined")
+			continue;
+		separateDataArray=data[i][columnName].split(delimiter);
+		for (var a=0; a<separateDataArray.length; a++) {
+			resultData[i][columnName+(a+1)]=separateDataArray[a].trim();
+		}
+	}
+	resultDataAttributes=uploadDataAttributesAddingNewColumns(dataAttributes, resultData);
+
+	return {data: resultData, dataAttributes: resultDataAttributes};
+}
+
+function separateColumnArrayRecords(data, dataAttributes, columnName, delimiter) {
+	var n= data.length, resultData=[], separateDataArray;  //, newColumnName;
+
+	if (dataAttributes[columnName].type!="string"){
+		alert("The content of column selected to separate must be 'string' type");
+		return;
+	}
+	for (var i=0;i<n;i++){
+		separateDataArray=data[i][columnName].split(delimiter);
+		//newColumnName=columnName+"-new";
+		for (var e=0; e<separateDataArray.length; e++){
+			//delete data[i][columnName];
+			//data[i][columnName]=separateDataArray[e].trim();
+			resultData.push(deapCopy(data[i]))
+			resultData[resultData.length-1][columnName]=separateDataArray[e].trim();
+		}
+	}
+	var resultDataAttributes=deapCopy(dataAttributes);
+	resultDataAttributes[columnName].type=getDataAttributeType(resultData, columnName);
+	//currentNode.STAdataAttributes=uploadDataAttributesAddingNewColumns(currentNode.STAdataAttributes, resultData); //currentNode.STAdataAttributes upload and networkNodes.update
+	return {data: resultData, dataAttributes: resultDataAttributes};
 }
 
 //options={RowMatching: [{left: "", right: ""}], NotMatch: "LeftTable"}
