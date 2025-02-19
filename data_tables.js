@@ -295,17 +295,13 @@ function separateColumnArrayRecords(data, dataAttributes, columnName, delimiter)
 	}
 	for (var i=0;i<n;i++){
 		separateDataArray=data[i][columnName].split(delimiter);
-		//newColumnName=columnName+"-new";
 		for (var e=0; e<separateDataArray.length; e++){
-			//delete data[i][columnName];
-			//data[i][columnName]=separateDataArray[e].trim();
 			resultData.push(deapCopy(data[i]))
 			resultData[resultData.length-1][columnName]=separateDataArray[e].trim();
 		}
 	}
 	var resultDataAttributes=deapCopy(dataAttributes);
 	resultDataAttributes[columnName].type=getDataAttributeType(resultData, columnName);
-	//currentNode.STAdataAttributes=uploadDataAttributesAddingNewColumns(currentNode.STAdataAttributes, resultData); //currentNode.STAdataAttributes upload and networkNodes.update
 	return {data: resultData, dataAttributes: resultDataAttributes};
 }
 
@@ -1073,7 +1069,7 @@ function addnewColumnAggr(data, columnName, columnsToEvaluate, aggrFunc, decimal
 			values.push(data[i][columnsToEvaluate[a]]);
 		}
 		aggr=aggrFunc(values); //Use function to be able to evaluate many columns
-		if (decimalNumber || decimalNumber!=""){
+		if (decimalNumber && decimalNumber!=""){
 			if (decimalNumber==0){ //round number
 				data[i][columnName]= Math.round(aggr);
 			}
