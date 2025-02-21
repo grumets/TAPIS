@@ -1603,7 +1603,9 @@ function ReadFileImportJSONLD(event) {
 function ReadURLImportJSONLD() {
 	var locationSTAURL;
 	var parentNode=GetFirstParentNode(currentNode);
-	currentNode.STAURL = document.getElementById("DialogImportJSONLDSourceURLInput").value;
+	if (!document.getElementById("DialogImportJSONLDSourceURLInput").value.trim())
+		return;
+	currentNode.STAURL = document.getElementById("DialogImportJSONLDSourceURLInput").value.trim();
 	currentNode.OGCType = "fileURL";
 	if (parentNode && parentNode.OGCType=="S3Bucket" && parentNode.STAdata && parentNode.STAdata[0].href==currentNode.STAURL) {
 		currentNode.STAAccessKey = parentNode.STAAccessKey;
@@ -1628,17 +1630,20 @@ function ReadURLImportJSONLD() {
 			);	
 }
 
-function TransformTextJSONToTable(jsonText, url) {
-	try
+function TransformTextJSONToTable(json, jsonText, url) {
+	if (!json)
 	{
-		var json = JSON.parse(jsonText);
-	}
-	catch (e) 
-	{
-		showInfoMessage("JSON parse error: " + e + "\n File content fragment:\n" + jsonText.substring(0, 1000));
-		currentNode.STAdata=null;
-		networkNodes.update(currentNode);
-		return;
+		try
+		{
+			json = JSON.parse(jsonText);
+		}
+		catch (e) 
+		{
+			showInfoMessage("JSON parse error: " + e + "\n File content fragment:\n" + jsonText.substring(0, 1000));
+			currentNode.STAdata=null;
+			networkNodes.update(currentNode);
+			return;
+		}
 	}
 	var result=ParseJSON(json)
 	currentNode.STAdata=result;
@@ -1666,7 +1671,7 @@ function ReadFileImportJSON(event) {
 
 	var reader = new FileReader();
 	reader.onload = function() {
-		TransformTextJSONToTable(reader.result, null);
+		TransformTextJSONToTable(null, reader.result, null);
 		showInfoMessage("JSON has been loaded.");
 	};
 	reader.readAsText(input.files[0]);   //By default it assumes "UTF8" as encoding
@@ -1675,7 +1680,9 @@ function ReadFileImportJSON(event) {
 function ReadURLImportJSON() {
 	var locationSTAURL;
 	var parentNode=GetFirstParentNode(currentNode);
-	currentNode.STAURL = document.getElementById("DialogImportJSONSourceURLInput").value;
+	if (!document.getElementById("DialogImportJSONSourceURLInput").value.trim())
+		return;
+	currentNode.STAURL = document.getElementById("DialogImportJSONSourceURLInput").value.trim();
 	currentNode.OGCType = "fileURL";
 	if (parentNode && parentNode.OGCType=="S3Bucket" && parentNode.STAdata && parentNode.STAdata[0].href==currentNode.STAURL) {
 		currentNode.STAAccessKey = parentNode.STAAccessKey;
@@ -1691,7 +1698,7 @@ function ReadURLImportJSON() {
 	HTTPJSONData(currentNode.STAURL, null, null, null, locationSTAURL ? getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAAccessKey, currentNode.STASecretKey, currentNode.STAS3Service, "us-east-1") : null).then(
 				function(value) { 
 					showInfoMessage('Download JSON completed.'); 
-					TransformTextJSONToTable(value.text, document.getElementById("DialogImportJSONSourceURLInput").value);
+					TransformTextJSONToTable(value.obj, value.text, document.getElementById("DialogImportJSONSourceURLInput").value);
 				},
 				function(error) { 
 					showInfoMessage('Error downloading JSON. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
