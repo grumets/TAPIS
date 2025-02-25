@@ -493,6 +493,10 @@ function GetSelectColumnsSTA(event)
 	if (!node)
 		return;
 
+	var parentNode=GetFirstParentNode(node);
+	if (!parentNode)
+		return ;
+
 	var previousSTAURL=null;
 
 	var {dataAttributesArray, previousSTAURL}=GetPropagateNodeSelectedSelectExpands(node, parentNode);

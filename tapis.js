@@ -248,7 +248,9 @@ function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
 	if ((STAOperations[removeExtension(parentNode.image)] && STAOperations[removeExtension(parentNode.image)].leafNode==true) ||
 		(TableOperations[removeExtension(parentNode.image)] && TableOperations[removeExtension(parentNode.image)].leafNode==true))
 		return "Parent node is a leaf node and cannot be connected with any other node";
-	if (node.image=="OneValueSTA.png" && parentNode.image!="Observations.png")
+	if (node.image == "SelectRowSTA.png" && parentNode.STASelectedExpands && parentNode.STASelectedExpands.expanded && Object.keys(parentNode.STASelectedExpands.expanded).length)
+		return "'Select Row' for STA node cannot be connected to an expanded branch. Use 'Filter row' for STA instead or select a row before expanding";
+	if (node.image == "OneValueSTA.png" && parentNode.image!="Observations.png")
 		return "'One value' node is designed be connected to an 'Observations' node only.";
 	var idNode=IdOfSTAEntity(node);
 	if (idNode<0)
@@ -4218,24 +4220,28 @@ function GetSelectRow(event) {
 	event.preventDefault(); // We don't want to submit this form
 	document.getElementById("DialogSelectRow").close();
 
-	if (currentNode.STAURL)
-		var previousSTAURL=currentNode.STAURL;
+	var node=getNodeDialog("DialogSelectRow");
+	if (!node)
+		return;
 
-	var parentNode=GetFirstParentNode(currentNode);
+	if (node.STAURL)
+		var previousSTAURL=node.STAURL;
+
+	var parentNode=GetFirstParentNode(node);
 	if (parentNode) {
 		if (parentNode.STAURL)
-			currentNode.STAURL = parentNode.STAURL;
+			node.STAURL = parentNode.STAURL;
 		if (parentNode.OGCType=="OGCAPIcollections")
-			currentNode.OGCType = "OGCAPIcollection";
+			node.OGCType = "OGCAPIcollection";
 		if (parentNode.OGCType=="EDCCatalogue") {
-			currentNode.OGCType = "EDCAsset";
-			currentNode.EDCConsumerURL = parentNode.EDCConsumerURL;
+			node.OGCType = "EDCAsset";
+			node.EDCConsumerURL = parentNode.EDCConsumerURL;
 		}	
 		if (parentNode.OGCType=="S3Buckets" || parentNode.OGCType=="S3Bucket") {
-			currentNode.OGCType = parentNode.OGCType;
-			currentNode.STAAccessKey = parentNode.STAAccessKey;
-			currentNode.STASecretKey = parentNode.STASecretKey;
-			currentNode.STAS3Service = parentNode.STAS3Service;
+			node.OGCType = parentNode.OGCType;
+			node.STAAccessKey = parentNode.STAAccessKey;
+			node.STASecretKey = parentNode.STASecretKey;
+			node.STAS3Service = parentNode.STAS3Service;
 		}
 	}
 	else
@@ -4246,138 +4252,42 @@ function GetSelectRow(event) {
 		if (elems[i].checked)
 			break;
 	}
-	var requiresLoadJSON=currentNode.STAURL && (!parentNode || 
+	var requiresLoadJSON=node.STAURL && (!parentNode || 
 				(parentNode.OGCType!="fileURL" && parentNode.OGCType!="OGCCSW" && parentNode.OGCType!="S3Buckets" && parentNode.OGCType!="S3Bucket"  && parentNode.OGCType!="EDCCatalogue")
 			);
 	if (i < elems.length) {
 		if (requiresLoadJSON) {
 			const s = elems[i].id.substring("SelectRow_".length);
-			currentNode.STAURLIdSelected=s;
+			node.STAURLIdSelected=s;
 
-			//if (currentNode?.OGCType=="OGCAPIitems")
-			//	currentNode.STAURL = parentNode.STAdata ? (parentNode.STAdata[i].link ? getURLWithoutQueryParams(parentNode.STAdata[i].link) : currentNode.STAURL+"/"+parentNode.STAdata[i].id) + "/items"  : parentNode.STAURL;
+			//if (node?.OGCType=="OGCAPIitems")
+			//	node.STAURL = parentNode.STAdata ? (parentNode.STAdata[i].link ? getURLWithoutQueryParams(parentNode.STAdata[i].link) : node.STAURL+"/"+parentNode.STAdata[i].id) + "/items"  : parentNode.STAURL;
 			if (parentNode?.OGCType=="OGCAPIcollections"){
-				currentNode.STAURL = RemoveQueryParamFromURL(parentNode.STAdata[s].link, "f");
+				node.STAURL = RemoveQueryParamFromURL(parentNode.STAdata[s].link, "f");
 			} else {
 				const n = Number(s);
-				currentNode.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(currentNode.STAURL) + (Number.isInteger(n) ? "(" + n + ")" : "('" + s + "')"), getURLQueryParams(currentNode.STAURL));
+				node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + (Number.isInteger(n) ? "(" + n + ")" : "('" + s + "')"), getURLQueryParams(node.STAURL));
 			}
 		}
 		else  //This should be a table operation: I'll do it myself here
 		{
 			if (parentNode.STAdata && i<parentNode.STAdata.length){
-				currentNode.STAdata=[];
-				currentNode.STAdata.push(deapCopy(parentNode.STAdata[i]));
+				node.STAdata=[];
+				node.STAdata.push(deapCopy(parentNode.STAdata[i]));
 			}
 		}
 	}
 	if (!requiresLoadJSON)
-		currentNode.STAURL = null;
+		node.STAURL = null;
 		
-	networkNodes.update(currentNode);
+	networkNodes.update(node);
 	if (requiresLoadJSON) {
 		showInfoMessage("Selecting OGC row...");
-		UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
-		LoadJSONNodeSTAData(currentNode);
+		UpdateChildenSTAURL(node, node.STAURL, previousSTAURL);
+		LoadJSONNodeSTAData(node);
 	}
 	else
-		updateQueryAndTableArea(currentNode);
-}
-
-function GetFilterRowsSTA() {
-		var previousSTAURL = currentNode.STAURL;
-		var parentNode = GetFirstParentNode(currentNode);
-		if (parentNode) {
-			if (parentNode.STAURL)
-				currentNode.STAURL = parentNode.STAURL;
-			if (parentNode.STAdata)
-				currentNode.STAdata = deapCopy(parentNode.STAdata);
-		}
-		else
-			return;
-
-		currentNode.STAUrlAPICounter = []; // I need to restart it 
-		var previousURL = parentNode.STAURL;//put URL ready to add things
-
-		var prevFilter = GetQueryParamFromURL(previousURL, "$filter");
-		if (prevFilter) {
-			currentNode.STAUrlAPI = RemoveQueryParamFromURL(previousURL, "$filter");
-			currentNode.STAUrlAPI = AddQueryParamsToURL(currentNode.STAUrlAPI, "$filter=" + prevFilter + " and ");
-		}
-		else
-			currentNode.STAUrlAPI = AddQueryParamsToURL(previousURL, "$filter=");
-
-		stopreadInformationRowFilterSTA = false;
-		var entity=getSTAURLLastEntity(currentNode.STAURL);
-
-		readInformationRowFilterSTA(currentNode.STAelementFilter, entity, "no", "no"); //apply filter
-		currentNode.STAURL = currentNode.STAUrlAPI;
-		LoadJSONNodeSTAData(currentNode);
-		UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
-	}
-function GetFilterRowsTable() {
-	stopreadInformationRowFilterTable = false;
-	currentNode.STAtableCounter = [];
-	currentNode.STAtable = "";
-	readInformationRowFilterTable(currentNode.STAelementFilter, "no", "no"); //apply filter
-	applyEvalAndFilterData();
-	UpdateChildenTable(currentNode);
-		
-}
-async function GetFilterRowsOGCAPIFeatures(){
-	var previousNode=networkNodes.get(network.getConnectedNodes(currentNode.id, "from"));
-	var previousURL = previousNode[0].STAURL;//put URL ready to add things 
-	if (currentNode.STAOGCAPIconformance.includes("cql-text")){
-		currentNode.STAUrlAPICounter = []; // I need to restart it 
-		stopreadInformationRowFilterOGCAPIFeatures = false;
-		currentNode.STAURL = previousURL  +"?filter=";
-		if (currentNode.STAUrlAPI){
-			currentNode.STAUrlAPI="";
-		}
-		readInformationRowFilterOGCAPIFeatures(currentNode.STAelementFilter, "no", "no"); //apply filter
-		currentNode.STAURL = currentNode.STAURL+currentNode.STAUrlAPI+"&f=json";
-		currentNode.OGCExpectedLength = 100;
-		LoadJSONNodeSTAData(currentNode);
-		networkNodes.update(currentNode);
-		UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousURL);
-	}
-}
-
-function GetFilterRows(event) {
-	event.preventDefault(); // We don't want to submit this form
-		//updateinfoFilter
-	takeSelectInformation(currentNode.id);
-
-	var close=true;
-	for (var i=0;i<currentNode.STAinfoFilter.length;i++){
-		if (currentNode.STAinfoFilter[i][2][0]==" "){
-			alert ("There is at least one Property field not chosen ");
-			close=false;
-		}
-		else if (currentNode.STAinfoFilter[i][3]=="--- Choose operator ---"){
-			alert ("There is at least one operator field not chosen ");
-			close=false;
-		}
-		else if (currentNode.STAinfoFilter[i][4]==""){
-			alert ("There is at least one value empty ");
-			close=false;
-		}
-	}
-
-	if (currentNode.image == "FilterRowsTable.png" ) { //import CSV
-		GetFilterRowsTable();
-	}else if (currentNode.STAOGCAPIconformance){//OGCAPIFeatures
-		if (currentNode.STAOGCAPIconformance?.includes("filter")){
-			GetFilterRowsOGCAPIFeatures()// we can apply filter from API
-		}else{
-			GetFilterRowsTable(); //No filter, use table filter
-		}
-	}else if (currentNode.image == "FilterRowsSTA.png"){ //STA
-		GetFilterRowsSTA();
-	}
-	if (close) document.getElementById("DialogFilterRows").close();
-	showInfoMessage("Filtering STA rows...");
-	networkNodes.update(currentNode);
+		updateQueryAndTableArea(node);
 }
 
 function getGeospatialFilter(node, parentNode){
@@ -6007,58 +5917,18 @@ function ProcessMessageFromMiraMonMapBrowser(event)
 }
 
 function ShowTableSelectRowDialog(parentNode, node) {
+	saveNodeDialog("DialogSelectRow", node);
+
 	var data = parentNode.STAdata;
 	
 	if (node.STAURL)
-		addTitleInRowFilterDialog("divTitleSelectRow");
-
-	//document.getElementById("SelectNumberOfRecordsSelectRowLabel").style.display=(node.image == "SelectRowTable.png") ? "none" : "inline-block";
+		addSTAEntityNameAsTitleDialog("divTitleSelectRow", node);
 
 	if (!data || !data.length) {
-		document.getElementById("DialogSelectRowsTable").innerHTML = "No data to show.";
+		document.getElementById("DialogSelectRowTable").innerHTML = "No data to show.";
 		return;
 	}
-	document.getElementById("DialogSelectRowsTable").innerHTML = GetHTMLTable(data, parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data), false, "SelectRow_", node.STAURLIdSelected ? node.STAURLIdSelected : 0, null, "", isAttributeAnyURI);
-}
-
-function ShowTableFilterRowsDialog(parentNode, node) {
-	var data = parentNode.STAdata;
-	node.STAdata=data; //Put all data from parent in this node 
-	networkNodes.update(node);
-
-	if (parentNode.image != "FilterRowsTable.png") {
-			addTitleInRowFilterDialog("divTitleSelectRows");
-	}
-
-	if (!data || !data.length) {
-		document.getElementById("DialogSelectRowsTable").innerHTML = "No data to show.";
-		return;
-	}
-
-	document.getElementById("DialogSelectRowsFilter").innerHTML = "<div id='selectorRowsContainer'><div id='divSelectorRowsFilter'></div></div>"; 
-	var SelectNumberOfRecordsFilterRows=document.getElementById("SelectNumberOfRecordsFilterRows");
-	var SelectNumberOfRecordsFilterRowsLabel=document.getElementById("SelectNumberOfRecordsFilterRowsLabel");
-
-	if (node.image=="FilterRowsTable.png"){ //Hide number request
-		SelectNumberOfRecordsFilterRows.style.display="none";
-		SelectNumberOfRecordsFilterRowsLabel.style.display="none";
-	}else{
-		SelectNumberOfRecordsFilterRows.style.display="inline-block";
-		SelectNumberOfRecordsFilterRowsLabel.style.display="inline-block";
-	}
-	
-	addNecessaryVariablesToFilterRowsSTANode(node);
-	
-	if (node.image=="FilterRowsSTA.png" && node.STAOGCAPIconformance){
-		if (node.STAOGCAPIconformance.includes("filter")){ //Create Filters if the API allows to filter its information
-			ShowFilterTable();
-
-		}else{
-		showFilterTableWithoutFilters(); //OGCAPIFeatures without filter option		
-		}
-	}else{
-		ShowFilterTable(); //STA and CSV 
-	}
+	document.getElementById("DialogSelectRowTable").innerHTML = GetHTMLTable(data, parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data), false, "SelectRow_", node.STAURLIdSelected ? node.STAURLIdSelected : 0, null, "", isAttributeAnyURI);
 }
 
 function SeparateColumns(event) {
