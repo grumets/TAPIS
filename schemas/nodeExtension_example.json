@@ -8,7 +8,7 @@
         "selected": [],
         "expanded": {
             "HistoricalLocations": {
-                "selected": [],
+                "selected": ["time"],
                 "expanded": {},
                 "skip": 0,
                 "top": 5,

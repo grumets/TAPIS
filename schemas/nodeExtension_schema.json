@@ -75,7 +75,7 @@
 					}
 				},
 				"selected": {
-					"description": "Attributes selected to be included in the returned entities. If missing, all attributes are included", 
+					"description": "Attributes selected to be included in the returned entities. If missing, all attributes are included. The implementation also supports an object with additionalProperties that are booleans for historical reasons.", 
 					"type": "array",
 					"items": {
 						"description": "Attribute name", 

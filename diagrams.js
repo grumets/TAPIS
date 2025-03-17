@@ -45,34 +45,112 @@
 
 "use strict"
 
-		function ShowScatterPlotDialog(parentNodes) {
-			var data = parentNodes[0].STAdata;
-			if (!data || !data.length) {
+		function ShowScatterPlotDialog(parentNodes, node) {
+			var noData=true, attributesArray=[], allAttributes,allAttributesKeys, objectWithParentNodesInfo={};
+
+			for (var i=0;i<parentNodes.length;i++){
+				attributesArray=[];
+				if (parentNodes[i].STAdata){
+					noData=false;
+					allAttributes=parentNodes[i].STAdataAttributes ?parentNodes[i].STAdataAttributes:getDataAttributes(parentNodes[i].STAdata);
+					allAttributesKeys=Object.keys(allAttributes);
+					for (var c=0;c<allAttributesKeys.length;c++){
+						if (allAttributes[allAttributesKeys[c]].type=="number" || allAttributes[allAttributesKeys[c]].type=="isodatetime" || allAttributes[allAttributesKeys[c]].type=="integer"){
+							attributesArray.push(allAttributesKeys[c])
+						}
+
+					}
+					objectWithParentNodesInfo[parentNodes[i].id]= {attr:attributesArray, nodeLabel:parentNodes[i].label}
+					
+				}
+			}
+			node.STAattributesToSelect={};
+			node.STAattributesToSelect.parentNodesInformation=objectWithParentNodesInfo;
+			node.STAattributesToSelect.dataGroupsSelectedToScatterPlot=
+				[{"nodeSelected":parentNodes[0].id,"X":objectWithParentNodesInfo[parentNodes[0].id].attr[0], "Y": objectWithParentNodesInfo[parentNodes[0].id].attr[0],  selectedYaxis:"left", color:"#f79646", legendText:""}]
+			networkNodes.update(node);
+
+			if (noData){
 				document.getElementById("DialogScatterPlotTitle").innerHTML = "No data to show.";
 				return;
 			}
 			document.getElementById("DialogScatterPlotTitle").innerHTML = "Scatter Plot";
+			createDialogWithSelectWithGroupsScatterPlot(node);
 
-			var dataAttributes = parentNodes[0].STAdataAttributes ? parentNodes[0].STAdataAttributes : getDataAttributes(data);
-			PopulateSelectSaveLayerDialog("DialogScatterPlotAxisX", dataAttributes, "phenomenonTime");
-			PopulateSelectSaveLayerDialog("DialogScatterPlotAxisY", dataAttributes, "result");
+		}
 
-			if (parentNodes.length<2)
-			{
-				document.getElementById("DialogScatterPlotVariableUoM").style.display = "none";
-				return;
+		function createDialogWithSelectWithGroupsScatterPlot(node) {
+			var scatterPlotDiv = document.getElementById("DialogScatterPlotDiv");
+			scatterPlotDiv.innerHTML = "";
+			var dialogGroups = node.STAattributesToSelect.dataGroupsSelectedToScatterPlot; //Array
+			var parentNodesInformation = node.STAattributesToSelect.parentNodesInformation;
+			var parentNodesInformationKeys = Object.keys(parentNodesInformation);
+
+			var cdns = `<button onclick="addNewSelectGroupInScatterPlot('${node.id}')"> Add new data group</button>` 
+
+			for (var i = 0; i < dialogGroups.length; i++) { //dialog groups of data
+				cdns += `<fieldset><legend>Serie ${i + 1}</legend><label  style="margin-right: 10px;margin-bottom:20px">Node with data: </label><select style="margin-bottom:10px" id="DialogScatterPlotAxisNodesSelect_${i}" onchange="updateSelectInformationScatterPlot('${i}','nodeSelected','select','DialogScatterPlotAxisNodesSelect_${i}','${node.id}')">`
+
+				for (var u = 0; u < parentNodesInformationKeys.length; u++) {
+					cdns += `<option value="${parentNodesInformationKeys[u]}" ${(dialogGroups[i].nodeSelected == parentNodesInformationKeys[u]) ? "selected=true" : ""} onchange="updateSelectInformationScatterPlot('${i}','nodeSelected','select','DialogScatterPlotAxisNodesSelect_${i}','${node.id}')">${parentNodesInformation[parentNodesInformationKeys[u]].nodeLabel}</option>`
+				}
+				cdns += `</select><br>
+				<label  style="margin-right: 10px;margin-bottom:20px">Axis X</label><select style="margin-bottom:10px" name="DialogScatterPlotAxisXSelect_${i}" id="DialogScatterPlotAxisXSelect_${i}" style="" onchange="updateSelectInformationScatterPlot('${i}','X','select','DialogScatterPlotAxisXSelect_${i}','${node.id}')">`
+
+				for (var e = 0; e < parentNodesInformation[dialogGroups[i].nodeSelected].attr.length; e++) { //Select X
+					cdns += `<option value="${parentNodesInformation[dialogGroups[i].nodeSelected].attr[e]}"`;
+					if (node.STAattributesToSelect.dataGroupsSelectedToScatterPlot[i].X == parentNodesInformation[dialogGroups[i].nodeSelected].attr[e]) cdns += " selected=true "; //checked option
+					cdns += `>${parentNodesInformation[dialogGroups[i].nodeSelected].attr[e]}</option>`
+				}
+
+				cdns += `</select><br>
+				<label style="margin-right: 10px;margin-bottom:20px">Axis Y</label><select style="margin-bottom:10px" name="DialogScatterPlotAxisYSelect_${i}" id="DialogScatterPlotAxisYSelect_${i}" style="" onchange="updateSelectInformationScatterPlot('${i}','Y','select','DialogScatterPlotAxisYSelect_${i}','${node.id}')">`
+				for (var e = 0; e < parentNodesInformation[dialogGroups[i].nodeSelected].attr.length; e++) { //Select Y
+					cdns += `<option value="${parentNodesInformation[dialogGroups[i].nodeSelected].attr[e]}"`;
+					if (node.STAattributesToSelect.dataGroupsSelectedToScatterPlot[i].Y == parentNodesInformation[dialogGroups[i].nodeSelected].attr[e]) cdns += " selected=true "; //checked option
+					cdns += `>${parentNodesInformation[dialogGroups[i].nodeSelected].attr[e]}</option>`
+				}
+
+				cdns += `</select><br>
+					<input type='radio'id="DialogScatterPlotAxisYRadioButton_Left_${i}"  name="DialogScatterPlotAxisYRadioButton_${i}" ${(node.STAattributesToSelect.dataGroupsSelectedToScatterPlot[i].selectedYaxis == "left") ? "checked" : ""} onclick="updateSelectInformationScatterPlot('${i}','selectedYaxis','radio','DialogScatterPlotAxisYRadioButton_Left_${i}','${node.id}')" value="left" </input><label>Left axis</label><br>
+					<input type='radio'id="DialogScatterPlotAxisYRadioButton_Right_${i}" name="DialogScatterPlotAxisYRadioButton_${i}" ${(node.STAattributesToSelect.dataGroupsSelectedToScatterPlot[i].selectedYaxis == "right") ? "checked" : ""} onclick="updateSelectInformationScatterPlot('${i}','selectedYaxis','radio','DialogScatterPlotAxisYRadioButton_Right_${i}','${node.id}')" value="right" </input><label>Right axis</label><br>
+					<label style="margin-top: 20px">Line Color: </label> <input type="color" id="selectColorScatterPlot_${i}" value="${node.STAattributesToSelect.dataGroupsSelectedToScatterPlot[i].color}" style="width:20px; height:22px" onchange="updateSelectInformationScatterPlot('${i}','color','radio','selectColorScatterPlot_${i}','${node.id}')"><br>
+					<label>Text in legend:   </label><input type="text" id="legendTextScatterPlot_${i}" value="${node.STAattributesToSelect.dataGroupsSelectedToScatterPlot[i].legendText} " onchange="updateSelectInformationScatterPlot('${i}','legendText','radio','legendTextScatterPlot_${i}','${node.id}')">
+					
+					<button onclick="deleteSelectGroupInScatterPlot('${node.id}', '${i}')"style="background-color:white; border-color:white"><img src="trash.png" alt="Remove" title="Remove"></button></fieldset>`
 			}
-			document.getElementById("DialogScatterPlotVariableUoM").style.display = "inline-block"
+			scatterPlotDiv.innerHTML = cdns;
+		}
 
-			data = parentNodes[1].STAdata;
-			if (!data || data.length!=1) {
-				document.getElementById("DialogScatterPlotTitle").innerHTML = "Second connection should only have one item. Continuing without title.";
-				document.getElementById("DialogScatterPlotVariableUoM").style.display = "none";
-				return;
+		function addNewSelectGroupInScatterPlot(nodeId){ //Add button
+			event.preventDefault();
+			var node = networkNodes.get(nodeId);
+			var dataGroupsSelected= node.STAattributesToSelect;
+			node.STAattributesToSelect.dataGroupsSelectedToScatterPlot.push({"nodeSelected":Object.keys(dataGroupsSelected.parentNodesInformation)[0],"X":dataGroupsSelected.parentNodesInformation[dataGroupsSelected.dataGroupsSelectedToScatterPlot[0].nodeSelected].attr[0], "Y":dataGroupsSelected.parentNodesInformation[dataGroupsSelected.dataGroupsSelectedToScatterPlot[0].nodeSelected].attr[0],  selectedYaxis:"left", color:"#f79646", legendText:""});
+			networkNodes.update(node);
+			createDialogWithSelectWithGroupsScatterPlot(node);
+		}
+		function deleteSelectGroupInScatterPlot(nodeId, groupToDelete){
+			event.preventDefault();
+			var node = networkNodes.get(nodeId);
+			node.STAattributesToSelect.dataGroupsSelectedToScatterPlot.splice(parseInt(groupToDelete),1);
+			networkNodes.update(node);
+			createDialogWithSelectWithGroupsScatterPlot(node);
+		}
+
+		function updateSelectInformationScatterPlot(numberDialog, keyToChange,typeOfSelector, elementName,nodeId){
+			var node = networkNodes.get(nodeId);
+			var value;
+			var element= document.getElementById(elementName)
+			if (typeOfSelector=="select"){
+				value=  element.options[element.selectedIndex].value;
+			}else{
+				value = element.value;
 			}
-			var dataAttributes = parentNodes[1].STAdataAttributes ? parentNodes[1].STAdataAttributes : getDataAttributes(data);
-			PopulateSelectSaveLayerDialog("DialogScatterPlotVariable", dataAttributes, "name");
-			PopulateSelectSaveLayerDialog("DialogScatterPlotUoM", dataAttributes, "unitOfMeasurement/symbol");
+			
+			node.STAattributesToSelect.dataGroupsSelectedToScatterPlot[numberDialog][keyToChange]=value;
+			networkNodes.update(node);
+			createDialogWithSelectWithGroupsScatterPlot(node)
 		}
 
 		function ShowBarPlotDialog(parentNodes) {
@@ -123,75 +201,117 @@
 		var ScatterPlotGraph2d=null;
 		function DrawScatterPlot(event){
 			event.preventDefault(); // We don't want to submit this form
-			var selectedOptions={};
-			selectedOptions.AxisX=document.getElementById("DialogScatterPlotAxisXSelect").value;
-			selectedOptions.AxisY=document.getElementById("DialogScatterPlotAxisYSelect").value;
-			if (document.getElementById("DialogScatterPlotVariableUoM").style.display!="none")
-			{
-				selectedOptions.Variable=document.getElementById("DialogScatterPlotVariableSelect").value;
-				selectedOptions.UoM=document.getElementById("DialogScatterPlotUoMSelect").value;
-			}
-
-			var nodes=GetParentNodes(currentNode);
-			if (nodes && nodes.length) {
-				var node=nodes[0];
-				var data, dataAttributes, record;
-				if (node.STAdata) {
-					var items=[], minx, maxx, miny, maxy;
-					data=node.STAdata;
-					dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data);
-
-					if (ScatterPlotGraph2d)
-						ScatterPlotGraph2d.destroy();
-					for (var i = 0; i < data.length; i++) {
-						record=data[i];
-						if (i==0){
-							minx=maxx=record[selectedOptions.AxisX];
-							miny=maxy=record[selectedOptions.AxisY];
-						} else {
-							if (minx>record[selectedOptions.AxisX])
-								minx=record[selectedOptions.AxisX];
-							if (maxx<record[selectedOptions.AxisX])
-								maxx=record[selectedOptions.AxisX];
-							if (miny>record[selectedOptions.AxisY])
-								miny=record[selectedOptions.AxisY];
-							if (maxy<record[selectedOptions.AxisY])
-								maxy=record[selectedOptions.AxisY];
+			var ScatterPlotNode=networkNodes.get(network.getSelectedNodes())[0];
+			var dataGroups=ScatterPlotNode.STAattributesToSelect.dataGroupsSelectedToScatterPlot;
+			var nodeId, node, nodeData,selectedOptions={},record,items=[], minx, maxx, minyRight, maxyRight, minyLeft, maxyLeft, leftOrRight;
+			for (var e=0;e<dataGroups.length;e++){
+				nodeId=dataGroups[e].nodeSelected;
+				selectedOptions.AxisX= dataGroups[e].X
+				selectedOptions.AxisY= dataGroups[e].Y;
+				nodeData =networkNodes.get(nodeId).STAdata;
+				leftOrRight=dataGroups[e].selectedYaxis;
+				for (var i = 0; i < nodeData.length; i++) {
+					record=nodeData[i];
+					if (i==0 && e==0){
+						minx=maxx=record[selectedOptions.AxisX];
+						if(leftOrRight=="left")minyLeft=maxyLeft=record[selectedOptions.AxisY];
+						else minyRight=maxyRight=record[selectedOptions.AxisY];
+					} else {
+						if(leftOrRight=="left" && minyLeft==undefined){
+							minyLeft=maxyLeft=record[selectedOptions.AxisY];
+						}else if (leftOrRight=="right" && minyRight==undefined){
+							minyRight=maxyRight=record[selectedOptions.AxisY];
 						}
-						items.push({x: record[selectedOptions.AxisX], y: record[selectedOptions.AxisY], group: 0})
-					}
-					var dataset = new vis.DataSet(items);
-					var groups = new vis.DataSet();
-					var options = {
-						dataAxis: {left: {range: {min:miny-(maxy-miny)*0.025, max:maxy+(maxy-miny)*0.025}, title: {text: "Values"}, format: AdaptValueAxisY}},
-						drawPoints: {size: 1},
-						legend: {left:{position:"bottom-left"}},
-						start: minx,
-						end: maxx
-					};
-					var title="Results";
-
-					if (nodes.length>1 && nodes[1].STAURL) {
-						node=nodes[1];
-						data=node.STAdata;
-						if (data.length)
-							record=data[0];
-						if (record[selectedOptions.Variable])
-							title=record[selectedOptions.Variable];
-						if (record[selectedOptions.UoM])
-							title+=" (" + record[selectedOptions.UoM] + ")";
-					}
-					groups.add({
-						id: 0,
-						content: title,
-						interpolation: {
-							parametrization: 'chordal'
+						if (minx>record[selectedOptions.AxisX])
+							minx=record[selectedOptions.AxisX];
+						if (maxx<record[selectedOptions.AxisX])
+							maxx=record[selectedOptions.AxisX];
+						if(leftOrRight=="left"){
+							if (minyLeft>record[selectedOptions.AxisY])
+								minyLeft=record[selectedOptions.AxisY];
+							if (maxyLeft<record[selectedOptions.AxisY])
+								maxyLeft=record[selectedOptions.AxisY];
+						}else{
+							if (minyRight>record[selectedOptions.AxisY])
+							minyRight=record[selectedOptions.AxisY];
+							if (maxyRight<record[selectedOptions.AxisY])
+							maxyRight=record[selectedOptions.AxisY];
 						}
-					});
-					ScatterPlotGraph2d = new vis.Graph2d(document.getElementById('DialogScatterPlotVisualization'), dataset, groups, options);
-				}
+						
+					}
+					items.push({x: record[selectedOptions.AxisX], y: record[selectedOptions.AxisY], group: e});
+					
+				}				
 			}
+			if (ScatterPlotGraph2d) 
+				ScatterPlotGraph2d.destroy();
+
+			var dataset = new vis.DataSet(items);
+			var groups = new vis.DataSet();
+
+			var stylesheet,newRule;
+			for (var n=0;n<dataGroups.length;n++){
+				groups.add({
+					id: n,
+					className:"classGraphGroup"+n, //every class define the color of the line (classes will be added above to the stylesheet)
+					 content: dataGroups[n].legendText,
+					 interpolation: {
+					 	parametrization: 'chordal'
+					 },
+					options: {
+						yAxisOrientation:dataGroups[n].selectedYaxis , // right, left
+						drawPoints: {
+							style: 'circle' // square, circle
+						}
+					}
+				});
+				
+				//create Style (class) to define color of the lines
+				stylesheet = document.styleSheets[0];
+				newRule = `.classGraphGroup${n} {fill:${dataGroups[n].color};fill-opacity:0;stroke-width:2px;stroke:${dataGroups[n].color} }`;
+				stylesheet.insertRule(newRule, stylesheet.cssRules.length);
+			}
+			var finalMinYLeft =minyLeft-(maxyLeft-minyLeft)*0.025;
+			var finalMinYRight=  minyRight-(maxyRight-minyRight)*0.025;
+			var finalMaxYLeft=maxyLeft+(maxyLeft-minyLeft)*0.025;
+			var finalMaxYRight= maxyRight+(maxyRight-minyRight)*0.025;
+
+			var DialogScatterPlotLegendLocationSelectLeft= document.getElementById("DialogScatterPlotLegendLocationSelectLeft");
+			var DialogScatterPlotLegendLocationSelectRight= document.getElementById("DialogScatterPlotLegendLocationSelectRight");
+			var axisYLabelRight= document.getElementById("DialogScatterPlotAxisYLabelRight").value;
+			var axisYLabelLeft= document.getElementById("DialogScatterPlotAxisYLabelLeft").value;
+						
+			var options = {
+
+				  dataAxis: {
+
+				 	right: {
+						range: { min:finalMinYRight, max:finalMaxYRight }
+						,format: AdaptValueAxisY,
+						title: {text:axisYLabelRight} 
+				 			
+	
+				 	},
+				 	left: {
+				 		range: { min: finalMinYLeft, max: finalMaxYLeft },
+						 format: AdaptValueAxisY,
+						 title: {text:axisYLabelLeft} 
+				 	},
+
+				},
+				drawPoints: {size: 1},
+				legend: {
+					left:{position:DialogScatterPlotLegendLocationSelectLeft.options[DialogScatterPlotLegendLocationSelectLeft.selectedIndex].value},
+					right:{position:DialogScatterPlotLegendLocationSelectRight.options[DialogScatterPlotLegendLocationSelectRight.selectedIndex].value} 	
+				},
+				start: minx,
+				end: maxx
+			};
+
+			ScatterPlotGraph2d = new vis.Graph2d(document.getElementById('DialogScatterPlotVisualization'), dataset, groups, options);
 		}
+		
+
 
 		function CloseDialogScatterPlot(event) {
 			event.preventDefault(); // We don't want to submit this form
