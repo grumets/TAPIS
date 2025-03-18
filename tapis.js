@@ -250,7 +250,7 @@ function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
 		return "Parent node is a leaf node and cannot be connected with any other node";
 	if (node.image == "SelectRowSTA.png" && parentNode.STASelectedExpands && parentNode.STASelectedExpands.expanded && Object.keys(parentNode.STASelectedExpands.expanded).length)
 		return "'Select Row' for STA node cannot be connected to an expanded branch. Use 'Filter row' for STA instead or select a row before expanding";
-	if (node.image == "OneValueSTA.png" && parentNode.image!="Observations.png")
+	if (node.image == "OneValueSTA.png" && parentNode.STAEntityName!="Observations" && parentNode.image!="Observations.png")
 		return "'One value' node is designed be connected to an 'Observations' node only.";
 	var idNode=IdOfSTAEntity(node);
 	if (idNode<0)
