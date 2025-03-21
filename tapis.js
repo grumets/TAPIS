@@ -49,10 +49,10 @@ var config;
 
 const ServicesAndAPIs = {sta: {name: "STA plus", description: "STA service", startNode: true, help: "Connects to a SensorThings API or a STAplus instance and returns a table with the list of entities suported by the API."},
 			ogcAPICols: {name: "OGC API cols", description: "OAPI Collections", startNode: true, help: "Connects to the collections page of a OGC Web API instance and returns a table with the list collections available."},
-			ogcAPIItems: {name: "OGC API items", description: "OAPI items", startNode: true, help: "Connects to a collection page on an OGC Web API Features or derivatives and returns a table with the items available. One of the columns contains the geometry JSON object."},
+			ogcAPIItems: {name: "OGC API items", description: "OAPI items", help: "Connects to a collection page on an OGC Web API Features or derivatives and returns a table with the items available. One of the columns contains the geometry JSON object."},
 			csw: {name: "Catalogue", description: "OGC CSW", startNode: true, help: "Connects to a OGC CSW cataloge service. The result is a table with a list of records in the catalogue that have data associated with them."},
 			s3Service: {name: "S3 Service", description: "S3 Service", startNode: true, help: "Connects to a Amazon S3 compatible service (e.g. MinIO) and return the list of buckets available as a table."},
-			s3Bucket: {name: "S3 Bucket", description: "S3 Bucket", startNode: true, help: "Connects to a Amazon S3 backet (e.g. MinIO) and return the list of files available (in the root folder and all subfolders as a table."},
+			s3Bucket: {name: "S3 Bucket", description: "S3 Bucket", help: "Connects to a Amazon S3 backet (e.g. MinIO) and return the list of files available (in the root folder and all subfolders as a table."},
 			edc: {name: "DataSpace cat.", description: "DataSpace cat.", startNode: true, help: "Connects to an Eclipse Data Connector (EDC) Catalogue and returns the list of assets available as a table."},
 			edcAsset: {name: "DataSpace asset", description: "DataSpace asset", help: "Prepares an Eclipse Data Connector (EDC) Asset."},
 			ImportCSV: {name: "CSV", description: "CSV", startNode: true, help: "Imports data from a CSV file and returns a table."},
@@ -413,35 +413,38 @@ function StartSTAPage() {
 }
 
 function PlaceButtonsSTAEntities() {
-	var s = "";
-	if (!document.getElementById("DialogConfigurationOnlyStartNodeButtons").checked) {
-		for (var i = 0; i < ServicesAndAPIsArray.length; i++)
-			s += textOperationButton(null, "", ServicesAndAPIsArray[i], ServicesAndAPIs[ServicesAndAPIsArray[i]].name, ServicesAndAPIs[ServicesAndAPIsArray[i]].description, ServicesAndAPIs[ServicesAndAPIsArray[i]].help, ServicesAndAPIs[ServicesAndAPIsArray[i]], ServicesAndAPIsType.singular);
-		s += "<br>";
+	var cdns = [];
+	var startButtonsOnly=document.getElementById("DialogConfigurationOnlyStartNodeButtons").checked
+	for (var i = 0; i < ServicesAndAPIsArray.length; i++) {
+		if (!startButtonsOnly || ServicesAndAPIs[ServicesAndAPIsArray[i]].startNode)
+			cdns.push(textOperationButton(null, "", ServicesAndAPIsArray[i], ServicesAndAPIs[ServicesAndAPIsArray[i]].name, ServicesAndAPIs[ServicesAndAPIsArray[i]].description, ServicesAndAPIs[ServicesAndAPIsArray[i]].help, ServicesAndAPIs[ServicesAndAPIsArray[i]], ServicesAndAPIsType.singular));
+	}
+	cdns.push("<br>");
+	if (!startButtonsOnly) {
 		for (var i = 0; i < STAEntitiesArray.length; i++)
-			s += textOperationButton(null, "", STAEntitiesArray[i], STAEntitiesArray[i], STAEntitiesArray[i], STAEntities[STAEntitiesArray[i]].help, null, STAEntitiesType.singular);
-		s += "<br>";
+			cdns.push(textOperationButton(null, "", STAEntitiesArray[i], STAEntitiesArray[i], STAEntitiesArray[i], STAEntities[STAEntitiesArray[i]].help, null, STAEntitiesType.singular));
+		cdns.push("<br>");
 		/*for (var i = 0; i < STAEntitiesArray.length; i++)
-			s += textOperationButton(null, "", STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].helpEdit, null, STAEntitiesType.singularEdit);
-		s += "<br>";*/
+			cdns.push(textOperationButton(null, "", STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].helpEdit, null, STAEntitiesType.singularEdit));
+		cdns.push("<br>");*/
 		for (var i = 0; i < STASpecialQueriesArray.length; i++)
-			s += textOperationButton(null, "", STASpecialQueriesArray[i], STASpecialQueriesArray[i], STASpecialQueries[STASpecialQueriesArray[i]].description, STASpecialQueries[STASpecialQueriesArray[i]].help, null, STASpecialQueriesType.singular);
-		s += "<br>";
+			cdns.push(textOperationButton(null, "", STASpecialQueriesArray[i], STASpecialQueriesArray[i], STASpecialQueries[STASpecialQueriesArray[i]].description, STASpecialQueries[STASpecialQueriesArray[i]].help, null, STASpecialQueriesType.singular));
+		cdns.push("<br>");
 	}
 
 	for (var i = 0; i < STAOperationsArray.length; i++) {
-		if (!document.getElementById("DialogConfigurationOnlyStartNodeButtons").checked || STAOperations[STAOperationsArray[i]].startNode)
-			s += textOperationButton(null, "", STAOperationsArray[i], STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].help, STAOperations[STAOperationsArray[i]], STAOperationsType.singular);
+		if (!startButtonsOnly || STAOperations[STAOperationsArray[i]].startNode)
+			cdns.push(textOperationButton(null, "", STAOperationsArray[i], STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].help, STAOperations[STAOperationsArray[i]], STAOperationsType.singular));
 	}
-	s += "<br>";
+	cdns.push("<br>");
 	for (var i = 0; i < TableOperationsArray.length; i++) {
-		if (!document.getElementById("DialogConfigurationOnlyStartNodeButtons").checked || TableOperations[TableOperationsArray[i]].startNode)
-			s += textOperationButton(null, "", TableOperationsArray[i], TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].help, TableOperations[TableOperationsArray[i]], TableOperationsType.singular);
+		if (!startButtonsOnly || TableOperations[TableOperationsArray[i]].startNode)
+			cdns.push(textOperationButton(null, "", TableOperationsArray[i], TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].help, TableOperations[TableOperationsArray[i]], TableOperationsType.singular));
 	}
-	if (!document.getElementById("DialogConfigurationOnlyStartNodeButtons").checked)
-		s += "<br>";
+	if (!startButtonsOnly)
+		cdns.push("<br>");
 
-	document.getElementById("ButtonsSTAEntities").innerHTML = s;
+	document.getElementById("ButtonsSTAEntities").innerHTML = cdns.join("");
 }
 
 var timeoutHelpToolTip=null;
@@ -2267,7 +2270,9 @@ async function RequestLastObservationAndRefreshOneValue(node) {
 					"MultiDatastream": {selected: [], expanded: {}}},
 				top: 1,
 				orderBy: {attribute: node.STAtimeVariable, desc: true}};
-	
+	if (parentNode.STASelectedExpands && parentNode.STASelectedExpands.filter)
+		node.STASelectedExpands.filter=deapCopy(parentNode.STASelectedExpands.filter);
+
 	//PRevious path parameters are preserved
 	node.STAURL = AddQueryParamsToURL(RemoveQueryParamSelectExpands(parentNode.STAURL), 
 					GetQueryParamSelectedSelectExpands(node.STASelectedExpands));
@@ -2651,7 +2656,6 @@ function PopulateCreateUpdateDeleteEntityMultiDatastreams(entityName, currentNod
 	var actionToDo = "";
 	for (var i = 0; i < parentNodes.length; i++) {
 		var parentNode = parentNodes[i];
-		//console.log(parentNode.STAdata[0]["@iot.id"])
 		var parentEntityName = getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL), false);
 		if (!parentNode.STAdata || parentNode.STAdata.length == 0) {
 			alert("Parent node has no STA data associated");
@@ -5625,6 +5629,8 @@ function ProcessMessageFromMiraMonMapBrowser(event)
 	}*/
 }
 
+/*
+Also in STAFilter
 function addSTAEntityNameAsTitleDialog(div_id, node) {
 	var entity;
 	if (node.STAEntityName)
@@ -5638,7 +5644,7 @@ function addSTAEntityNameAsTitleDialog(div_id, node) {
 		}
 	}
 	document.getElementById(div_id).innerHTML = entity ? "<img src='" + entity + ".png' style='height:30px;' />" + entity : "";
-}
+}*/
 
 function ShowTableSelectRowDialog(parentNode, node) {
 	saveNodeDialog("DialogSelectRow", node);
@@ -6217,7 +6223,7 @@ function networkDoubleClick(params) {
 			var parentNodes=GetParentNodes(currentNode);
 			if (parentNodes && parentNodes[0]) {
 				if (parentNodes[0].STAdata)
-					ShowBarPlotDialog(parentNodes);
+					ShowBarPlotDialog(parentNodes,currentNode);
 				document.getElementById("DialogBarPlot").showModal();
 			}
 		}
@@ -6242,6 +6248,10 @@ function networkDoubleClick(params) {
 			document.getElementById("DialogSaveLayer").showModal();
 		}
 		else if (currentNode.image == "OpenMap.png") {
+			var parentNodes=GetParentNodes(currentNode);
+			if (parentNodes[0]){
+				currentNode.STAdataAttributes=deapCopy(parentNodes[0].STAdataAttributes);
+			}
 			ShowOpenMapDialog(currentNode);
 			document.getElementById("DialogSaveLayer").showModal();
 		}
@@ -7941,14 +7951,22 @@ function calculateMinMaxMeanDesvest(aggregatedData){
 function createAndLoadImportGeoJSONNode(data,url){
 	
 	addCircularImage(null, null, "GeoJSON", "ImportGeoJSON.png");
-
-	currentNode = networkNodes.get(network.getSelectedNodes()[0]);
+	console.log(data)
+	var node = networkNodes.get(network.getSelectedNodes()[0]);
+	currentNode=node;
+	saveNodeDialog("DialogImportGeoJSON", node);
 	document.getElementById("DialogImportGeoJSONSourceExternalData").disabled= false;
 	document.getElementById("DialogImportGeoJSONSourceExternalData").checked= true;
 	document.getElementById("DialogImportGeoJSONSourceExternalDataText").value= url;
 
+	var geojson = JSON.parse(data);
+	var dataTrasnformed= TransformGeoJSONToTable(geojson);	
+	node.STAdata=dataTrasnformed
+	var attributes= getDataAttributes(dataTrasnformed);
+	node.STAdataAttributes=attributes;
+	updateQueryAndTableArea(node);
+	networkNodes.update(node);
 	
-	TransformTextGeoJSONToTable(data);	
 }
 
 /*function giveMeNetworkInformation(event) {
