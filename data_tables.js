@@ -631,10 +631,10 @@ var r_max,r_min, n=values.length;
 /*function aggrFuncProportionDefined(values){
 }*/
 
-function GroupRecordsData(dataSorted, i_ini, i_end, dataAttributesArray, groupByParams, date) {
+function GroupRecordsData(dataSorted, i_ini, i_end, dataAttributesArray, groupByParams) {
 	var record={}, recordSorted=dataSorted[i_ini], aggrFuncName, valuesString=null, values=null, r, countDefined=-1;
 	//Populate groupByAttr
-	if (date) groupByParams.groupByAttr.push(groupByParams.groupByDate[1]) //Add date attribute
+	//if (date) groupByParams.groupByAttr.push(groupByParams.groupByDate[1]) //Add date attribute
 	for (var j=0; j<dataAttributesArray.length; j++) {
 		if (groupByParams.groupByAttr.indexOf(dataAttributesArray[j])!=-1)
 			record[dataAttributesArray[j]]=recordSorted[dataAttributesArray[j]];
@@ -825,7 +825,7 @@ function GroupByTableData(data, dataAttributesNull, dataCurrentAttributes, group
 		iniRecord=dataSorted[i_ini];
 		if (0!=sortRecords(iniRecord, dataSorted[i])){ 
 			//records i_ini to i-1 are grouped			
-			dataCurrent.push(GroupRecordsData(dataSorted, i_ini, i-1, dataAttributesArray, groupByParams,true));  //Add the record to the result
+			dataCurrent.push(GroupRecordsData(dataSorted, i_ini, i-1, dataAttributesArray, groupByParams));  //Add the record to the result
 			i_ini=i;
 		}
 	}

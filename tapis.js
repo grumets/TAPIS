@@ -6419,7 +6419,7 @@ function networkDoubleClick(params) {
 				currentNode.STAdataCopy=deapCopy(currentNode.STAdata); //To recovery data if cancel is pressed
 				currentNode.STAdata = deapCopy(parentNode.STAdata); //Necessary to reset data taking it from parent
 			}
-			fillAggregateColumVariablesList();
+			fillAggregateColumVariablesList(currentNode);
 			showCheckRadioOptions("operationsFieldSet", "operationsRadioAggrgatedColumns_", AggregationColumnsOptions, 3, "operationsRadioAggrgatedColumns", "writeColumnNameInAggregatedColumns (event)");
 			if (parentNode) {
 				if (!currentNode.STAnewColumnsToAdd){
@@ -6971,81 +6971,73 @@ function deselectColumnNameRadioButton(radiobutton){
 	}
 }
 
-function fillAggregateColumVariablesList(){
+function fillAggregateColumVariablesList(node){
 
-	var dataKeys= Object.keys(currentNode.STAdata[0]);
- //var n= dataKeys.length;
-// var dataKeysObject=[];
-// for (var i=0;i<n;i++){
-// 	dataKeysObject.push({name:dataKeys[i], desc:dataKeys[i] });
-// }
-//showCheckRadioOptions("columnsFielset", "attributesRadioAggrgatedColumns_", dataKeysObject, 1, null, "writeColumnNameInAggregatedColumns (event)");
-	var parentNode=GetFirstParentNode(currentNode);
-	ShowTableSelectColumnsDialog("columnsFielset", parentNode, currentNode, false,"writeColumnNameInAggregatedColumns (event)" );
+	var dataKeys= Object.keys(node.STAdata[0]);
+	var parentNode=GetFirstParentNode(node);
+	ShowTableSelectColumnsDialog("columnsFielset", parentNode, node, false,"writeColumnNameInAggregatedColumns (event)" );
 
 	//Create list of columns to avoid repetitions
-	currentNode.STAcolumnsList=dataKeys;
-
+	node.STAcolumnsList=dataKeys;
 }
 
 function checkRadioButtonColumName(event){
-event.preventDefault();
-document.getElementById("columnNameRadioAggregateColumns_personalized").setAttribute("checked", true);
-document.getElementById("columnNameRadioAggregateColumns_suggested").setAttribute("checked", false);
+	event.preventDefault();
+	document.getElementById("columnNameRadioAggregateColumns_personalized").setAttribute("checked", true);
+	document.getElementById("columnNameRadioAggregateColumns_suggested").setAttribute("checked", false);
 }
+
 function addColumnToListAggregateColumns(event) {
-event.preventDefault();
-var TypeOfOperation = document.getElementsByName("operationsRadioAggrgatedColumns"); //operation
-var STANewColumnsArray = [], attributesArray = [], attribute;
-var dataKeys = Object.keys(currentNode.STAdata[0]);
-var typeOfOperationLenght = TypeOfOperation.length, dataKeysLenght = dataKeys.length;
-var columnName;
+	event.preventDefault();
+	var TypeOfOperation = document.getElementsByName("operationsRadioAggrgatedColumns"); //operation
+	var STANewColumnsArray = [], attributesArray = [], attribute;
+	var dataKeys = Object.keys(currentNode.STAdata[0]);
+	var typeOfOperationLenght = TypeOfOperation.length, dataKeysLenght = dataKeys.length;
+	var columnName;
 
-var typeOfOperationExist = false, atLeast2attributesSelected = false;
-//Operation
-for (var i = 0; i < typeOfOperationLenght; i++) { //Take operation 
-	if (TypeOfOperation[i].checked) {
-	STANewColumnsArray.push(TypeOfOperation[i].id.split("AggrgatedColumns_")[1]);
-	typeOfOperationExist = true;
-			}
+	var typeOfOperationExist = false, atLeast2attributesSelected = false;
+	//Operation
+	for (var i = 0; i < typeOfOperationLenght; i++) { //Take operation 
+		if (TypeOfOperation[i].checked) {
+			STANewColumnsArray.push(TypeOfOperation[i].id.split("AggrgatedColumns_")[1]);
+			typeOfOperationExist = true;
 		}
-//attributes
-for (var a = 0; a < dataKeysLenght; a++) {
-	attribute = document.getElementById("columnsFielset_" + a);
-	if (attribute.checked) {
-	attributesArray.push(dataKeys[a]);
 	}
-}
-if (attributesArray.length >= 2) {
-	atLeast2attributesSelected = true;
+
+//attributes
+	for (var a = 0; a < dataKeysLenght; a++) {
+		attribute = document.getElementById("columnsFielset_" + a);
+		if (attribute.checked)
+			attributesArray.push(dataKeys[a]);
+	}
+	if (attributesArray.length >= 2)
+		atLeast2attributesSelected = true;
+
+	if (typeOfOperationExist == false || atLeast2attributesSelected == false) {
+		alert("At least two attributes and one aggregation method have to be selected");
+	} else {//All is correct, new column can be added to the list
+		//columnName
+		if (document.getElementById("columnNameRadioAggregateColumns_personalized").checked) {
+			columnName = document.getElementById("columnNameAggregateColumns").value;
+			if (columnName.length == 0) columnName = "noname";
+		} else {
+			columnName = document.getElementById("columnNameAggregateColumns_span").value;
+		}
+		var columnNameExist = columnExistInTheTable(columnName); //Search if name for column is not repeated
+	
+		if (columnNameExist) { //It will not be added because column name already exist
+			alert("Chosen column name already exists, change it to add column to the list ");
+		} else { //It can be added
+			STANewColumnsArray.push(columnName, attributesArray);
+			if (document.getElementById("chooseNumberDecimals_0").checked)
+				STANewColumnsArray.push(document.getElementById("chooseNumberDecimals_0_input").value);
+			currentNode.STAnewColumnsToAdd.push(STANewColumnsArray); //[typeOfOperation,columnName,[attributes]]
+			networkNodes.update(currentNode);
+			drawTableInColumnBoxTableInAggregateColumns();
+		}
+	}
 }
 
-if (typeOfOperationExist == false || atLeast2attributesSelected == false) {
-	alert("At least two attributes and one aggregation method have to be selected");
-} else {//All is correct, new column can be added to the list
-	//columnName
-	if (document.getElementById("columnNameRadioAggregateColumns_personalized").checked) {
-	columnName = document.getElementById("columnNameAggregateColumns").value;
-	if (columnName.length == 0) columnName = "noname";
-	} else {
-	columnName = document.getElementById("columnNameAggregateColumns_span").value;
-	}
-	var columnNameExist = columnExistInTheTable(columnName); //Search if name for column is not repeated
-	
-	if (columnNameExist) { //It will not be added because column name already exist
-	alert("Chosen column name already exists, change it to add column to the list ");
-			}
-	else { //It can be added
-	STANewColumnsArray.push(columnName, attributesArray);
-	if (document.getElementById("chooseNumberDecimals_0").checked) {
-			STANewColumnsArray.push(document.getElementById("chooseNumberDecimals_0_input").value)
-		}	
-	currentNode.STAnewColumnsToAdd.push(STANewColumnsArray); //[typeOfOperation,columnName,[attributes]]
-		networkNodes.update(currentNode);
-		drawTableInColumnBoxTableInAggregateColumns();
-	}
-}
-}
 function drawTableInColumnBoxTableInAggregateColumns(){
 	var spanColumnsListAggregateColumns=document.getElementById("spanColumnsListAggregateColumns");
 	var cdns;

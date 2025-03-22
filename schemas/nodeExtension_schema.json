@@ -41,6 +41,54 @@
 				"type": "integer"
 			} 
 		},
+		"barPlotOptions": {
+			"description": "Saves the configuration of a bar chart or pie graphic for the functions DrawBarPlot() and ShowBarPlotDialog()",
+			"type": "object",
+			"properties": {
+				"plotType": {
+					 "enum": ["pie", "bar"]
+				},
+				"axisX": {
+					"description": "Name of the field that provides the category names for pie and bar charts",
+					"type": "string"
+				},
+				"axisY": {
+					"description": "Name of the field that provides the values for pie and bar charts",
+					"type": "string"
+				},
+				"labelY": {
+					"description": "Text for the description of the axis Y for bar charts",
+					"type": "string"
+				}
+			}
+		},
+		"groupByParams": {
+			"description": "Saves the configuration of a groupBy for the functions GetGroupBy() and TBD()",
+			"type": "object",
+			"properties": {		
+				"groupByAttr": {
+					"description": "Array of column names that should have the same value to group",
+					"type": "array",
+					"items": { "type": "string" }
+				},
+				"groupByDate": {
+					"description": "Rounding for the date fields",
+					"type": "string",
+					"enum": ["Year", "Month", "Day", "Hour", "Minute", "Second"]
+				},
+				"aggregationAttr": {
+					"description": "Column names and the aggregation method",
+					"type": "object",
+					"additionalProperties": {
+						"type": "array",
+						"items": { 
+							"type": "string",
+							"enum": ["Mean", "Mode", "FirstValue", "Median", "StandardDeviation", "LastValue", "Q1", "Variance", "RandomValue", "Q3", "Sum", "CountDefined", "MinValue", "Concatenate", "Count", "MaxValue", "Range", "ProportionDefined"]
+						} 
+					}
+				}
+			}
+		},
 		"STAdata": {
 			"$ref": "data_schema.json#/definitions/data"
 		},
