@@ -5676,7 +5676,7 @@ function SeparateColumns(event) {
 			options.removeAlreadyPresent=true;
 		currentNode.STAdataAttributes={};
 		var result=separateObjectColumns(parentNode.STAdata, parentNode.STAdataAttributes ? parentNode.STAdataAttributes : null, options);
-	} else { /document.getElementById("DialogSeparateColumnsAs_Columns").checked //ARRAY
+	} else { //document.getElementById("DialogSeparateColumnsAs_Columns").checked //ARRAY
 		var selectColumnName= document.getElementById("SeparateColumsSelect_column");
 		var columnName= selectColumnName.options[selectColumnName.selectedIndex].value;
 		var delimiter=document.getElementById("SeparateColumsInput_column").value;
@@ -5684,7 +5684,7 @@ function SeparateColumns(event) {
 			showInfoMessage("No data loaded in the parent node.");
 			return;
 		}
-		if (document.getElementById("DialogSeparateColumnsLists").checked) //array columns
+		if (document.getElementById("DialogSeparateColumnsAs_Columns").checked) //array columns
 			var result=separateColumnArrayColumns(parentNode.STAdata, parentNode.STAdataAttributes ? parentNode.STAdataAttributes : null, columnName, delimiter);
 		else //array records
 			var result=separateColumnArrayRecords(parentNode.STAdata, parentNode.STAdataAttributes ? parentNode.STAdataAttributes : null, columnName, delimiter);
@@ -6223,7 +6223,7 @@ function networkDoubleClick(params) {
 			var parentNodes=GetParentNodes(currentNode);
 			if (parentNodes && parentNodes[0]) {
 				if (parentNodes[0].STAdata)
-					ShowBarPlotDialog(parentNodes,currentNode);
+					ShowBarPlotDialog(parentNodes, currentNode);
 				document.getElementById("DialogBarPlot").showModal();
 			}
 		}

@@ -179,7 +179,7 @@
 				var dataAttributes = parentNodes[1].STAdataAttributes ? parentNodes[1].STAdataAttributes : getDataAttributes(data);
 				PopulateSelectSaveLayerDialog("DialogBarPlotVariable", dataAttributes, node && node.barPlotOptions && node.barPlotOptions.labelY ? node.barPlotOptions.labelY : "name");
 			}
-			if (node.barPlotOptions.plotType=="pie") {
+			if (node.barPlotOptions && node.barPlotOptions.plotType=="pie") {
 				document.getElementById("DialogBarPlotTypePie").checked=true;
 				document.getElementById("DialogBarPlotTypeBar").checked=false;
 			} else {
