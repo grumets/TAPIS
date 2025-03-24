@@ -273,13 +273,12 @@ function separateColumnArrayColumns(data, dataAttributes, columnName, delimiter)
 	resultData=[];
 	for (var i=0; i<n; i++) {
 		resultData[i]=deapCopy(data[i]);
-		delete resultData[i][columnName];
-		if (typeof data[i][columnName] === "undefined")
+		if (!data[i][columnName] || typeof data[i][columnName] !== "string") 
 			continue;
+		delete resultData[i][columnName];
 		separateDataArray=data[i][columnName].split(delimiter);
-		for (var a=0; a<separateDataArray.length; a++) {
+		for (var a=0; a<separateDataArray.length; a++) 
 			resultData[i][columnName+(a+1)]=separateDataArray[a].trim();
-		}
 	}
 	resultDataAttributes=uploadDataAttributesAddingNewColumns(dataAttributes, resultData);
 
@@ -289,13 +288,15 @@ function separateColumnArrayColumns(data, dataAttributes, columnName, delimiter)
 function separateColumnArrayRecords(data, dataAttributes, columnName, delimiter) {
 	var n= data.length, resultData=[], separateDataArray;  //, newColumnName;
 
-	if (dataAttributes[columnName].type!="string"){
+	if (dataAttributes[columnName].type!="string") {
 		alert("The content of column selected to separate must be 'string' type");
 		return;
 	}
-	for (var i=0;i<n;i++){
+	for (var i=0;i<n;i++) {
+		if (!data[i][columnName] || typeof data[i][columnName] !== "string") 
+			continue;
 		separateDataArray=data[i][columnName].split(delimiter);
-		for (var e=0; e<separateDataArray.length; e++){
+		for (var e=0; e<separateDataArray.length; e++) {
 			resultData.push(deapCopy(data[i]))
 			resultData[resultData.length-1][columnName]=separateDataArray[e].trim();
 		}

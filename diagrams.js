@@ -347,7 +347,7 @@ const ColorsForBarPlot=["#1f77b4","#aec7e8","#ff7f0e","#ffbb78","#2ca02c","#98df
 			var parentNode=nodes[0];
 			var data, dataAttributes, record;
 			if (parentNode.STAdata) {
-				var labels=[], dataY=[], backgroundColor=[], labelY="Magnitude", scales, legend, plugins;
+				var labels=[], dataY=[], backgroundColor=[], labelY="Magnitude", scales, legend, plugins, data;
 				data=parentNode.STAdata;
 				dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
 
@@ -379,6 +379,7 @@ const ColorsForBarPlot=["#1f77b4","#aec7e8","#ff7f0e","#ffbb78","#2ca02c","#98df
 						}
 					};
 					plugins={
+						legend: legend,
 						labels: {
 							render: 'value',
 							precision: 0,
@@ -404,26 +405,39 @@ const ColorsForBarPlot=["#1f77b4","#aec7e8","#ff7f0e","#ffbb78","#2ca02c","#98df
 							textMargin: 4
 						}
 					};
+					data={
+						labels: labels,
+						datasets: [{
+							data: dataY,
+							backgroundColor: backgroundColor,
+							borderWidth: 0
+						}]
+					};
 				} else {
 					node.barPlotOptions.plotType="bar";
 					scales={
-						xAxes: [{
-							scaleLabel: {display: true, labelString: dataAttributes[node.barPlotOptions.axisX].description ? dataAttributes[node.barPlotOptions.axisX].description : node.barPlotOptions.axisX},
-							categoryPercentage: 1,
-							barPercentage: 1,
-							gridLines: { display: false},
+						x: {
+							title: {
+								display: true, 
+								text: dataAttributes[node.barPlotOptions.axisX].description ? dataAttributes[node.barPlotOptions.axisX].description : node.barPlotOptions.axisX
+							},
+							grid: { display: false},
 							ticks: { autoSkip: false /*, maxRotation: 0 */}
-						}],
-						yAxes: [{
+						},
+						y: {
 							//type: "logarithmic",
-							scaleLabel: {display: true, labelString: labelY},
-						ticks: { beginAtZero:true }
-						}]
+							title: {
+								display: true, 
+								text: labelY
+							},
+							beginAtZero:true
+						}
 					};
 					legend={
 						display: false
 					};
 					plugins={
+						legend: legend,
 						labels: {
 							render: 'value',
 							precision: 0,
@@ -438,21 +452,23 @@ const ColorsForBarPlot=["#1f77b4","#aec7e8","#ff7f0e","#ffbb78","#2ca02c","#98df
 							textMargin: 4
 						}
 					};
+					data={
+						labels: labels,
+						datasets: [{
+							categoryPercentage: 1,
+							barPercentage: 1,
+							data: dataY,
+							backgroundColor: backgroundColor,
+							borderWidth: 0
+						}]
+					};
 				}
 				if (BarPlotGraph2d)
 					BarPlotGraph2d.destroy();
 				BarPlotGraph2d = new Chart(document.getElementById('DialogBarPlotVisualizationCanvas'), {
 							type: node.barPlotOptions.plotType,
-							data: {
-								labels: labels,
-								datasets: [{
-									data: dataY,
-									backgroundColor: backgroundColor,
-									borderWidth: 0
-								}]
-							},
+							data: data,
 							options: {	
-								legend: legend,
 								scales: scales,
 								plugins: plugins,
 								maintainAspectRatio: false,
