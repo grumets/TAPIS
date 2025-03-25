@@ -52,6 +52,10 @@
 					"description": "Name of the field that provides the category names for pie and bar charts",
 					"type": "string"
 				},
+				"series": {
+					"description": "Name of the field that provides the subclassification for the stacked bar charts",
+					"type": "string"
+				},
 				"axisY": {
 					"description": "Name of the field that provides the values for pie and bar charts",
 					"type": "string"
