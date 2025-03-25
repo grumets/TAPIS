@@ -6460,6 +6460,7 @@ function networkDoubleClick(params) {
 			document.getElementById("DialogConcatenateTables").showModal();
 		}
 		else if (currentNode.image =="ColumnStatistics.png") {
+			saveNodeDialog("DialogColumnStatistics", currentNode);
 			document.getElementById("DialogColumnStatistics").showModal();
 		}
 		
@@ -7396,13 +7397,15 @@ function addColumnsToTableInColumnsCalculator(){
 	document.getElementById("DialogColumnsCalculator").close();
 
 }
+
 function createColumnStatistics(event){
+	var node=getNodeDialog("DialogColumnStatistics");
 	event.preventDefault();
-	var parentNodes= GetParentNodes(currentNode);
+	var parentNodes= GetParentNodes(node);
 	var staData= parentNodes[0].STAdata;
 	var dataAttributes= parentNodes[0].STAdataAttributes ? parentNodes[0].STAdataAttributes : getDataAttributes(staData);
 	var keys = Object.keys(staData[0]);
-	var collectedData,obj, finallyArray=[],dataType;
+	var collectedData,obj, finalArray=[],dataType;
 
 	for (var i=0;i<keys.length;i++){
 		obj={};
@@ -7431,14 +7434,14 @@ function createColumnStatistics(event){
 		obj["Count"]= aggrFuncCount(collectedData);
 		//obj["ProportionDefined"]= aggrFuncProportionDefined(collectedData); 
 
-		finallyArray.push(obj);
+		finalArray.push(obj);
 	}
 
-	currentNode.STAdata=finallyArray;
-	networkNodes.update(currentNode);
-	document.getElementById("DialogColumnStatistics").close();
+	node.STAdata=finalArray;
+	networkNodes.update(node);
+	updateQueryAndTableArea(node);
 
-	
+	document.getElementById("DialogColumnStatistics").close();	
 }
 
 
