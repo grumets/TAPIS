@@ -755,20 +755,34 @@ function ShowTableSelectSortByDialog(parentNode, node) {
 		return;
 	}
 
-	var dataAttributesArray=ShowPropagateNodeSelectedSelectExpands(node, parentNode)
-	var selectedExpands=GetSTASelectExpandNextOrigin(node.STASelectedExpands, node.STASelectExpandNextOrigin);
+	var dataAttributesArray;
+	if (node.image == "SortBySTA.png"){ //STA
+		dataAttributesArray=ShowPropagateNodeSelectedSelectExpands(node, parentNode)
+		var selectedExpands=GetSTASelectExpandNextOrigin(node.STASelectedExpands, node.STASelectExpandNextOrigin);
+	}else{ //tables
 
+		node.STAdataAttributes=parentNode.STAdataAttributes ? deapCopy(parentNode.STAdataAttributes) :  getDataAttributes(data);
+		dataAttributesArray= Object.keys(node.STAdataAttributes);
+		networkNodes.update(node);
+	}
 	var s = "";
 	var first=true;
 	for (var a = 0; a < dataAttributesArray.length; a++)
 	{
-		if (dataAttributesArray[a].endsWith("@iot.navigationLink") || dataAttributesArray[a].charAt(0)=='@')
-			continue;
-		s += "<label><input type='radio'" + (selectedExpands && selectedExpands.orderBy ? 
-				(selectedExpands.orderBy.attribute=dataAttributesArray[a] ? 'checked="checked"' : '') : 
-				(first ? 'checked="checked"' : '')) + " id='SelectSortByEntity_" + a + "' name='SelectSortByEntity'/> " + dataAttributesArray[a] + "</label><br>";
-		first=false;
+		if (node.image == "SortBySTA.png"){
+			if (dataAttributesArray[a].endsWith("@iot.navigationLink") || dataAttributesArray[a].charAt(0)=='@')
+				continue;
+			s += "<label><input type='radio'" + (selectedExpands && selectedExpands.orderBy ? 
+					(selectedExpands.orderBy.attribute=dataAttributesArray[a] ? 'checked="checked"' : '') : 
+					(first ? 'checked="checked"' : '')) + " id='SelectSortByEntity_" + a + "' name='SelectSortByEntity'/> " + dataAttributesArray[a] + "</label><br>";
+			first=false;
+		}else{
+			s += "<label><input type='radio'" + 
+					(first ? 'checked="checked"' : '') + " id='SelectSortByEntity_" + a + "' name='SelectSortByEntity'/> " + dataAttributesArray[a] + "</label><br>";
+			first=false;
+		}
 	}
+
 	document.getElementById("DialogSelectSortByRadioButtons").innerHTML = s;
 	if (selectedExpands && selectedExpands.orderBy && selectedExpands.orderBy.desc) {
 		document.getElementById("SelectSortByDesc").checked=true;
@@ -791,6 +805,15 @@ function GetSelectSortBy(event) {
 	if (!parentNode)
 		return;
 
+	if (node.image == "SortBySTA.png") {
+		GetSelectSortBySTA(parentNode, node);
+	} else {
+		GetSelectSortBySTables(parentNode, node);
+	}
+	updateQueryAndTableArea(node);
+}
+
+function GetSelectSortBySTA(parentNode, node){
 	var {dataAttributesArray, previousSTAURL}=GetPropagateNodeSelectedSelectExpands(node, parentNode);
 	var selectedExpands=GetSTASelectExpandNextOrigin(node.STASelectedExpands, node.STASelectExpandNextOrigin);
 	if (!selectedExpands)
@@ -811,6 +834,26 @@ function GetSelectSortBy(event) {
 			selectedExpands.orderBy.desc=true;	
 	}
 	FinalizeSelectedSelectExpands(node, previousSTAURL, "Sorting STA by "+ selectedExpands.orderBy.attribute + " (" + (selectedExpands.orderBy.desc ? "descending" : "ascending") + ")...");
+}
+
+function GetSelectSortBySTables(parentNode, node){
+	if (document.getElementById("DialogSelectSortByHTML").style.display != "none"){
+		var dataAttributesArray= Object.keys(node.STAdataAttributes);
+		var attributeSelected, AscOrDesc="asc";
+		for (var a = 0; a < dataAttributesArray.length; a++){
+
+			if (document.getElementById("SelectSortByEntity_" + a).checked) {
+				attributeSelected=dataAttributesArray[a];
+				break;
+			}
+		}
+		if (document.getElementById("SelectSortByDesc") && document.getElementById("SelectSortByDesc").checked)
+			AscOrDesc="desc";	
+
+		var newData= SortTableByColumn(deapCopy(parentNode.STAdata), attributeSelected, AscOrDesc);
+		node.STAdata=newData;
+		networkNodes.update(node);
+	}
 }
 
 ////////////// Merge expands circle

@@ -1196,3 +1196,39 @@ function sortValuesNumbersOrText(arrayValues) {
 	}
 	return arrayNumbers.sort((a, b) => a - b).concat(arrayText.sort());  //join arrays
 }
+
+function SortTableByColumn(data, columnSelected, AscOrDesc) {
+
+	//var attributes = getDataAttributesSimple(data);
+	//if (attributes[columnSelected].type == "string") {
+		if (AscOrDesc && AscOrDesc == "asc") {
+			data.sort(function (a, b) {
+				if (a[columnSelected] > b[columnSelected]) {
+					return 1;
+				}
+				if (a[columnSelected] < b[columnSelected]) {
+					return -1;
+				}
+				return 0;
+			})
+		} else {
+			data.sort(function (a, b) {
+				if (a[columnSelected] < b[columnSelected]) {
+					return 1;
+				}
+				if (a[columnSelected] > b[columnSelected]) {
+					return -1;
+				}
+				return 0;
+			})
+		}
+	/*} else { //number
+		if (AscOrDesc == "asc") {
+			data.sort((a, b) => a[columnSelected] - b[columnSelected]);
+		}else{
+			data.sort((a, b) => b[columnSelected] - a[columnSelected]);
+		}
+	}*/
+	return data;
+}
+

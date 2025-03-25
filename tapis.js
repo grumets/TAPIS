@@ -115,7 +115,8 @@ const TableOperations = {Table: {description: "View Table", leafNode: true, help
 			FilterRowsTable: {description: "Filter Rows", help: "Obtain a table with the records that match the contitions. Not recommended for SensorThings API or a STAplus entities as it removes the STA URL."},
 			JoinTables: {description: "Join Tables", help:"Creates a single table that is the result of joining two tables using some selected column values in both tables to defined the merge criteria."},
 			ConcatenateTables: {description: "Concatenate Columns", help: "Create a single table by adding the records of the second table to the first one. The columns with the same name in both tables are merged in a sigle column."},
-			GroupBy: {description: "GroupBy", help: "Creates a table will the columns containng selected statistics of the aggregation of some records that have the same values other selected columns."},
+			GroupBy: {description: "Group by", help: "Creates a table will the columns containng selected statistics of the aggregation of some records that have the same values other selected columns."},
+			SortByTables: {description: "Sort by", callSTALoad: true, help: "Gets a table with data sorted by a given criteria."},
 			AggregateColumns: {description: "Aggregate Columns", help: "Adds a new column to a table with the aggregation of other previous selected columns."},
 			CreateColumns: {description: "Create Columns", help: "Adds a new column to your table. This column can be left empty, filled with a constant value or filled with an autoincremental value."},
 			ColumnsCalculator: {description: "Columns calculator", help: "Adds a new column to your table where for each record the new column contains the result of an operation involving other column values of that record."},
@@ -5629,22 +5630,6 @@ function ProcessMessageFromMiraMonMapBrowser(event)
 	}*/
 }
 
-/*
-Also in STAFilter
-function addSTAEntityNameAsTitleDialog(div_id, node) {
-	var entity;
-	if (node.STAEntityName)
-		entity = getSTAEntityPlural(node.STAEntityName);
-	else if (node.STAURL && getSTAURLLastEntity(node.STAURL)) {
-		entity = getSTAURLLastEntity(node.STAURL);
-		for (var i = 0; i < STAEntitiesArray.length; i++) {
-			if (STAEntitiesArray[i] == entity) {
-				break;
-			}
-		}
-	}
-	document.getElementById(div_id).innerHTML = entity ? "<img src='" + entity + ".png' style='height:30px;' />" + entity : "";
-}*/
 
 function ShowTableSelectRowDialog(parentNode, node) {
 	saveNodeDialog("DialogSelectRow", node);
@@ -5833,6 +5818,13 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 		if (addEdge)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
 		DoMergeExpandSTA(nodeTo);
+		return true;
+	}
+	if (tableNodes && nodeTo.image == "SortByTables.png") {
+		networkNodes.update(nodeTo);
+		if (addEdge)
+			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
+		
 		return true;
 	}
 	if (staNodes && nodeTo.image == "GeoFilterPolSTA.png") {
@@ -6376,6 +6368,14 @@ function networkDoubleClick(params) {
 			var parentNode=GetFirstParentNode(currentNode);
 			if (parentNode) {
 				if (parentNode.STAURL)
+					ShowTableSelectSortByDialog(parentNode, currentNode);
+				document.getElementById("DialogSelectSortBy").showModal();
+			}
+		}
+		else if (currentNode.image == "SortByTables.png") {
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				if (parentNode.STAdata)
 					ShowTableSelectSortByDialog(parentNode, currentNode);
 				document.getElementById("DialogSelectSortBy").showModal();
 			}
@@ -7445,65 +7445,69 @@ function createColumnStatistics(event){
 }
 
 
-function concatenateTables(){
+function concatenateTables() {
 	event.preventDefault();
-	var selected= (document.getElementById("concatenationType_allColumns").checked ==true)?"allColumns":"repeatedColumns";			//agafar les data de tots els pares i juntar
+	var selected= (document.getElementById("concatenationType_allColumns").checked ==true)?"allColumns":"repeatedColumns";
 	var parentNodes= GetParentNodes(currentNode);
-	var parentNodesArrayData=[], parentNodesArrayKeys=[];
+	var parentNodesArrayData=[], parentNodesArrayKeys=[], parentNodesArrayData=[];
+
 
 	for(var i=0;i<parentNodes.length;i++){
 		parentNodesArrayData.push(...parentNodes[i].STAdata);
-		parentNodesArrayKeys.push(Object.keys(parentNodes[i].STAdata[0]));
+	 	parentNodesArrayKeys.push(...Object.keys(parentNodes[i].STAdata[0]));
 	}
-	//llista de les keys
-	var allkeysWithOutRepetitions=parentNodesArrayKeys[0];
-	var repitedKeys=[];
 
-	for (var i=1;i<parentNodesArrayKeys.length;i++){
-		for (var e=0;e<parentNodesArrayKeys[i].length;e++){
-			if (allkeysWithOutRepetitions.indexOf(parentNodesArrayKeys[i][e])==-1){ //All different keys
-				allkeysWithOutRepetitions.push(parentNodesArrayKeys[i][e]); 
+	var finalKeys=[], sharedKeys=[];
+	if (selected=="allColumns"){
+		var keysSet = new Set(parentNodesArrayKeys);
+		finalKeys = [...keysSet];
 				
 			}else{
-				repitedKeys.push(parentNodesArrayKeys[i][e]); //only repeated keys
-			}
-		}
-	}
-	var necessaryRepetitions= parentNodes.length-1;// repitedKeys shan de repetir un cop menys q elements hi ha
-	repitedKeys=repitedKeys.sort();
-	var count=1, lastKey=repitedKeys[0], repitedKeysDefinitive=[];
-	for (var i=0;i<repitedKeys.length;i++){
+		parentNodesArrayKeys=parentNodesArrayKeys.sort();
+		var lastKey=parentNodesArrayKeys[0], count=1;
 
-		if (lastKey==repitedKeys[i]){
-			count+=1;
-			lastKey=repitedKeys[i];
+		for (var e=1;e<parentNodesArrayKeys.length;e++){
+
+			if (parentNodesArrayKeys[e]==lastKey){
+				if (e== parentNodesArrayKeys.length-1){ //last one
+					if(count+1==parentNodes.length) //save last key (same as previous)
+						sharedKeys.push(lastKey);
 		}else{
-			if(count==necessaryRepetitions){repitedKeysDefinitive.push(repitedKeys[i])};
-			count=0;
-			lastKey=repitedKeys[i];
+					count++;
+				}
+				
+			}else{
+				if (e!= parentNodesArrayKeys.length-1){
+					if (count==parentNodes.length){ //repited in all parents
+						sharedKeys.push(lastKey);
+						count=1;
+						lastKey=parentNodesArrayKeys[e];
+					}else{
+						lastKey=parentNodesArrayKeys[e];
+						count=1;
+					}
+				}else{ //lastone
+					if (count==parentNodes.length){ //Save previous key
+						sharedKeys.push(lastKey);
+					}
+				}
+
+			}			
 		}
-	}
-
-	var keysToNewTable;
-	if (selected=="allColumns"){
-		keysToNewTable= allkeysWithOutRepetitions;
-
-	}else{ //repeatedColumns
-		keysToNewTable= repitedKeysDefinitive;
+		finalKeys=sharedKeys;
 	}
 
 	var resultData=[], obj;
 	for (var i=0;i<parentNodesArrayData.length;i++){
 		obj={}
-		for (var e=0;e<keysToNewTable.length;e++){
-			if(parentNodesArrayData[i].hasOwnProperty(keysToNewTable[e])){
-				obj[keysToNewTable[e]]= parentNodesArrayData[i][keysToNewTable[e]];
+		for (var e=0;e<finalKeys.length;e++){
+			if(parentNodesArrayData[i].hasOwnProperty(finalKeys[e])){
+				obj[finalKeys[e]]= parentNodesArrayData[i][finalKeys[e]];
 			}else{
-				obj[keysToNewTable[e]]= "";
+				obj[finalKeys[e]]= "";
 			}
 		}
 		resultData.push(obj);
-		
 	}
 	currentNode.STAdata=resultData;
 	var parentNodes= GetParentNodes(currentNode);
