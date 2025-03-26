@@ -167,7 +167,6 @@
 			PopulateSelectSaveLayerDialog("DialogBarPlotSeries", dataAttributes, node && node.barPlotOptions && node.barPlotOptions.series ? node.barPlotOptions.series :  "");
 			PopulateSelectSaveLayerDialog("DialogBarPlotAxisY", dataAttributes, node && node.barPlotOptions && node.barPlotOptions.axisY ? node.barPlotOptions.axisY : "result");
 
-
 			if (parentNodes.length<2)
 				document.getElementById("DialogBarPlotVariable").innerHTML='<input id="DialogBarPlotVariableInput" value="' + (node && node.barPlotOptions && node.barPlotOptions.labelY ? node.barPlotOptions.labelY : '') + '">';
 			else {
@@ -186,6 +185,20 @@
 			} else {
 				document.getElementById("DialogBarPlotTypePie").checked=false;
 				document.getElementById("DialogBarPlotTypeBar").checked=true;
+			}
+
+			if (node.barPlotOptions && node.barPlotOptions.valueLabels=="none") {
+				document.getElementById("DialogBarPlotTypeLabelsNone").checked=true;
+				document.getElementById("DialogBarPlotTypeLabelsValue").checked=false;
+				document.getElementById("DialogBarPlotTypeLabelsPercentage").checked=false;
+			} else if (node.barPlotOptions && node.barPlotOptions.valueLabels=="percentage") {
+				document.getElementById("DialogBarPlotTypeLabelsNone").checked=false;
+				document.getElementById("DialogBarPlotTypeLabelsValue").checked=false;
+				document.getElementById("DialogBarPlotTypeLabelsPercentage").checked=true;
+			} else { //if (node.barPlotOptions && node.barPlotOptions.valueLabels=="value")
+				document.getElementById("DialogBarPlotTypeLabelsNone").checked=false;
+				document.getElementById("DialogBarPlotTypeLabelsValue").checked=true;
+				document.getElementById("DialogBarPlotTypeLabelsPercentage").checked=false;
 			}
 
 			if (document.getElementById("DialogBarPlotAxisXSelect").value && 
@@ -392,6 +405,13 @@ const ColorsForBarPlot=["#1f77b4","#aec7e8","#ff7f0e","#ffbb78","#2ca02c","#98df
 					else if (dataAttributes[node.barPlotOptions.axisY].UoM)
 						labelY+=" (" + dataAttributes[node.barPlotOptions.axisY].UoM + ")";
 				}
+				if (document.getElementById("DialogBarPlotTypeLabelsNone").checked)
+					node.barPlotOptions.valueLabels="none";
+				else if (document.getElementById("DialogBarPlotTypeLabelsValue").checked)
+					node.barPlotOptions.valueLabels="value";
+				else // if (document.getElementById("DialogBarPlotTypeLabelsPercentage").checked)
+					node.barPlotOptions.valueLabels="percentage";
+
 				if (document.getElementById("DialogBarPlotTypePie").checked) {
 					node.barPlotOptions.plotType="pie";
 					scales=null;
@@ -402,33 +422,39 @@ const ColorsForBarPlot=["#1f77b4","#aec7e8","#ff7f0e","#ffbb78","#2ca02c","#98df
 							padding: 3
 						}
 					};
-					plugins={
-						legend: legend,
-						labels: {
-							render: 'value',
-							precision: 0,
-							showZero: true,
-							fontSize: 12,
-							fontColor: '#fff',
-							fontStyle: 'normal',
-							fontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
-							textShadow: true,
-							shadowOffsetX: -5,
-							shadowOffsetY: 5,
-							shadowColor: 'rgba(255,0,0,0.75)',
-							arc: true,
-							position: 'default',
-							overlap: true,
-							showActualPercentages: true,
-							images: [{
-							  src: 'image.png',
-							  width: 16,
-							  height: 16
-							}],
-							outsidePadding: 4,
-							textMargin: 4
-						}
-					};
+					if (node.barPlotOptions.valueLabels=="none") {
+						plugins={
+							legend: legend
+						};
+					} else {
+						plugins={
+							legend: legend,
+							labels: {
+								render: node.barPlotOptions.valueLabels,    // render 'label', 'value', 'percentage', 'image' or custom function, default is 'percentage'
+								precision: 0,       // precision for percentage, default is 0
+								showZero: true,     // identifies whether or not labels of value 0 are displayed, default is false
+								fontSize: 12,
+								fontColor: '#fff',
+								fontStyle: 'normal',
+								fontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+								textShadow: true,
+								shadowOffsetX: -5,
+								shadowOffsetY: 5,
+								shadowColor: 'rgba(255,0,0,0.75)',
+								arc: true,             // draw label in arc, default is false; bar chart ignores this
+								position: 'default',   // position to draw label, available value is 'default', 'border' and 'outside'; bar chart ignores this; default is 'default'
+								overlap: true,         // raw label even it's overlap, default is true; bar chart ignores this
+								showActualPercentages: true,   // show the real calculated percentages from the values and don't apply the additional logic to fit the percentages to 100 in total, default is false
+								/*images: [{
+								  src: 'image.png',
+								  width: 16,
+								  height: 16
+								}],     // set images when `render` is 'image'  */
+								outsidePadding: 4,     // add padding when position is `outside`; default is 2
+								textMargin: 4          // add margin of text when position is `outside` or `border`; default is 2
+							}
+						};
+					}
 				} else {
 					node.barPlotOptions.plotType="bar";
 					scales={
@@ -452,22 +478,28 @@ const ColorsForBarPlot=["#1f77b4","#aec7e8","#ff7f0e","#ffbb78","#2ca02c","#98df
 					legend={
 						display: node.barPlotOptions.series ? true : false
 					};
-					plugins={
-						legend: legend,
-						labels: {
-							render: 'value',
-							precision: 0,
-							showZero: true,
-							fontSize: 12,
-							fontStyle: 'normal',
-							fontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
-							position: 'default',
-							overlap: true,
-							showActualPercentages: false,
-							outsidePadding: 4,
-							textMargin: 4
-						}
-					};
+					if (node.barPlotOptions.valueLabels=="none") {
+						plugins={
+							legend: legend
+						};
+					} else {
+						plugins={
+							legend: legend,
+							labels: {
+								render: node.barPlotOptions.valueLabels,
+								precision: 0,
+								showZero: true,
+								fontSize: 12,
+								fontStyle: 'normal',
+								fontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+								position: 'default',
+								overlap: true,
+								showActualPercentages: true,
+								outsidePadding: 4,
+								textMargin: 4
+							}
+						};
+					}
 				}
 				data={
 					labels: labels
@@ -490,8 +522,11 @@ const ColorsForBarPlot=["#1f77b4","#aec7e8","#ff7f0e","#ffbb78","#2ca02c","#98df
 					if (node.barPlotOptions.plotType=="bar") {
 						scales.x.stacked=true;
 						scales.y.stacked=true;
-						plugins.labels.outsidePadding=-14;
-						plugins.labels.textMargin=-14;
+						if (plugins.labels) {
+							plugins.labels.outsidePadding=-14;
+							plugins.labels.textMargin=-14;
+							plugins.labels.showZero=false;  //It seems the library ignores this.
+						}
 					}
 				} else {
 					data.datasets=[{
