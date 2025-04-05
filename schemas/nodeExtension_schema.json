@@ -26,6 +26,12 @@
 			"type": "string",
 			"format": "uri"
 		},
+		"STAdata": {
+			"$ref": "data_schema.json#/definitions/data"
+		},
+		"STAdataAttributes": {
+			"$ref": "dataAttributes_schema.json#/definitions/dataAttributes"
+		},
 		"STASelectedExpands": {
 			"$ref": "#/definitions/selectedExpands"
 		},
@@ -93,11 +99,31 @@
 				}
 			}
 		},
-		"STAdata": {
-			"$ref": "data_schema.json#/definitions/data"
+		"STAtimeOut": {
+			"description": "Javascript TimeOut handle for the subscriptions to update data",
+			"type": "string"
 		},
-		"STAdataAttributes": {
-			"$ref": "dataAttributes_schema.json#/definitions/dataAttributes"
+		"STAOneValue": {
+			"description": "Saves the configuration of the OneValue box",
+			"type": "object",
+			"properties": {
+				"variable": {
+					"description": "Name of the collumn that contains the variable value to represent",
+					"type": "string"
+				},
+				"timeVariable": {
+					"description": "Name of the collumn that contains the time to the value to represent",
+					"type": "string"
+				},
+				"redrawPeriod": {
+					"description": "Number of seconds to refresh the value",
+					"type": "integer"
+				},
+				"alertValue": {
+					"description": "If the variable value is above this numerial value, the text and the node are represented in red",
+					"type": "number"
+				}
+			}
 		}
 	},
 	"definitions": { 

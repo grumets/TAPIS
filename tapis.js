@@ -391,12 +391,23 @@ function changeCSSStyle(selector, cssProp, cssVal) {
 
 var currentNode=null, connectionInProcess=false, startingNodeContextId=null, startingEdgeContextId=null;
 
+function ChangeToHTTPS(question) {
+	var response=true, s_protocol=getProtocol(location.href);
+	if (s_protocol && s_protocol.toLowerCase()!="https:") {
+		if (!question)
+			location.replace("https:" + location.href.substring(s_protocol.length));
+		else {
+			response=confirm("The page is not using secured HTTPS. Do you want to change to HTTPS?")
+			if (response)
+				location.replace("https:" + location.href.substring(s_protocol.length));
+		}
+	}	
+	return response;
+}
+
 function StartSTAPage() {
 
-	var s_protocol=getProtocol(location.href);
-
-	if (s_protocol && s_protocol.toLowerCase()!="https:")
-		location.replace("https:" + location.href.substring(s_protocol.length));
+	ChangeToHTTPS(true);
 
 	//document.getElementById("UserInfoText").innerHTML="";
 	network=new vis.Network(document.getElementById("mynetwork"), {
@@ -405,8 +416,6 @@ function StartSTAPage() {
 	}, networkOptions);
 	setEventFunctionsNetwork();
 	PrepareTextAreaCalculator();
-
-	hello.init({"authenix": "662eb5eb-e706-40a4-baf8-51016fec5a05"}, {redirect_uri: ((location.pathname.charAt(location.pathname.length-1)=='/') ? location.pathname.substring(0, location.pathname.length-1) : location.pathname)});
 
 	UpdateConfiguration();
 
@@ -826,6 +835,7 @@ async function LoadJSONNodeSTAData(node, callback, url) {
 			return;
 		}
 	}
+	var nextLink;
 	if (url && (typeof node.OGCExpectedLength!=="undefined" || (node.STASelectedExpands && typeof node.STASelectedExpands.top!=="undefined"))) {
 		if (node.OGCType=="OGCAPIcollections")
 			node.STAdata.push(...simplifyOGCAPICollections(jsonData.collections));
@@ -837,15 +847,23 @@ async function LoadJSONNodeSTAData(node, callback, url) {
 			node.STAdata.push(...getSimplifyOGCCSWRecord(jsonData['csw:GetRecordsResponse']['csw:SearchResults']['gmd:MD_Metadata']));
 		else if (node.OGCType=="GUF")
 			node.STAdata.push(...await getSimplifyGUFRecords(jsonData['feed']['entry']));
-		else
+		else {
 			node.STAdata.push(...jsonData.value);
-			
-		if (node.STASelectedExpands && typeof node.STASelectedExpands.top!=="undefined")
-			node.STAdata.length=node.STASelectedExpands.top;
-		else if (node.STAdata.length>node.OGCExpectedLength)  //too much data. Trucating
-			node.STAdata.length=node.OGCExpectedLength;
+			nextLink = jsonData["@iot.nextLink"];
+		}
+
+		if (node.STASelectedExpands && typeof node.STASelectedExpands.top!=="undefined") {
+			if (node.STAdata.length>node.STASelectedExpands.top) {
+				node.STAdata.length=node.STASelectedExpands.top;  //too much data. Trucating
+				nextLink=null;
+			}
+		} else if (node.STAdata.length>node.OGCExpectedLength && node.STAdata.length>node.OGCExpectedLength) {
+			if (node.STAdata.length>node.OGCExpectedLength) {
+				node.STAdata.length=node.OGCExpectedLength;  //too much data. Trucating
+				nextLink=null;
+			}
+		}
 	} else { 
-		var nextLink;
 		if (node.OGCType=="OGCAPIcollections") {
 			node.STAdata = (typeof jsonData.collections!=="undefined") ? simplifyOGCAPICollections(jsonData.collections) : [jsonData];
 			nextLink = getLinkRelInLinks(jsonData["links"], "next", "application/json");
@@ -1475,7 +1493,18 @@ function parseJwt(token) {
 	return JSON.parse(atob(base64));
 };
 
+var loginInit=false;
+
 function OpenLogin(event) {
+
+	if (false==ChangeToHTTPS(true))
+		return;
+
+	if (!loginInit) {
+		hello.init({"authenix": "662eb5eb-e706-40a4-baf8-51016fec5a05"}, {redirect_uri: ((location.pathname.charAt(location.pathname.length-1)=='/') ? location.pathname.substring(0, location.pathname.length-1) : location.pathname)});
+		loginInit=false;
+	}
+
 	hello("authenix").login({redirect_uri: location.pathname, lang: getLang(), scope: "openid profile idp citiobs.secd.eu%23read citiobs.secd.eu%23create citiobs.secd.eu%23update citiobs.secd.eu%23delete", display: "popup"}).then(
 		function(success) {
 			document.getElementById("buttonOpenLogin").style.display="none";
@@ -1599,6 +1628,9 @@ function TransformS3ServiceResponseToDataAttributes(node, text) {
 function GetDialogS3BucketEvent(event) {
 	event.preventDefault(); // We don't want to submit this form
 	document.getElementById("DialogS3Bucket").close(document.getElementById("DialogS3BucketURL").value);
+
+	if (false==ChangeToHTTPS(true))
+		return;
 
 	var parentNode=GetFirstParentNode(currentNode);
 	if (parentNode && parentNode.OGCType=="S3Buckets")
@@ -2117,11 +2149,11 @@ function ShowOneValueDialog(node) {
 	document.getElementById("DialogOneValueTitle").innerHTML = "Select value to see the last value";
 
 	var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
-	PopulateSelectSaveLayerDialog("DialogOneValueVariable", dataAttributes, node.STAvariable ? node.STAvariable : "result");
-	document.getElementById("DialogOneValueAlertValue").value=typeof node.STAalertValue === "undefined" ? "" : node.STAalertValue;
-	PopulateSelectSaveLayerDialog("DialogOneValueTime", dataAttributes, node.STAtimeVariable ? node.STAtimeVariable : "phenomenonTime");
-	if (node.STAredrawPeriod)
-		document.getElementById("DialogOneValueRefreshPeriod").value=node.STAredrawPeriod;
+	PopulateSelectSaveLayerDialog("DialogOneValueVariable", dataAttributes, node.STAOneValue && node.STAOneValue.variable ? node.STAOneValue.variable : "result");
+	document.getElementById("DialogOneValueAlertValue").value=!node.STAOneValue || typeof node.STAOneValue.alertValue === "undefined" ? "" : node.STAOneValue.alertValue;
+	PopulateSelectSaveLayerDialog("DialogOneValueTime", dataAttributes, node.STAOneValue && node.STAOneValue.timeVariable ? node.STAOneValue.timeVariable : "phenomenonTime");
+	if (node.STAOneValue && node.STAOneValue.redrawPeriod)
+		document.getElementById("DialogOneValueRefreshPeriod").value=node.STAOneValue.redrawPeriod;
 }
 
 function PrepareRefreshOneValue(event) {
@@ -2136,10 +2168,11 @@ function PrepareRefreshOneValue(event) {
 		clearTimeout(node.STAtimeOut);
 		node.STAtimeOut=null;
 	}
-	node.STAvariable=document.getElementById("DialogOneValueVariableSelect").value;
-	node.STAtimeVariable=document.getElementById("DialogOneValueTimeSelect").value;
-	node.STAredrawPeriod=document.getElementById("DialogOneValueRefreshPeriod").value;
-	node.STAalertValue=document.getElementById("DialogOneValueAlertValue").value;
+	node.STAOneValue={};
+	node.STAOneValue.variable=document.getElementById("DialogOneValueVariableSelect").value;
+	node.STAOneValue.timeVariable=document.getElementById("DialogOneValueTimeSelect").value;
+	node.STAOneValue.redrawPeriod=document.getElementById("DialogOneValueRefreshPeriod").value;
+	node.STAOneValue.alertValue=document.getElementById("DialogOneValueAlertValue").value;
 	networkNodes.update(node);
 
 	RequestLastObservationAndRefreshOneValue(node);
@@ -2170,9 +2203,9 @@ function prepareRefreshCountResults(event) {
 	if (!node)
 		return;	
 
-	if (node.STACountTimeOut) {
-		clearTimeout(node.STACountTimeOut);
-		node.STACountTimeOut=null;
+	if (node.STAtimeOut) {
+		clearTimeout(node.STAtimeOut);
+		node.STAtimeOut=null;
 	}
 	node.STAredrawPeriodCount=document.getElementById("DialogCountResultsRefreshPeriod").value;
 	networkNodes.update(node);
@@ -2189,8 +2222,8 @@ function stopRefreshCountResults(event) {
 	if (!node)
 		return;	
 
-	if (node.STACountTimeOut) {
-		clearInterval(node.STACountTimeOut);
+	if (node.STAtimeOut) {
+		clearInterval(node.STAtimeOut);
 		showInfoMessage("Refresh cancelled.");
 	}
 }
@@ -2225,25 +2258,25 @@ function GetObservationResultAsString(v) {
 
 function getOneValueLabel(node, record) {
 var label, value;
-	if (record["MultiDatastream"] && typeof record[node.STAvariable].length !== "undefined") {
+	if (record["MultiDatastream"] && typeof record[node.STAOneValue.variable].length !== "undefined") {
 		label="";
-		if (record[node.STAvariable].length)
-			value=GetObservationResultAsString(record[node.STAvariable][0]);
-		for (var i=0; i<record[node.STAvariable].length; i++)
+		if (record[node.STAOneValue.variable].length)
+			value=GetObservationResultAsString(record[node.STAOneValue.variable][0]);
+		for (var i=0; i<record[node.STAOneValue.variable].length; i++)
 		{
-			label+=GetObservationResultAsString(record[node.STAvariable][i]);
+			label+=GetObservationResultAsString(record[node.STAOneValue.variable][i]);
 			if (record["MultiDatastream"]?.unitOfMeasurements[i]?.symbol)
 				label+=record["MultiDatastream"]?.unitOfMeasurements[i]?.symbol;
-			if (i+1!=record[node.STAvariable].length)
+			if (i+1!=record[node.STAOneValue.variable].length)
 				label+=", ";
 		}
 	} else {
-		label=value=GetObservationResultAsString(record[node.STAvariable]);
+		label=value=GetObservationResultAsString(record[node.STAOneValue.variable]);
 		if (record["Datastream"] && record["Datastream"]?.unitOfMeasurement?.symbol)
 			label+=record["Datastream"].unitOfMeasurement.symbol;
 	}
-	node.label=label + " (" + (isISOTimeToday(record[node.STAtimeVariable]) ? getTimeISOTime(record[node.STAtimeVariable]) : getDateTimeISOTime(record[node.STAtimeVariable])) + ")";
-	if ((isNaN(value) || isNaN(node.STAalertValue)) ? value>=node.STAalertValue : parseFloat(value)>=parseFloat(node.STAalertValue)) {
+	node.label=label + " (" + (isISOTimeToday(record[node.STAOneValue.timeVariable]) ? getTimeISOTime(record[node.STAOneValue.timeVariable]) : getDateTimeISOTime(record[node.STAOneValue.timeVariable])) + ")";
+	if ((isNaN(value) || isNaN(node.STAOneValue.alertValue)) ? value>=node.STAOneValue.alertValue : parseFloat(value)>=parseFloat(node.STAOneValue.alertValue)) {
 		node.color={background: '#f36971', /*border: '...', */highlight: { background: '#f9a8ac' /*'#97c2fc', border: '...'*/ }, hover: { background: '#f9a8ac'}};
 		node.font={color: "#ff0000" /*, size: */};
 	} else {
@@ -2252,7 +2285,7 @@ var label, value;
 	}
 	networkNodes.update(node);
 	if (node.STAtimeOut)
-		showInfoMessage(node.label + ". Waiting " + node.STAredrawPeriod + " seconds ...");
+		showInfoMessage(node.label + ". Waiting " + node.STAOneValue.redrawPeriod + " seconds ...");
 	else
 		showInfoMessage(node.label + ". Waiting for updates ...");
 
@@ -2266,11 +2299,11 @@ async function RequestLastObservationAndRefreshOneValue(node) {
 		return;
 
 	//Previous query parametres are not considered deliverately as we will not use them anyway.
-	node.STASelectedExpands={selected: [node.STAtimeVariable, node.STAvariable],
+	node.STASelectedExpands={selected: [node.STAOneValue.timeVariable, node.STAOneValue.variable],
 				expanded: {"Datastream": {selected: [], expanded: {}}, 
 					"MultiDatastream": {selected: [], expanded: {}}},
 				top: 1,
-				orderBy: {attribute: node.STAtimeVariable, desc: true}};
+				orderBy: {attribute: node.STAOneValue.timeVariable, desc: true}};
 	if (parentNode.STASelectedExpands && parentNode.STASelectedExpands.filter)
 		node.STASelectedExpands.filter=deapCopy(parentNode.STASelectedExpands.filter);
 
@@ -2299,7 +2332,7 @@ async function RequestLastObservationAndRefreshOneValue(node) {
 		SubscribeTopicToWebHub(config.WebSocketUrl, config.WebHookUrl, websub.hub, websub.self, node.id, 300, UpdateNodeId, showInfoMessage);
 	} else {
 		//Redraw
-		node.STAtimeOut=setTimeout(RequestLastObservationAndRefreshOneValue, node.STAredrawPeriod*1000, node);
+		node.STAtimeOut=setTimeout(RequestLastObservationAndRefreshOneValue, node.STAOneValue.redrawPeriod*1000, node);
 	}
 	getOneValueLabel(node, node.STAdata[0]);
 }
@@ -2325,7 +2358,7 @@ async function requestAndRefreshCountResults(node, period) {
 
 	//Redraw	
 	showInfoMessage(node.label + ". Waiting " + period + " seconds ...");
-	node.STACountTimeOut=setTimeout(requestAndRefreshCountResults, period*1000, node, period);
+	node.STAtimeOut=setTimeout(requestAndRefreshCountResults, period*1000, node, period);
 	networkNodes.update(node);
 }
 
@@ -4191,9 +4224,9 @@ async function UpdateChildenLoadJSONCallback(parentNode) {
 		}
 		else if (node.image == "CountResultsSTA.png")
 		{
-			if (node.STACountTimeOut) {
-				clearTimeout(node.STACountTimeOut);
-				node.STACountTimeOut=null;
+			if (node.STAtimeOut) {
+				clearTimeout(node.STAtimeOut);
+				node.STAtimeOut=null;
 			}
 			await requestAndRefreshCountResults(node, node.STAredrawPeriodCount);
 		}
@@ -6036,6 +6069,8 @@ function networkDoubleClick(params) {
 			document.getElementById("DialogSTAURL").showModal();
 		}
 		else if (currentNode.image == "s3Service.png") {
+			if (false==ChangeToHTTPS(true))
+				return;
 			document.getElementById("divTitleDialogS3Bucket").innerHTML = "S3 Service";
 			if (currentNode.STAURL)
 				document.getElementById("DialogS3BucketURL").value = currentNode.STAURL;
@@ -6043,6 +6078,8 @@ function networkDoubleClick(params) {
 			document.getElementById("DialogS3Bucket").showModal();
 		}
 		else if (currentNode.image == "s3Bucket.png") {
+			if (false==ChangeToHTTPS(true))
+				return;
 			document.getElementById("divTitleDialogS3Bucket").innerHTML = "S3 Bucket";
 			if (currentNode.STAURL)
 				document.getElementById("DialogS3BucketURL").value = currentNode.STAURL;
@@ -6060,6 +6097,8 @@ function networkDoubleClick(params) {
 			document.getElementById("DialogS3Bucket").showModal();
 		}
 		else if (currentNode.image == "edc.png") {
+			if (false==ChangeToHTTPS(true))
+				return;
 			document.getElementById("divTitleDialogEDC").innerHTML = "Eclipse DataSpace Connector";
 			if (currentNode.STAURL)
 				document.getElementById("DialogEDCCatalogURL").value = currentNode.STAURL;
