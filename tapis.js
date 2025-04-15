@@ -120,6 +120,7 @@ const TableOperations = {Table: {description: "View Table", leafNode: true, help
 			AggregateColumns: {description: "Aggregate Columns", help: "Adds a new column to a table with the aggregation of other previous selected columns."},
 			CreateColumns: {description: "Create Columns", help: "Adds a new column to your table. This column can be left empty, filled with a constant value or filled with an autoincremental value."},
 			ColumnsCalculator: {description: "Columns calculator", help: "Adds a new column to your table where for each record the new column contains the result of an operation involving other column values of that record."},
+			PivotTable: {description: "Pivot table", help:"Create a new table where some column content is transponsed into new columns" },
 			ColumnStatistics: {description:"Columns statistics", help: "Create a table where, for each column the main statistics for the column values of all records are recorded."},
 			SeparateColumns: {description: "Separate Columns", help: "Splits a column containing a JSON object into separated new columns and removes the original column."},
 			ScatterPlot: {description: "Scatter Plot", leafNode: true, help: "Creates a scatter plot with a the values of the column of a table."},
@@ -242,9 +243,9 @@ function getConnectionSTAEntity(parentNode, node) {
 
 //Return null if there is no reason (and there is a "fit").
 function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
-	if (parentNode.image == "sta.png" && (node.image == "FilterRowsSTA.png" || node.image == "SelectRowSTA.png" || node.image == "GeoFilterPolSTA.png" || node.image == "SelectColumnsSTA.png" || node.image == "ExpandColumnSTA.png"  || node.image == "MergeExpandsSTA.png" || node.image == "RecursiveExpandSTA.png" || node.image == "SortBySTA.png" || node.image == "RangeSTA.png" || node.image == "OneValueSTA.png" || node.image == "CountResultsSTA.png" ) )
+	if (parentNode.image == "sta.png" && (node.image == "FilterRowsSTA.png" || node.image == "SelectRowSTA.png" || node.image == "GeoFilterPolSTA.png" || node.image == "SelectColumnsSTA.png" || node.image == "ExpandColumnSTA.png"  || node.image == "MergeExpandsSTA.png" || node.image == "RecursiveExpandSTA.png" || node.image == "SortBySTA.png" || node.image == "RangeSTA.png" || node.image == "OneValueSTA.png" || node.image == "SubscribeSTA.png" || node.image == "CountResultsSTA.png" ) )
 		return "The operation cannot be applied to the root of an STA. (Suggestion: connect a STA Entity first)";
-	if (parentNode.image=="sta.png" || parentNode.image=="ogcAPICols.png" || parentNode.image=="csw.png")
+	if (parentNode.image=="sta.png" || parentNode.image=="staRoot.png" || parentNode.image=="edcAsset.png" || parentNode.image=="ogcAPICols.png" || parentNode.image=="csw.png")
 		return null;
 	if ((STAOperations[removeExtension(parentNode.image)] && STAOperations[removeExtension(parentNode.image)].leafNode==true) ||
 		(TableOperations[removeExtension(parentNode.image)] && TableOperations[removeExtension(parentNode.image)].leafNode==true))
@@ -792,7 +793,7 @@ async function LoadJSONNodeSTAData(node, callback, url) {
 			url_fetch=AddQueryParamsToURL(node.STAURL, "$top=" + node.STASelectedExpands.top);
 		else
 			url_fetch=AddQueryParamsToURL(node.STAURL, ((node.OGCType == "OGCAPIcollections" || node.OGCType == "OGCAPIitems") ? "limit=" : ((node.OGCType == "GUF") ? "COUNT=" : "$top=")) + node.OGCExpectedLength);
-		AddHeadersIfNeeded(options);
+		AddHeadersIfNeeded(options, node.STAsecurity);
 
 		if (options.headers)
 			response = await fetch(url_fetch, options);
@@ -1465,7 +1466,7 @@ function SaveLocalDataFile(data, fileName, extension, mediatype)   //Saves a mem
 	if (fileName.substring(fileName.length-extension.length) != extension)
 		fileName+=extension;
 	link.setAttribute('download', fileName);
-	link.setAttribute('href', MakeHrefData(data));
+	link.setAttribute('href', MakeHrefData(data, mediatype));
 	document.body.appendChild(link);
 
 	// wait for the link to be added to the document
@@ -1720,177 +1721,6 @@ function GetDialogEDCEvent(event) {
 			);
 }
 
-function EDCNegociateContract(node, EDCConsumerURL, offerId, counterPartyAddress) {
-	var obj={
-		"@context": {"edc": "https://w3id.org/edc/v0.0.1/ns/"},
-		"@type": "ContractRequest",
-		"counterPartyAddress": counterPartyAddress,
-		"protocol": "dataspace-protocol-http",
-		"policy": {
-			"@context": "http://www.w3.org/ns/odrl.jsonld",
-			"@id": offerId,
-			"@type": "Offer",
-			"assigner": "provider",
-			"target": "assetId",
-			"permission": []
-		}
-	};
-	HTTPJSONData(EDCConsumerURL+"/management/v3/contractnegotiations", null, "POST", obj).then(
-				function(value) {
-					if (value.obj && value.obj["@type"] && value.obj["@type"]=="IdResponse" && value.obj["@id"]) {
-						showInfoMessage('EDC contract negociation iniciated...');
-						EDCWaitForNegociationCompletition(node, EDCConsumerURL, value.obj["@id"], 0);
-					} else {
-						showInfoMessage('EDC contract negociation failed: '+ JSON.stringify(value.obj));
-					}
-				},
-				function(error) { 
-					showInfoMessage('EDC contract negociation failed. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
-					console.log(error) ;
-				}
-			);
-}
-
-function EDCWaitForNegociationCompletition(node, EDCConsumerURL, id, n) {
-	setTimeout(EDCVerifyNegociationCompletition, 1000, node, EDCConsumerURL, id, n);
-}
-
-function EDCVerifyNegociationCompletition(node, EDCConsumerURL, id, n) {
-	HTTPJSONData(EDCConsumerURL+"/management/v2/contractnegotiations/"+id).then(
-				function(value) {
-					if (!value.obj || !value.obj["@type"] || value.obj["@type"]!="ContractNegotiation" || !value.obj.state) {
-						showInfoMessage('EDC contract negociation failed' + (value.obj ? ': '+ JSON.stringify(value.obj) : '.'));
-						return;
-					}
-					if (value.obj.state!="FINALIZED") {
-						if (n==20) {
-							showInfoMessage('EDC contract negociation failed after ' + n + ' iterations');
-							return;
-						}
-						EDCWaitForNegociationCompletition(node, EDCConsumerURL, id, n++);
-						return;
-					} 	
-					if (!value.obj.contractAgreementId) {
-						showInfoMessage('EDC contract negociation failed: ' + JSON.stringify(value.obj));
-						return;
-					}				
-					showInfoMessage('EDC contract negociation successful.');
-					EDCRequestTransfer(node, EDCConsumerURL, value.obj.contractAgreementId, value.obj.counterPartyAddress)
-				},
-				function(error) { 
-					showInfoMessage('EDC contract negociation failed. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
-					console.log(error);
-				}
-			);
-}
-
-function EDCRequestTransfer(node, EDCConsumerURL, contractAgreementId, counterPartyAddress) {
-	var obj={
-		"@context": {
-			"@vocab": "https://w3id.org/edc/v0.0.1/ns/"
-		},
-		"@type": "TransferRequestDto",
-		"connectorId": "provider",
-		"counterPartyAddress": counterPartyAddress,
-		"contractId": contractAgreementId,
-		"assetId": "assetId",
-		"protocol": "dataspace-protocol-http",
-		"transferType": "HttpData-PULL"
-	};
-	HTTPJSONData(EDCConsumerURL+"/management/v3/transferprocesses", null, "POST", obj).then(
-				function(value) { 
-					if (value.obj && value.obj["@type"] && value.obj["@type"]=="IdResponse" && value.obj["@id"]) {
-						showInfoMessage('EDC transfer requested...');
-						EDCWaitForTransferStarted(node, EDCConsumerURL, value.obj["@id"], 0);
-					} else {
-						showInfoMessage('EDC transfer request failed' + (value.obj ? ': '+ JSON.stringify(value.obj) : '.'));
-					}
-				},
-				function(error) { 
-					showInfoMessage('Error in requesting EDC catalog. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
-					console.log(error) ;
-				}
-			);	
-}
-
-function EDCWaitForTransferStarted(node, EDCConsumerURL, id, n) {
-	setTimeout(EDCVerifyEDCTransferStarted, 1000, node, EDCConsumerURL, id, n);
-}
-
-function EDCVerifyEDCTransferStarted(node, EDCConsumerURL, id, n) {
-	HTTPJSONData(EDCConsumerURL+"/management/v3/transferprocesses/"+id).then(
-				function(value) {
-					if (!value.obj || !value.obj["@type"] || value.obj["@type"]!="TransferProcess" || !value.obj.state) {
-						showInfoMessage('EDC transfer request failed' + (value.obj ? ': '+ JSON.stringify(value.obj) : '.'));
-						return;
-					}
-					if (value.obj.state!="STARTED") {
-						if (n==20) {
-							showInfoMessage('EDC transfer request failed after ' + n + ' iterations');
-							return;
-						}
-						EDCWaitForTransferStarted(node, EDCConsumerURL, id, n++);
-						return;
-					} 	
-					/*if (!value.obj.contractId) {
-						showInfoMessage('EDC transfer request failed: ' + JSON.stringify(value.obj));
-						return;
-					}*/				
-					showInfoMessage('EDC transfer request start confirmed.');
-					EDCGetAddressToTransfer(node, EDCConsumerURL, id);
-				},
-				function(error) { 
-					showInfoMessage('EDC transfer request failed. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
-					console.log(error);
-				}
-			);
-}
-
-function EDCGetAddressToTransfer(node, EDCConsumerURL, id) {
-	HTTPJSONData(EDCConsumerURL+"/management/v3/edrs/"+id+"/dataaddress").then(
-				function(value) {
-					if (!value.obj || !value.obj["@type"] || value.obj["@type"]!="DataAddress" || !value.obj.endpoint || !value.obj.authorization) {
-						showInfoMessage('EDC getting URL for transfer request failed' + (value.obj ? ': '+ JSON.stringify(value.obj) : '.'));
-						return;
-					}
-					showInfoMessage('EDC URL for transfer obtained.');
-					EDCExectuteTransfer(node, value.obj.endpoint, value.obj.authorization);
-				},
-				function(error) { 
-					showInfoMessage('EDC getting URL for transfer request failed. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
-					console.log(error);
-				}
-			);
-}
-
-function EDCExectuteTransfer(node, url, authorization) {
-	HTTPJSONData(url, ["Content-Type", "Content-Length"], null, null, {'Accept': '*/*', 'Authorization': authorization}).then(
-				function(value) {
-					showInfoMessage('EDC Raw data transfer completed. It it is not automatically transformed into a table, use the relevant "format" tool to do so.');
-					node.STAURL=url;
-					node.OGCType="fileURL";
-					var mediatype=removeParamContentType(value.responseHeaders["Content-Type"]);
-					node.STARawData=value;
-					if (mediatype=="application/json")
-						node.STAdata=ParseJSON(value.obj);
-					else if (mediatype=="application/ld+json")
-						node.STAdata=ParseJSONLD(value.obj);
-					else if (mediatype=="text/csv" || mediatype=="application/vnd.ms-excel") {
-						node.STAdata=Papa.parse(value.text, {header: true, dynamicTyping: true, skipEmptyLines: true}).data;
-						//Papa.parse transforms ISO dates to javascript Dates. I revert this to ISO date expressed in text.
-						TransformDatesToISO(currentNode.STAdata);
-					}
-					else
-						node.STAdata=[{"Content-Type": value.responseHeaders["Content-Type"], "Content-Length": value.responseHeaders["Content-Length"]}]
-					networkNodes.update(node);
-					updateQueryAndTableArea(node);
-				},
-				function(error) { 
-					showInfoMessage('EDC contract negociation failed. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
-					console.log(error);
-				}
-			);
-}
 
 function PopulateInputFromSelect(event, idPrefix) {
 	event.preventDefault(); // We don't want to submit this form
@@ -3980,11 +3810,10 @@ function GetSelectRow(event) {
 			node.STAURL = parentNode.STAURL;
 		if (parentNode.OGCType=="OGCAPIcollections")
 			node.OGCType = "OGCAPIcollection";
-		if (parentNode.OGCType=="EDCCatalogue") {
+		else if (parentNode.OGCType=="EDCCatalogue") {
 			node.OGCType = "EDCAsset";
 			node.EDCConsumerURL = parentNode.EDCConsumerURL;
-		}	
-		if (parentNode.OGCType=="S3Buckets" || parentNode.OGCType=="S3Bucket") {
+		} else if (parentNode.OGCType=="S3Buckets" || parentNode.OGCType=="S3Bucket") {
 			node.OGCType = parentNode.OGCType;
 			node.STAAccessKey = parentNode.STAAccessKey;
 			node.STASecretKey = parentNode.STASecretKey;
@@ -4006,11 +3835,11 @@ function GetSelectRow(event) {
 		if (requiresLoadJSON) {
 			const s = elems[i].id.substring("SelectRow_".length);
 			node.STAURLIdSelected=s;
-
 			//if (node?.OGCType=="OGCAPIitems")
 			//	node.STAURL = parentNode.STAdata ? (parentNode.STAdata[i].link ? getURLWithoutQueryParams(parentNode.STAdata[i].link) : node.STAURL+"/"+parentNode.STAdata[i].id) + "/items"  : parentNode.STAURL;
 			if (parentNode?.OGCType=="OGCAPIcollections"){
-				node.STAURL = RemoveQueryParamFromURL(parentNode.STAdata[s].link, "f");
+				//node.STAURL = RemoveQueryParamFromURL(parentNode.STAdata[s].link, "f");
+				node.STAURL = parentNode.STAURL + "/" + parentNode.STAdata[s].id;
 			} else {
 				const n = Number(s);
 				node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + (Number.isInteger(n) ? "(" + n + ")" : "('" + s + "')"), getURLQueryParams(node.STAURL));
@@ -5714,7 +5543,7 @@ function SeparateColumns(event) {
 	UpdateChildenTable(currentNode);
 }
 
-function populateSelectColumnSeparateColumns(){
+function populateSelectColumnSeparateColumns() {
 	var parentNode= GetFirstParentNode(currentNode);
 	if (!parentNode || !parentNode.STAdata) {
 		showInfoMessage("No data loaded in the parent node.");
@@ -5723,12 +5552,14 @@ function populateSelectColumnSeparateColumns(){
 	currentNode.STAURL=null;
 	networkNodes.update(currentNode);
 	
-	var attributes= Object.keys(parentNode.STAdataAttributes);
-		var selectColumnName= document.getElementById("SeparateColumsSelect_column");
-		selectColumnName.innerHTML="";
-		var cdns=[];
-		for (var i=0;i< attributes.length;i++){
-		cdns.push(`<option value="${attributes[i]}"> ${attributes[i]} (${parentNode.STAdataAttributes[attributes[i]].type})</option>`)
+	var dataAttributes=(parentNode.STAdataAttributes) ? parentNode.STAdataAttributes : getDataAttributes(parentNode.STAdata);
+
+	var attributes= Object.keys(dataAttributes);
+	var selectColumnName= document.getElementById("SeparateColumsSelect_column");
+	selectColumnName.innerHTML="";
+	var cdns=[];
+	for (var i=0;i< attributes.length;i++) {
+		cdns.push(`<option value="${attributes[i]}"> ${attributes[i]} (${dataAttributes[attributes[i]].type})</option>`);
 	}
 	selectColumnName.innerHTML+=cdns.join("");
 	document.getElementById("SeparateColumsInput_column").value=",";
@@ -5774,13 +5605,15 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 		return null;
 	}
 	if (staNodes && nodeFrom.STAURL && IdOfSTAEntity(nodeTo) != -1) {
-		if (nodeFrom.image=="sta.png")
+		if (nodeFrom.image=="sta.png" || nodeFrom.image=="staRoot.png" || nodeFrom.image=="edcAsset.png")
 			nodeTo.STAURL = nodeFrom.STAURL + "/" + STAEntitiesArray[IdOfSTAEntity(nodeTo)];
 		else 
 			nodeTo.STAURL = nodeFrom.STAURL + "/" + getConnectionSTAEntity(nodeFrom, nodeTo).entity;
 		if (nodeFrom.STASelectedExpands)
 			nodeTo.STASelectedExpands=deapCopy(nodeFrom.STASelectedExpands);
 		nodeTo.STAEntityName = STAEntitiesArray[IdOfSTAEntity(nodeTo)];
+		if (nodeFrom.STAsecurity)
+			nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
 
 		networkNodes.update(nodeTo);
 		if (addEdge)
@@ -5794,6 +5627,9 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 		nodeTo.STAURL = nodeFrom.STAURL + "/" + STASpecialQueries[STASpecialQueriesArray[IdOfSTASpecialQueries(nodeTo)]].query;
 		if (nodeFrom.STASelectedExpands)
 			nodeTo.STASelectedExpands=deapCopy(nodeFrom.STASelectedExpands);
+		if (nodeFrom.STAsecurity)
+			nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
+
 		networkNodes.update(nodeTo);
 		if (addEdge)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
@@ -5806,13 +5642,16 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 		(getSTAEntityPlural(nodeFrom.STAEntityName) == nodeFrom.STAEntityName)? plural=true: plural=false;
 		if(nodeTo.image == "FilterRowsSTA.png"){
 			if (plural==true){
-					nodeTo.STAURL = nodeFrom.STAURL;
+				nodeTo.STAURL = nodeFrom.STAURL;
 				if (nodeFrom.STASelectedExpands)
 					nodeTo.STASelectedExpands=deapCopy(nodeFrom.STASelectedExpands);
 				if (nodeFrom.STAdata)
 					nodeTo.STAdata = deapCopy(nodeFrom.STAdata);
 				if (nodeFrom.STAdataAttributes)
 					nodeTo.STAdataAttributes = deapCopy(nodeFrom.STAdataAttributes);
+				if (nodeFrom.STAsecurity)
+					nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
+
 				networkNodes.update(nodeTo);
 				if (addEdge)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
@@ -5830,16 +5669,19 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 					nodeTo.STAdata = deapCopy(nodeFrom.STAdata);
 				if (nodeFrom.STAdataAttributes)
 					nodeTo.STAdataAttributes = deapCopy(nodeFrom.STAdataAttributes);
+				if (nodeFrom.STAsecurity)
+					nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
 				networkNodes.update(nodeTo);
 				if (addEdge)
 					networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
 				return true;
 		}
-
 	}
 	if (staNodes && nodeFrom.STAURL && (nodeTo.image == "SelectColumnsSTA.png" || nodeTo.image == "ExpandColumnSTA.png") || 
 						nodeTo.image == "SortBySTA.png" || nodeTo.image == "RangeSTA.png") {
 		nodeTo.STAURL = nodeFrom.STAURL;
+		if (nodeFrom.STAsecurity)
+			nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
 		networkNodes.update(nodeTo);
 		if (addEdge)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
@@ -5847,6 +5689,8 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 	}
 	if (staNodes && nodeFrom.STAURL && nodeTo.image == "MergeExpandsSTA.png") {
 		nodeTo.STAURL = nodeFrom.STAURL;
+		if (nodeFrom.STAsecurity)
+			nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
 		networkNodes.update(nodeTo);
 		if (addEdge)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
@@ -5867,6 +5711,8 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 				nodeTo.STAdata = deapCopy(nodeFrom.STAdata);
 			if (nodeFrom.STAdataAttributes)
 				nodeTo.STAdataAttributes = deapCopy(nodeFrom.STAdataAttributes);		
+			if (nodeFrom.STAsecurity)
+				nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
 			networkNodes.update(nodeTo);
 		} else if (!nodeTo.STAURL)
 			return false;
@@ -5881,6 +5727,8 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 			nodeTo.STAURL=getSTAURLRoot(nodeFrom.STAURL);
 			if (nodeFrom.STASelectedExpands)
 				nodeTo.STASelectedExpands=={selected: [], expanded: {}, top: nodeFrom.STASelectedExpands ? nodeFrom.STASelectedExpands : 100};
+			if (nodeFrom.STAsecurity)
+				nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
 			networkNodes.update(nodeTo);
 		}
 		if (addEdge)
@@ -5891,15 +5739,17 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 		}
 		return true;
 	}
-	if (tableNodes && nodeTo.image == "Meaning.png" || 
-					nodeTo.image == "SelectColumnsTable.png" || nodeTo.image == "SelectRowTable.png" || 
-		nodeTo.image == "FilterRowsTable.png" || nodeTo.image == "JoinTables.png"){
+	if (tableNodes && (nodeTo.image == "Meaning.png" || 
+				nodeTo.image == "SelectColumnsTable.png" || nodeTo.image == "SelectRowTable.png" || 
+				nodeTo.image == "FilterRowsTable.png" || nodeTo.image == "JoinTables.png")){
 		if (nodeFrom.STAdata)
 			nodeTo.STAdata = deapCopy(nodeFrom.STAdata);  //This copy will be done again in "SelectColumnsTable.png" and "SelectRowTable.png". We do it here to have the full table while the user does not enter any selection
 		if (nodeFrom.STAdataAttributes)
 			nodeTo.STAdataAttributes = deapCopy(nodeFrom.STAdataAttributes);
 		if (nodeFrom.STAfileUrl)
 			nodeTo.STAfileUrl = deapCopy(nodeFrom.STAfileUrl);
+		if (nodeFrom.STAsecurity)
+			nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
 		networkNodes.update(nodeTo);
 		if (addEdge)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
@@ -5953,8 +5803,29 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 		networkNodes.update(nodeTo);
 		if (addEdge)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
-		//nodeFrom.STAdata[0].assetId;
 		EDCNegociateContract(nodeTo, nodeFrom.EDCConsumerURL, nodeFrom.STAdata[0].offerId, nodeFrom.STAdata[0].counterPartyAddress);
+		return true;
+	}
+	if (tableNodes && nodeTo.image == "ogcAPICols.png") {
+		if (nodeFrom && nodeFrom.STAURL) {
+			nodeTo.STAURL=nodeFrom.STAURL;
+			if (nodeFrom.STAsecurity)
+				nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
+		}
+		networkNodes.update(nodeTo);
+
+		if (addEdge)
+			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
+		return true;
+	}
+	if (tableNodes && nodeTo.image == "ogcAPIItems.png") {
+		if (nodeFrom && nodeFrom.STAsecurity)
+			nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
+
+		networkNodes.update(nodeTo);
+
+		if (addEdge)
+			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
 		return true;
 	}
 	return false;
@@ -6274,6 +6145,10 @@ function networkDoubleClick(params) {
 			saveNodeDialog("DialogCountResults", currentNode);
 			document.getElementById("DialogCountResults").showModal();
 		}
+		else if (currentNode.image == "SubscribeSTA.png") {
+			saveNodeDialog("DialogSubscribe", node);
+			document.getElementById("DialogSubscribe").showModal();
+		}
 		else if (currentNode.image == "SaveLayer.png") {
 			ShowSaveLayerDialog(currentNode);
 			document.getElementById("DialogSaveLayer").showModal();
@@ -6497,6 +6372,10 @@ function networkDoubleClick(params) {
 
 		else if (currentNode.image =="ConcatenateTables.png") {
 			document.getElementById("DialogConcatenateTables").showModal();
+		}
+		else if (currentNode.image=="PivotTable.png"){
+			populatePivotTableDialog(currentNode);
+			document.getElementById("DialogPivotTable").showModal();
 		}
 		else if (currentNode.image =="ColumnStatistics.png") {
 			saveNodeDialog("DialogColumnStatistics", currentNode);
@@ -8005,6 +7884,103 @@ function createAndLoadImportGeoJSONNode(data,url){
 	updateQueryAndTableArea(node);
 	networkNodes.update(node);
 	
+}
+
+function populatePivotTableDialog(node){
+	saveNodeDialog("DialogPivotTable", node);
+	var parentNode=GetParentNodes(node)[0];
+	node.STAdataAttributes=deapCopy(parentNode.STAdataAttributes);
+	node.STAdata= deapCopy(parentNode.STAdata);
+	if (!node.STApivotTable)node.STApivotTable={Columns:[], Rows:[], Values:[]};
+	networkNodes.update(node);
+	var attributes=Object.keys(node.STAdataAttributes);
+
+	var options="";
+
+	for (var i=0;i< attributes.length;i++){
+		options+=` <option value="${attributes[i]}">${attributes[i]}</option>`;
+	}
+
+	document.getElementById("pivotTableColumns_select").innerHTML=options;
+	document.getElementById("pivotTableRows_select").innerHTML=options;
+	document.getElementById("pivotTableValues_select").innerHTML=options;
+
+	
+	var columnsRowsValues=["Columns", "Rows", "Values"];
+	var elementsInTable;
+
+	for (var e= 0;e<columnsRowsValues.length;e++){
+		elementsInTable="";
+		if (node.STApivotTable[columnsRowsValues[e]].length==0){
+			elementsInTable=`<tr style="border: 1px solid black;"> 
+								<td style="font-style: italic; color:rgba(145, 143, 141, 0.51); border: 1px solid black;""> ${columnsRowsValues[e]} to table ... </td>
+								<td style="border: 1px solid black;"><button onclick="deleteTableRowInPivotTable('${columnsRowsValues[e]}',0)"><img src="trash.png" alt="Remove" title="Remove" style="width:20px"></button></td>
+							</tr>`
+		}else{
+			for (var u=0;u<node.STApivotTable[columnsRowsValues[e]].length;u++){
+				elementsInTable+=`<tr style="border: 1px solid black;"> 
+				<td style="border: 1px solid black;""> ${node.STApivotTable[columnsRowsValues[e]][u]} </td>
+				<td style="border: 1px solid black;"><button onclick="deleteTableRowInPivotTable('${columnsRowsValues[e]}',${u})"><img src="trash.png" alt="Remove" title="Remove" style="width:20px"></button></td>
+			</tr>`;
+			}
+
+		}
+		document.getElementById("pivotTable"+columnsRowsValues[e]+"_table").innerHTML=elementsInTable;
+		showCheckRadioOptions("DialogPivotTableAggregationsSpan", "DialogPivotTable", AggregationsOptions, 3, "DialogPivotTableAggregatedBy");
+		document.getElementById("DialogPivotTableSum").checked=true; //Mirar quin hi ha guardat
+
+	}
+}
+function addTableRowInPivotTable(place){
+	event.preventDefault();
+	var node= getNodeDialog("DialogPivotTable");
+	var select= document.getElementById("pivotTable"+place+"_select");
+	if (node.STApivotTable[place].includes(select.options[select.selectedIndex].value)){
+		alert("This attribute has already been added in "+place);
+	}else{
+		node.STApivotTable[place].push(select.options[select.selectedIndex].value);
+		networkNodes.update(node);
+		//if (place=="Rows") document.getElementById("pivotTableRows_addButton").disabled=true;
+		populatePivotTableDialog(node);
+	}
+
+}
+
+function deleteTableRowInPivotTable(place,number){
+	event.preventDefault();
+	var node= getNodeDialog("DialogPivotTable");
+	var elements= node.STApivotTable[place];
+	var elementsFiltered=[];
+	for (var i=0;i<elements.length;i++){
+		if (i!=number)elementsFiltered.push(elements[i]);
+	}
+	node.STApivotTable[place]=elementsFiltered;
+	networkNodes.update(node);
+	if (place=="Rows") document.getElementById("pivotTableRows_addButton").disabled=false;
+	populatePivotTableDialog(node);
+}
+function okButtonInPivotTable(event){
+	event.preventDefault();
+	var node= getNodeDialog("DialogPivotTable");
+	var radioButtonsAggregatted = document.getElementsByName('DialogPivotTableAggregatedBy');
+	var aggregation;
+	for (let i = 0; i < radioButtonsAggregatted.length; i++) {
+		if (radioButtonsAggregatted[i].checked) {
+			aggregation=radioButtonsAggregatted[i].id.split("DialogPivotTable")[1];
+			node.STApivotTable.aggregation= aggregation
+			networkNodes.update(node);
+		 break;
+		}
+	}
+	var newData=buildPivotTable(node.STAdata, node.STApivotTable.Rows, node.STApivotTable.Columns, node.STApivotTable.Values, aggregation);
+	if ( typeof newData != "string"){
+		node.STAdata=newData;
+		node.STAdataAttributes=uploadDataAttributesAddingNewColumns(node.STAdataAttributes, newData, "");
+		networkNodes.update(node);
+		document.getElementById("DialogPivotTable").close();
+	}else{
+		alert (newData) //Error
+	}
 }
 
 /*function giveMeNetworkInformation(event) {

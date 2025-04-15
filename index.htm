@@ -11,9 +11,11 @@
 	<!--Thanks to https://github.com/DavideViolante/chartjs-plugin-labels and downloaded from:
 		https://www.npmjs.com/package/chart.js-plugin-labels-dv/v/3.3.0 -->
 	<script type="text/javascript" src="chartjs-plugin-labels.min.js"></script>
+	<!--Thanks to chartjs-adapter-date-fns v3.0.0; to use time in chart axis -->
+	<script	type="text/javascript" src="chartjs-adapter-date-fns.bundle.min.js"></script>
 
 	<script	type="text/javascript" src="vis-network.min.js"></script>
-	<script type="text/javascript" src="vis-timeline-graph2d.min.js"></script>
+	<!--script type="text/javascript" src="vis-timeline-graph2d.min.js"></script Replaced by chartjs in 2025-04-01-->
 
 	<script type="text/javascript" src="papaparse.min.js" async defer></script>
 	<script type="text/javascript" src="crypto-js.min.js" async defer></script> 
@@ -54,8 +56,8 @@
 						<td><img src="logo.png" height="70"></td>
 						<td>
 							<div style="font-size: 30px; font-weight: bold;">TAPIS</div>
-							<div style="font-size: 20px; font-weight: bold;">Tables from APIS</div>
-							<div style="font-size: 10px; font-weight: normal;">or an API Explerer and a Table Manager							</div>
+							<div style="font-size: 20px; font-weight: bold;">Tables from APIs</div>
+							<div style="font-size: 10px; font-weight: normal;">or an API Explorer and a Table Manager							</div>
 						</td>
 					</tr>
 				</table>
@@ -63,11 +65,11 @@
 			<td align="right" valign="top">
 				<span id="UserInfoText"></span>
 				<button id="buttonReloadSTA" onclick='reloadSTA(event);'onmouseover='showHelpToolTip(event, "", "Reload all schema to upload the data" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="reload.png" height="20" valign="middle"> Refresh</button>
-				<label class=labelbotton onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="OpenNetwork.png" height="20" valign="middle" > Open
+				<label class=labelbotton onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="OpenNetwork.png" height="20" valign="middle" > Open...
 				<input type="file" id="openNetworkFileName" hidden onchange='openFileNetwork(event);'/>
 				</label> <!-- https://dev.to/faddalibrahim/how-to-create-a-custom-file-upload-button-using-html-css-and-javascript-1c03 -->
-				<button onclick='document.getElementById("DialogOpenURLNetwork").showModal();' onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data from a webside or from Help examples" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="OpenURLNetwork.png" height="20" valign="middle"> Open URL</button>
-				<button onclick='saveNetwork(event);'onmouseover='showHelpToolTip(event, "", "Save your Tapis schema with nodes and data as a JSON to be able to open it later" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="SaveNetwork.png" height="20" valign="middle"> Save</button>
+				<button onclick='document.getElementById("DialogOpenURLNetwork").showModal();' onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data from a webside or from Help examples" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="OpenURLNetwork.png" height="20" valign="middle"> Open URL...</button>
+				<button onclick='saveNetwork(event);'onmouseover='showHelpToolTip(event, "", "Save your Tapis schema with nodes and data as a JSON to be able to open it later" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="SaveNetwork.png" height="20" valign="middle"> Save as...</button>
 				<button id="buttonOpenLogin" onclick='OpenLogin(event);' onmouseover='showHelpToolTip(event, "", "Login to be able to have access to certain places")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="login.png" height="20" valign="middle"> Login</button>
 				<button id="buttonOpenLogout" onclick='OpenLogout(event);' style="display: none");' onmouseover='showHelpToolTip(event, "", "Close your sesion")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="login.png" height="20" valign="middle"> Logout</button>
 				<button onclick='OpenConfiguration(event);'onmouseover='showHelpToolTip(event, "", "To modify display configurations")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )' ><img src="config.png" height="20" valign="middle">Configuration</button>
@@ -636,7 +638,62 @@
 			<input type="hidden" id="DialogColumnStatisticsNodeId"></input>
 		</form>
 	</dialog>
-	
+
+	<dialog id="DialogPivotTable">
+		<form>
+ 			<div> 
+				<fieldset>
+					<legend>Columns</legend>
+					<table>
+						<tr>
+							<td>
+								<select id= "pivotTableColumns_select"></select><button id="pivotTableColumns_addButton" onclick="addTableRowInPivotTable('Columns')">Add a Column</button>
+							</td>
+							<td>
+								<table type="text" id="pivotTableColumns_table"></table>
+							</td>
+						</tr>
+					</table>
+					
+				</fieldset>
+				<fieldset>
+					<legend>Rows</legend>
+					<table>
+						<tr>
+							<td>
+								<select id= "pivotTableRows_select"></select><button id="pivotTableRows_addButton" onclick="addTableRowInPivotTable('Rows')">Add a Row</button>
+							</td>
+							<td>
+								<table type="text" id="pivotTableRows_table"></table>
+							</td>
+						</tr>
+					</table>
+				</fieldset>
+				<fieldset>
+					<legend>Values</legend>
+					<table>
+						<tr>
+							<td>
+								<select id= "pivotTableValues_select"></select><button id="pivotTableValues_addButton" onclick="addTableRowInPivotTable('Values')">Add a Value</button>
+							</td>
+							<td>
+								<table type="text" id="pivotTableValues_table"></table>
+							</td>
+						</tr>
+					</table>
+				</fieldset>
+				<fieldset>
+					<legend>Repited values aggregated by: </legend>
+					<span id="DialogPivotTableAggregationsSpan"></span>
+				</fieldset>
+			</div>
+			<div  style="text-align: center">
+				<button value="default" onClick="okButtonInPivotTable(event)">Ok</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+			<input type="hidden" id="DialogPivotTableNodeId"></input>
+		</form>
+	</dialog>
 	<dialog id="DialogConcatenateTables">
 		<form >
 			<fieldset> 
@@ -1177,14 +1234,6 @@
 	</dialog>
 
 	<dialog id="DialogScatterPlot">
-		<!-- <form>
-			<div id="ScatterPlotTableDiv">
-
-			</div>
-			<div class="center">
-				<button value="ok" onClick="CloseDialogScatterPlot(event)" formmethod="dialog">Close</button>
-			</div>
-		</form> -->
 		<table border="0"><tr><td>
 			<span id="DialogScatterPlotTitle"></span>
 			<form>
@@ -1195,9 +1244,10 @@
 				<button value="draw" onClick="DrawScatterPlot(event)">Draw</button>
 				<button value="ok" onClick="CloseDialogScatterPlot(event)" formmethod="dialog">Close</button>
 			</div>
+			<input type="hidden" id="DialogScatterPlotNodeId"></input>
 			</form>
 		</td>
-		<td><div id="DialogScatterPlotVisualization" style="width:600px; height:500px;"></div></td>
+		<td style="vertical-align: top;"><canvas id="DialogScatterPlotVisualization" style="width:600px; height:500px;max-height:500px; "></canvas></td>
 		</tr>
 		<tr>
 			<td></td>
@@ -1206,25 +1256,11 @@
 					<legend>
 						Graphic configurations
 					</legend>
-					<label style="font-weight: bold;">Left Y axis:  </label><br>
-					<label>Legend position</label>
-					<select id="DialogScatterPlotLegendLocationSelectLeft">
-						<option value="bottom-left">Bottom left</option>
-						<option value="bottom-right">Bottom right</option>
-						<option value="top-left">Top left</option>
-						<option value="top-right">Top right</option>
-					</select>
-					<label>Axis label: </label><input value="" type="text" id="DialogScatterPlotAxisYLabelLeft"></input><br><br>
-					<label style="font-weight: bold;">Right Y axis:  </label><br>
-					<label>Legend position</label>
-					<select id="DialogScatterPlotLegendLocationSelectRight">
-						<option value="bottom-left">Bottom left</option>
-						<option value="bottom-right">Bottom right</option>
-						<option value="top-left">Top left</option>
-						<option value="top-right" selected>Top right</option>
-					</select>
-					<label>Axis label:</label>
-					<input value="" type="text" id="DialogScatterPlotAxisYLabelRight"></input>
+						<label style="font-weight: bold;">Graphic title:</label>
+						<input value="" type="text" id="DialogScatterPlotAxisTitle"></input> <br>
+						<label style="font-weight: bold;">X axis label:  </label><input value="" type="text" id="DialogScatterPlotAxisXLabel"></input><br>
+						<label style="font-weight: bold;">Left Y axis label:  </label><input value="" type="text" id="DialogScatterPlotAxisYLabelLeft"></input><br>
+						<label style="font-weight: bold;">Right Y axis label:  </label><input value="" type="text" id="DialogScatterPlotAxisYLabelRight"></input>
 				</fieldset>
 
 			</td>
@@ -1254,12 +1290,7 @@
 				<label>Values:
 					<span id="DialogBarPlotAxisY"></span>
 				</label>
-				<fieldset>
-    					<legend>Value labels:</legend>
-					<label><input type="radio" name="DialogBarPlotLabels" id="DialogBarPlotTypeLabelsNone"></input>None</label>
-					<label><input type="radio" name="DialogBarPlotLabels" id="DialogBarPlotTypeLabelsValue" checked="checked"></input>Value</label>
-					<label><input type="radio" name="DialogBarPlotLabels" id="DialogBarPlotTypeLabelsPercentage"></input>Percentage</label>
-				</fieldset>
+				<br>
 				<label>Variable name (optional):
 					<span id="DialogBarPlotVariable"></span>
 				</label>

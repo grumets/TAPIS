@@ -684,7 +684,9 @@ function GetSelectColumnsSTA(event)
 	var previousSTAURL=null;
 
 	var {dataAttributesArray, previousSTAURL}=GetPropagateNodeSelectedSelectExpands(node, parentNode);
-	var selectedColumns=GetSTASelectExpandNextOrigin(node.STASelectedExpands, node.STASelectExpandNextOrigin).selected;
+	var selectExpand=GetSTASelectExpandNextOrigin(node.STASelectedExpands, node.STASelectExpandNextOrigin);
+	selectExpand.selected={};
+	var selectedColumns=selectExpand.selected;
 
 	for (var a = 0; a < dataAttributesArray.length; a++) {
 		if (!document.getElementById("SelectColumns_" + a).checked)
@@ -850,7 +852,7 @@ function GetSelectSortBySTables(parentNode, node){
 		if (document.getElementById("SelectSortByDesc") && document.getElementById("SelectSortByDesc").checked)
 			AscOrDesc="desc";	
 
-		var newData= SortTableByColumn(deapCopy(parentNode.STAdata), attributeSelected, AscOrDesc);
+		var newData= SortTableByColumns(deapCopy(parentNode.STAdata), [attributeSelected], AscOrDesc);
 		node.STAdata=newData;
 		networkNodes.update(node);
 	}

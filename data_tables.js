@@ -899,7 +899,7 @@ function GetHTMLdataAttribute(dataAttributeName, dataAttribute) {
 					cdns.push((dataAttributes[dataAttributesArray[a]].type=="number" || dataAttributes[dataAttributesArray[a]].type=="integer") ? "<td align='right'>" :  "<td>");
 					if (typeof cell !== "undefined") {
 						if (f_isAttributeAnyURI && needhref[a] && cell.length)
-							cdns.push("<a href='", cell, "' target='_blank'>", cell, "</a>");
+							cdns.push("<a href='", cell.replaceAll("'", "%27"), "' target='_blank'>", cell, "</a>");
 						else if (typeof cell === "object")
 							cdns.push(JSON.stringify(cell));
 						else
@@ -1197,38 +1197,182 @@ function sortValuesNumbersOrText(arrayValues) {
 	return arrayNumbers.sort((a, b) => a - b).concat(arrayText.sort());  //join arrays
 }
 
-function SortTableByColumn(data, columnSelected, AscOrDesc) {
-
-	//var attributes = getDataAttributesSimple(data);
-	//if (attributes[columnSelected].type == "string") {
-		if (AscOrDesc && AscOrDesc == "asc") {
+/* 
+'data' is the data to be sorted. This input is modified.
+'columnsSelected' is a list of column names
+'AscOrDesc' can be "asc" or "desc" and applies for all columns (what is questionable and might change in the future.
+*/
+function SortTableByColumns(data, columnsSelected, AscOrDesc) { 
+	var column;	
+	if (AscOrDesc && AscOrDesc == "asc") {
 			data.sort(function (a, b) {
-				if (a[columnSelected] > b[columnSelected]) {
-					return 1;
-				}
-				if (a[columnSelected] < b[columnSelected]) {
-					return -1;
+				for (var i=0;i<columnsSelected.length;i++){
+					column= columnsSelected[i];
+					if (a[column] > b[column]) {
+						return 1;
+					}
+					if (a[column] < b[column]) {
+						return -1;
+					}
 				}
 				return 0;
 			})
 		} else {
 			data.sort(function (a, b) {
-				if (a[columnSelected] < b[columnSelected]) {
-					return 1;
-				}
-				if (a[columnSelected] > b[columnSelected]) {
-					return -1;
+				for (var i=0;i<columnsSelected.length;i++){
+					column= columnsSelected[i];
+					if (a[column] < b[column]) {
+						return 1;
+					}
+					if (a[column] > b[column]) {
+						return -1;
+					}
 				}
 				return 0;
 			})
 		}
-	/*} else { //number
-		if (AscOrDesc == "asc") {
-			data.sort((a, b) => a[columnSelected] - b[columnSelected]);
-		}else{
-			data.sort((a, b) => b[columnSelected] - a[columnSelected]);
-		}
-	}*/
 	return data;
 }
+
+//Marta, please describe the inputs and outputs and what the function does.
+function buildPivotTable(data, rows, columns, values, aggregation){
+	var allowedKey=false;
+	for (var i=0;i<AggregationsOptions.length;i++){ //To check if it is an aggregation type allowed
+		if (AggregationsOptions[i].name==aggregation) {
+			allowedKey=true;
+			break;
+		}
+	}
+	var applyFunction=true;
+	for (var i=0;i< rows.length;i++){
+ 			if (columns.includes(rows[i])){
+				applyFunction=false;
+				break;
+			}
+	}
+	if (applyFunction==false) return "Error: Attributes betwen columns and rows can't be repited "
+	else if (!values || values.length==0) return "Error:It is necessary to send values";
+	else if((!columns|| columns.length==0) && (!rows|| rows.length==0 )) return "Error: It is necessary to send columns or rows";
+	else if(!aggregation ||allowedKey==false ) return "Error: It is necessary to send an allowed aggfregation type";
+ 	else{
+
+		var newdataArray=[], newOject, rowName="", rowsValue,columnName, arrayAllColumns=[];
+		//rowsName with or withoutrows
+		if (rows.length>1){
+			for (var r=0;r<rows.length;r++){
+				if(r!=0)rowName+="_";
+				rowName+=rows[r];
+			}
+		}else if (rows.length==1){
+			rowName=rows[0];
+		}else{
+			rowName="aggregation"
+		}
+
+		//Reorganize data to groupBy and join 
+		for (var d=0;d<data.length;d++){
+			newOject={};
+			rowsValue="";
+			columnName="";
+			if (rows.length!=0){  //rows with or without columns
+				for (var r=0;r<rows.length;r++){
+					if(r!=0)rowsValue+="_";
+					rowsValue+=data[d][rows[r]];
+				}
+				newOject[rowName]=rowsValue;
+
+				if (columns.length!=0){ //with columns
+					for (var c=0;c<columns.length;c++){
+						if(c!=0)columnName+="_";
+						columnName+=data[d][columns[c]];
+					}
+					for (var v=0;v<values.length;v++){
+						if (!arrayAllColumns.includes(columnName+"_"+values[v]))arrayAllColumns.push(columnName+"_"+values[v]);
+						newOject[columnName+"_"+values[v]]=data[d][values[v]];
+					}
+					newdataArray.push(newOject);
+					
+				}else if (values.length!=0 ){ //Without columns (Use values to build columns names)
+					var columnsAsValues=[];
+					for (var v=0;v<values.length;v++){
+						columnsAsValues.push(values[v]);
+						newOject[values[v]]=data[d][values[v]];
+					}
+					newdataArray.push(newOject);
+				}
+				
+			}else{ //Without rows
+				if (columns.length!=0){ 
+					for (var c=0;c<columns.length;c++){
+						if(c!=0)columnName+="_";
+						columnName+=data[d][columns[c]];	
+					}
+					if (!arrayAllColumns.includes(columnName))arrayAllColumns.push(columnName);
+					for (var v=0;v<values.length;v++){ //values as rows names
+						newOject={}
+						newOject.aggregation=values[v];
+						newOject[columnName]=data[d][values[v]];
+						newdataArray.push(newOject);
+					}
+				}
+			}
+
+		}
+
+		//add all columns to all objects
+		if (columns.length!=0){
+			for (var n=0;n<newdataArray.length;n++){
+				for (var c = 0;c<arrayAllColumns.length;c++){
+					if (!newdataArray[n].hasOwnProperty(arrayAllColumns[c])){
+						newdataArray[n][arrayAllColumns[c]]=undefined;
+					}
+				}
+			}
+		}
+
+		//GroupingBy all columns to unify repetitions 
+		var attributes= getDataAttributesSimple(newdataArray);
+		var finalArrayObjects;
+		if (columns.length==0){ //WithOunt columns
+			arrayAllColumns=columnsAsValues;
+		}
+		var groupByParams, attr, options,newData,aggregationAttr={};
+		for (var c = 0;c<arrayAllColumns.length;c++){
+			attr=arrayAllColumns[c];
+			aggregationAttr={}
+			aggregationAttr[attr]=[aggregation];
+			groupByParams={};
+			groupByParams={
+				aggregationAttr: aggregationAttr,
+				groupByAttr: [rowName],
+				groupByDate:[]
+			}
+			if (c==0)finalArrayObjects=GroupByTableData(newdataArray, attributes, {}, groupByParams);
+			else{
+				newData=GroupByTableData(newdataArray, attributes, {}, groupByParams);
+				options={NotMatch: "BothTables",RowMatching:[{left: rowName, right: rowName}]};
+				finalArrayObjects=JoinTablesData(finalArrayObjects,newData,getDataAttributesSimple(finalArrayObjects),getDataAttributesSimple(newData),{},options)
+			}
+				
+		}
+
+		//add all columns again, because GroupByTableData can "erase" some columns in some objects 
+		
+		for (var a =0;a<arrayAllColumns.length;a++){ //add new Parameter added by GroupBy
+			arrayAllColumns[a]=arrayAllColumns[a]+"_"+aggregation;
+		}
+
+		for (var n=0;n<finalArrayObjects.length;n++){
+			for (var c = 0;c<arrayAllColumns.length;c++){
+				if (!finalArrayObjects[n].hasOwnProperty(arrayAllColumns[c])){
+					finalArrayObjects[n][arrayAllColumns[c]]=undefined;
+				}
+			}
+		}
+
+		//console.log(finalArrayObjects);
+		return finalArrayObjects;
+ 	}		
+}
+
 

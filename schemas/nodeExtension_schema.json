@@ -39,6 +39,24 @@
 			"description": "Last name of the entity in the path or expanded. Defines the scope of the node query parameters",
 			"type": "string"
 		},
+		"STAsecurity": {
+			"description": "Security parameters",
+			"type": "object",
+			"properties": {
+				"authorization": {
+					"description": "'authorization' header parameter to be used in the EDC",
+					"type": "string"					
+				}
+			} 
+		},
+		"OGCType": {
+			"description": "OGC type of service",
+			"enum": ["fileURL", "OGCAPIcollections", "OGCAPIcollection", "OGCAPIitem", "OGCAPIitems", "GUF", "OGCCSW",  "S3Buckets", "S3Bucket", "EDCCatalogue", "EDCAsset"]
+		},
+		"STAURLIdSelected": {
+			"description": "Text representing the Id of the selected item in the SelectRow",
+			"type": "string"		
+		},
 		"STASelectExpandNextOrigin": {
 			"description": "Points to the the recursive STASelectedExpands expanded entity that is the focus of the node query parameters. If empty, points to the root of STASelectedExpands",
 			"type": "array",
