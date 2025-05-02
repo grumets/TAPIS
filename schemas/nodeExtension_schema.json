@@ -53,8 +53,8 @@
 			"description": "OGC type of service",
 			"enum": ["fileURL", "OGCAPIcollections", "OGCAPIcollection", "OGCAPIitem", "OGCAPIitems", "GUF", "OGCCSW",  "S3Buckets", "S3Bucket", "EDCCatalogue", "EDCAsset"]
 		},
-		"STAURLIdSelected": {
-			"description": "Text representing the Id of the selected item in the SelectRow",
+		"STAResourceId": {
+			"description": "Text representing the Id of a selected resource (e.g. in SelectRow or SelectResource)",
 			"type": "string"		
 		},
 		"STASelectExpandNextOrigin": {

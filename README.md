@@ -10,7 +10,7 @@ A part of a classical rows and columns tabular representation, data can be prese
 You can deploy your own copy of the code and offer there. The official
 deployment can be found and used here: https://www.tapis.grumets.cat
 
-You can find recipe 
+You can find recipes on how to use TAPIS in practice in https://www.tapis.grumets.cat/help/#recipes
 
 ## Lineage
 While the project is completely independent from the [Orange data mining](https://orangedatamining.com/) software, it has been inspired by its GUI design. If you have used Orange in the past, you will immediately know how TAPIS works.
@@ -23,5 +23,5 @@ But there are some differences with Orange:
 ![STA Plus Explorer](STAplusExplorer.png)
 
 
-![EuropeanFlag](eu_flag.jpg)  Co-funded by the European Union, Switzerland and the United Kingdom.
+![EuropeanFlag](eu_flag.jpg)  Co-funded by the European Union, Switzerland and the United Kingdom.s
 

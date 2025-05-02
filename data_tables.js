@@ -854,64 +854,144 @@ function GetHTMLdataAttribute(dataAttributeName, dataAttribute) {
 	return cdns.join("");
 }
 
-//rowNumbers: Show two numbers as first collumn
+function getHTMLCharacterAttributeType(type) {
+	var cdns=[];
+	cdns.push('<span class="roundCorner" style="background-color: ');
+	switch(type) {
+		case "boolean":
+			cdns.push('DarkGrey');
+			break;
+		case "array":
+			cdns.push('DarkOrange');
+			break;
+		case "null":
+			cdns.push('LightSlateGrey');
+			break;
+		case "object":
+			cdns.push('Fuchsia');
+			break;
+		case "undefined": 
+			cdns.push('LightGrey');
+			break;
+		case "integer": 
+			cdns.push('IndianRed');
+			break;
+		case "number":
+			cdns.push('Red');
+			break;
+		case "isodatetime":
+			cdns.push('BlueViolet');					
+			break;
+		case "anyURI":
+			cdns.push('Coral');
+			break;
+		case "string":
+		default:
+			cdns.push('ForestGreen');
+	}
+	cdns.push('" title="', type,'">');
+	switch(type) {
+		case "boolean":
+			cdns.push('B');
+			break;
+		case "array":
+			cdns.push('A');
+			break;
+		case "null":
+			cdns.push('N');
+			break;
+		case "object":
+			cdns.push('O');
+			break;
+		case "undefined":
+			cdns.push('U'); 
+			break;
+		case "integer": 
+			cdns.push('I');
+			break;
+		case "number":
+			cdns.push('N');
+			break;
+		case "isodatetime":
+			cdns.push('D');
+			break;
+		case "anyURI":
+			cdns.push('L');
+			break;
+		case "string":
+		default:
+			cdns.push('C');
+	}
+	cdns.push('</span>');
+	return cdns.join('');
+}
+
+//rowNumbers: Show row numbers as first collumn
 //prefix_selectedEntityId, in the radio buttons to select use prefix_selectedEntityId+i as an identifier, 
 //selectedEntityId index of the selected radio button, 
 //f_onclickselectEntity: on click function for the radio buttons
-//f_onclickselectEntityParam: on click function for the radio buttons parameter (it is an string)
+//onclickselectEntityParam: on click function for the radio buttons parameter (it is an string)
+//f_onclickInsteadOfLink: on click function that will govern the reaction to a click on a link
+//onclickInsteadOfLinkParam: on click function that will govern the reaction to a click on a link
 //f_isAttributeAnyURI: function to determine if an attribute is a URI
 //f_attributeToHide: function to determine if an attribute should be hidden in the view
-		function GetHTMLTable(data, dataAttributesInput, rowNumbers, prefix_selectedEntityId, selectedEntityId, f_onclickselectEntity, f_onclickselectEntityParam, f_isAttributeAnyURI, f_attributeToHide) {
-			var dataAttributes = dataAttributesInput ? dataAttributesInput : getDataAttributesSimple(data); 
-			var cdns=[], needhref=[], record, cell, dataAttribute;
-			var dataAttributesArray = Object.keys(dataAttributes);
+function getHTMLTable(data, dataAttributesInput, 
+		rowNumbers, 
+		prefix_selectedEntityId, selectedEntityId, f_onclickselectEntity, onclickselectEntityParam, 
+		f_onclickInsteadOfLink, onclickInsteadOfLinkParam, f_isAttributeAnyURI, 
+		f_attributeToHide) {
+	var dataAttributes = dataAttributesInput ? dataAttributesInput : getDataAttributesSimple(data); 
+	var cdns=[], needhref=[], record, cell, dataAttribute;
+	var dataAttributesArray = Object.keys(dataAttributes);
 
-			cdns.push("<table class='tablesmall'><tr>");
-			if (rowNumbers)
-				cdns.push("<th></th>");
-			if (selectedEntityId!==null && typeof selectedEntityId!=="undefined")
-				cdns.push("<th></th>");
-			for (var a = 0; a < dataAttributesArray.length; a++) {
-				if (f_attributeToHide && f_attributeToHide(dataAttributesArray[a]))
-					continue;
-				cdns.push("<th>");
-				cdns.push(GetHTMLdataAttribute(dataAttributesArray[a], dataAttributes[dataAttributesArray[a]]));
-				cdns.push("</th>");
-				if (f_isAttributeAnyURI)
-					needhref[a]=f_isAttributeAnyURI(dataAttributesArray[a]);
-			}
+	cdns.push("<table class='tablesmall'><tr>");
+	if (rowNumbers)
+		cdns.push("<th></th>");
+	if (selectedEntityId!==null && typeof selectedEntityId!=="undefined")
+		cdns.push("<th></th>");
+	for (var a = 0; a < dataAttributesArray.length; a++) {
+		if (f_attributeToHide && f_attributeToHide(dataAttributesArray[a]))
+			continue;
+		cdns.push("<th>",
+			GetHTMLdataAttribute(dataAttributesArray[a], dataAttributes[dataAttributesArray[a]]),
+			" ",
+			getHTMLCharacterAttributeType(dataAttributes[dataAttributesArray[a]].type),
+			"</th>");
+		if (f_isAttributeAnyURI)
+			needhref[a]=f_isAttributeAnyURI(dataAttributesArray[a]);
+	}
 
-			cdns.push("</tr>");
-			for (var i = 0; i < data.length; i++) {
-				record=data[i];
-				cdns.push("<tr>");
-				if (rowNumbers)
-					cdns.push("<td align='right'>", i + 1, "</td>");
-				if (selectedEntityId!==null && typeof selectedEntityId!=="undefined")
-				{
-					var s=record["@iot.id"] ? record["@iot.id"] : i;
-					cdns.push("<td><input type='radio' name='SelectRowRadio' id='", prefix_selectedEntityId, s, "' ", f_onclickselectEntity ? "onClick='" + f_onclickselectEntity.name + "(\"" + f_onclickselectEntityParam+ "\");' " : "", s == selectedEntityId ? "checked='checked'" : "", "/></td>");
-				}
-				for (var a = 0; a < dataAttributesArray.length; a++) {
-					if (f_attributeToHide && f_attributeToHide(dataAttributesArray[a]))
-						continue;
-					cell=record[dataAttributesArray[a]];
-					cdns.push((dataAttributes[dataAttributesArray[a]].type=="number" || dataAttributes[dataAttributesArray[a]].type=="integer") ? "<td align='right'>" :  "<td>");
-					if (typeof cell !== "undefined") {
-						if (f_isAttributeAnyURI && needhref[a] && cell.length)
-							cdns.push("<a href='", cell.replaceAll("'", "%27"), "' target='_blank'>", cell, "</a>");
-						else if (typeof cell === "object")
-							cdns.push(JSON.stringify(cell));
-						else
-							cdns.push(cell);
-					}
-					cdns.push("</td>");
-				}
-				cdns.push("</tr>");
-			}
-			cdns.push("</table>");
-			return cdns.join("");
+	cdns.push("</tr>");
+	for (var i = 0; i < data.length; i++) {
+		record=data[i];
+		cdns.push("<tr>");
+		if (rowNumbers)
+			cdns.push("<td align='right'>", i + 1, "</td>");
+		if (selectedEntityId!==null && typeof selectedEntityId!=="undefined")
+		{
+			var s=record["@iot.id"] ? record["@iot.id"] : i;
+			cdns.push("<td><input type='radio' name='SelectRowRadio' id='", prefix_selectedEntityId, s, "' ", f_onclickselectEntity ? "onClick='" + f_onclickselectEntity.name + "(\"" + onclickselectEntityParam+ "\");' " : "", s == selectedEntityId ? "checked='checked'" : "", "/></td>");
 		}
+		for (var a = 0; a < dataAttributesArray.length; a++) {
+			if (f_attributeToHide && f_attributeToHide(dataAttributesArray[a]))
+				continue;
+			cell=record[dataAttributesArray[a]];
+			cdns.push((dataAttributes[dataAttributesArray[a]].type=="number" || dataAttributes[dataAttributesArray[a]].type=="integer") ? "<td align='right'>" :  "<td>");
+			if (typeof cell !== "undefined") {
+				if (f_isAttributeAnyURI && needhref[a] && cell.length)
+					cdns.push("<a href='", f_onclickInsteadOfLink ? "javascript:void();" : cell.replaceAll("'", "%27"), "' target='_blank'", (f_onclickInsteadOfLink ? " onClick='return " + f_onclickInsteadOfLink.name + "(\"" + onclickInsteadOfLinkParam + "\", \"" + dataAttributesArray[a] + "\", " + i +");'" : ""), ">", cell, "</a>");
+				else if (typeof cell === "object")
+					cdns.push(JSON.stringify(cell));
+				else
+					cdns.push(cell);
+			}
+			cdns.push("</td>");
+		}
+		cdns.push("</tr>");
+	}
+	cdns.push("</table>");
+	return cdns.join("");
+}
 
 function addNewEmptyColumn(data,columnName){
 	for (var i=0;i<data.length;i++){

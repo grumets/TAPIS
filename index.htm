@@ -142,6 +142,23 @@
 		</form>
 	</dialog>
 
+	<dialog id="DialogLink">
+		<form>
+			<p>
+				Link to: <span id="DialogLinkLink"></span><p>
+				<label><input type="radio" name="DialogLinkHowOpen" id="DialogLinkAddGraph" checked="checked"></input>Add to the graph</label><br>
+				<label><input type="radio" name="DialogLinkHowOpen" id="DialogLinkOpenWindow"></input>Open as JSON in a separate window</label>
+			</p>
+			<div class="center">
+				<button value="default" onClick="OpenLink(event)">OK</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+			<input type="hidden" id="DialogLinkNodeId"></input>
+			<input type="hidden" id="DialogLinkIRecord"></input>
+			<input type="hidden" id="DialogLinkColumnName"></input>
+		</form>
+	</dialog>
+
 
 	<dialog id="DialogOpenURLNetwork">
 		<form>
@@ -153,7 +170,8 @@
 				<label>Suggested stored networks:
 					<select id="DialogOpenURLNetworkSelect" onChange="PopulateInputFromSelect(event, 'DialogOpenURLNetwork');">
 						<option "">-- Select an option--</option>
-						<option value="help/recipe01_STA_UML_model.json">Recipe 1: Understanding the concept of Datastream in STAplus</option>
+						<option value="help/recipe01_01_STA_UML_model.json">Recipe 1, cooking method 1: Understanding the concept of Datastream in STAplus</option>
+						<option value="help/recipe01_02_observedProperties3URLs.json">Recipe 1: cooking method 2: Visiting the same entity from different paths</option>
 						<option value="help/recipe02_PartyObservationsParty.json">Recipe 2, both methods: Show the current evolution of a variable captured by a particular party</option>
 						<option value="help/recipe02_01_PartyObservations.json">Recipe 2, cooking method 1: Recurrently selecting a row using entity identifiers</option>
 						<option value="help/recipe02_02_ObservationsParty.json">Recipe 2, cooking method 2: Filtering observations</option>
@@ -853,6 +871,20 @@
 		</form>
 	</dialog>
 
+	<dialog id="DialogSelectResource">
+		<div id="divTitleSelectResource" class="center" style="font-size: large;"></div>
+		<form>
+			<label>Identifier of resource to select: 
+				<input type="text" id="DialogSelectResourceId"></label>
+			</span>
+			<div class="center">
+				<button value="default" onClick="GetSelectResource(event)">OK</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+			<input type="hidden" id="DialogSelectResourceNodeId"></input>
+		</form>
+	</dialog>
+
 	<dialog id="DialogFilterRows">
 		<div id="divTitleSelectRows" class="center" style="font-size: large;"></div>
 		<form>
@@ -874,10 +906,10 @@
 				<legend>Period</legend>
 				<label>Property:</label>
 				<select id="filterRowsByTimeSelectProperty"></select>
-				<label>From: </label>
-				<input type="datetime-local" id="filterRowsByTimeCalendarFrom">
-				<label>To: </label>
-				<input type="datetime-local" id="filterRowsByTimeCalendarTo">
+				<label>From: 
+				<input type="datetime-local" id="filterRowsByTimeCalendarFrom"></label>
+				<label>To: 
+				<input type="datetime-local" id="filterRowsByTimeCalendarTo"></label>
 			</fieldset>
 			<fieldset>
 			<legend>To aggregate data by (Optional. Only available with "Observations"): </legend>
@@ -1479,6 +1511,4 @@
 	<pre id="eventSpanContent"></pre-->
 
 </body>
-
-
 </html>
