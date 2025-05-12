@@ -65,20 +65,20 @@ const ServicesAndAPIsArray = Object.keys(ServicesAndAPIs);
 const ServicesAndAPIsType = {singular: "Data input tool", plural: "Data input tools"};
 
 const STAEntities = {
-	ObservedProperties: { singular: "ObservedProperty", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "definition", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the ObservedProperties of this STAPlus service.", helpEdit: "Create, edit or delete an ObservedProperty in a STAPlus service."},
-	Observations: { singular: "Observation", entities: [{ name: "Datastream", required: "true" }, { name: "MultiDatastream", required: "true" }, { name: "FeatureOfInterest", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Subjects", required: "false" }, { name: "Objects", required: "false" }], properties: [{ name: "phenomenonTime", dataType: "object", required: "true" }, { name: "resultTime", dataType: "isodatetime", required: "true" }, { name: "result", dataType: "", required: "true" }, { name: "resultQuality", dataType: "object", required: "false" }, { name: "validTime", dataType: "data_isoperiod", required: "false" }, { name: "parameters", dataType: "JSON", required: "false" }], entityRelations: ["Object", "Subject"], help:"Visualize through a table the Observations of this STAPlus service.", helpEdit: "Create, edit or delete an Observation in a STAPlus service."},
-	FeaturesOfInterest: { singular: "FeatureOfInterest", entities: [{ name: "Observations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "feature", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }],help:"Visualize through a table the FeaturesOfInterest of this STAPlus service.", helpEdit: "Create, edit or delete a FeatureOFInterest in a STAPlus service." },
-	Sensors: { singular: "Sensor", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "metadata", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Sensors of this STAPlus service.", helpEdit: "Create, edit or delete a Sensor in a STAPlus service."},
-	Things: { singular: "Thing", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "Locations", required: "false" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Things of this STAPlus service.", helpEdit: "Create, edit or delete a Thing in a STAPlus service."},
-	Locations: { singular: "Location", entities: [{ name: "Things", required: "false" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "location", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Locations of this STAPlus service.", helpEdit: "Create, edit or delete a Location in a STAPlus service."},
-	HistoricalLocations: { singular: "HistoricalLocation", entities: [{ name: "Thing", required: "true" }, { name: "Locations", required: "true" }], properties: [{ name: "time", dataType: "isodatetime", required: "true" }], help:"Visualize through a table the HistoricalLocations of this STAPlus service" },
-	Datastreams: { singular: "Datastream", entities: [{ name: "Party", required: "true" }, { name: "Sensor", required: "true" }, { name: "ObservedProperty", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Thing", required: "true" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "observationType", dataType: "string", required: "true" }, { name: "unitOfMeasurement", dataType: "JSON", required: "true" }, { name: "observedArea", dataType: "object", required: "false" }, { name: "phenomenonTime", dataType: "data_isoperiod", required: "false" }, { name: "resultTime", dataType: "data_isoperiod", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Datastreams of this STAPlus service.", helpEdit: "Create, edit or delete a Datastream in a STAPlus service."},
-	MultiDatastreams: { singular: "MultiDatastream", entities: [{ name: "Party", required: "true" }, { name: "Sensor", required: "true" }, { name: "ObservedProperty", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Thing", required: "true" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "observationType", dataType: "string", required: "true" }, { name: "unitOfMeasurement", dataType: "JSON", required: "true" }, { name: " observedArea", dataType: "object", required: "false" }, { name: "phenomenonTime", dataType: "data_isoperiod", required: "false" }, { name: "resultTime", dataType: "data_isoperiod", required: "false" }, { name: "multiObservationDataType", dataType: "JSON", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }],help:"Visualize through a table the MultiDatastreams of this STAPlus service.", helpEdit: "Create, edit or delete a MultiDatastream in a STAPlus service."},
-	Parties: { singular: "Party", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Things", required: "false" }], properties: [{ name: "description", dataType: "string", required: "false" }, { name: "authId", dataType: "string", required: "false" }, { name: "role", dataType: "PartyRoleCode", required: "true" }, { name: "displayName", dataType: "string", required: "false" }], help: "Visualize through a table the Parties of this STAPlus service.", helpEdit: "Create, edit or delete a Party in a STAPlus service."},
 	Campaigns: { singular: "Campaign", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "License", required: "false" }, {name:"ObservationGroups", required:"false"}], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "classification", dataType: "string", required: "false" }, { name: "termsOfUse", dataType: "string", required: "true" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "true" }, { name: "url", dataType: "URI", required: "false" }, { name: "startTime", dataType: "isodatetime", required: "false" }, { name: "endTime", dataType: "isodatetime", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Campaigns of this STAPlus service.", helpEdit: "Create, edit or delete an Campaign in a STAPlus service."},
+	Datastreams: { singular: "Datastream", entities: [{ name: "Party", required: "true" }, { name: "Sensor", required: "true" }, { name: "ObservedProperty", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Thing", required: "true" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "observationType", dataType: "string", required: "true" }, { name: "unitOfMeasurement", dataType: "JSON", required: "true" }, { name: "observedArea", dataType: "object", required: "false" }, { name: "phenomenonTime", dataType: "data_isoperiod", required: "false" }, { name: "resultTime", dataType: "data_isoperiod", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Datastreams of this STAPlus service.", helpEdit: "Create, edit or delete a Datastream in a STAPlus service."},
+	FeaturesOfInterest: { singular: "FeatureOfInterest", entities: [{ name: "Observations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "feature", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }],help:"Visualize through a table the FeaturesOfInterest of this STAPlus service.", helpEdit: "Create, edit or delete a FeatureOFInterest in a STAPlus service." },
+	HistoricalLocations: { singular: "HistoricalLocation", entities: [{ name: "Thing", required: "true" }, { name: "Locations", required: "true" }], properties: [{ name: "time", dataType: "isodatetime", required: "true" }], help:"Visualize through a table the HistoricalLocations of this STAPlus service" },
 	Licenses: { singular: "License", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "definition", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "logo", dataType: "string", required: "false" }, { name: "attributionText", dataType: "JSON", required: "false" }],help: "Visualize through a table the Licenses of this STAPlus service.", helpEdit: "Create, edit or delete a License in a STAPlus service."},
+	Locations: { singular: "Location", entities: [{ name: "Things", required: "false" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "location", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Locations of this STAPlus service.", helpEdit: "Create, edit or delete a Location in a STAPlus service."},
+	MultiDatastreams: { singular: "MultiDatastream", entities: [{ name: "Party", required: "true" }, { name: "Sensor", required: "true" }, { name: "ObservedProperty", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Thing", required: "true" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "observationType", dataType: "string", required: "true" }, { name: "unitOfMeasurement", dataType: "JSON", required: "true" }, { name: " observedArea", dataType: "object", required: "false" }, { name: "phenomenonTime", dataType: "data_isoperiod", required: "false" }, { name: "resultTime", dataType: "data_isoperiod", required: "false" }, { name: "multiObservationDataType", dataType: "JSON", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }],help:"Visualize through a table the MultiDatastreams of this STAPlus service.", helpEdit: "Create, edit or delete a MultiDatastream in a STAPlus service."},
 	ObservationGroups: { singular: "ObservationGroup", entities: [{ name: "Party", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Relations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "purpose", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "false" }, { name: "endTime", dataType: "isodatetime", required: "false" }, { name: "termsOfUsed", dataType: "string", required: "false" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "dataQuality", dataType: "JSON", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }],help: "Visualize through a table the ObservationGroups of this STAPlus service.", helpEdit: "Create, edit or delete an ObservationGroup in a STAPlus service."},
-	Relations: { singular: "Relation", entities: [{ name: "Object", required: "true" }, { name: "Subject", required: "true" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "role", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "false" }, { name: "externalObject", dataType: "URI", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], entityRelations: ["Objects", "Subjects"], help: "Visualize through a table the Relations of this STAPlus service", helpEdit: "Create, edit or delete an Relation in a STAPlus service."}
+	Observations: { singular: "Observation", entities: [{ name: "Datastream", required: "true" }, { name: "MultiDatastream", required: "true" }, { name: "FeatureOfInterest", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Subjects", required: "false" }, { name: "Objects", required: "false" }], properties: [{ name: "phenomenonTime", dataType: "object", required: "true" }, { name: "resultTime", dataType: "isodatetime", required: "true" }, { name: "result", dataType: "", required: "true" }, { name: "resultQuality", dataType: "object", required: "false" }, { name: "validTime", dataType: "data_isoperiod", required: "false" }, { name: "parameters", dataType: "JSON", required: "false" }], entityRelations: ["Object", "Subject"], help:"Visualize through a table the Observations of this STAPlus service.", helpEdit: "Create, edit or delete an Observation in a STAPlus service."},
+	ObservedProperties: { singular: "ObservedProperty", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "definition", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the ObservedProperties of this STAPlus service.", helpEdit: "Create, edit or delete an ObservedProperty in a STAPlus service."},
+	Parties: { singular: "Party", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Things", required: "false" }], properties: [{ name: "description", dataType: "string", required: "false" }, { name: "authId", dataType: "string", required: "false" }, { name: "role", dataType: "PartyRoleCode", required: "true" }, { name: "displayName", dataType: "string", required: "false" }], help: "Visualize through a table the Parties of this STAPlus service.", helpEdit: "Create, edit or delete a Party in a STAPlus service."},
+	Relations: { singular: "Relation", entities: [{ name: "Object", required: "true" }, { name: "Subject", required: "true" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "role", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "false" }, { name: "externalObject", dataType: "URI", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], entityRelations: ["Objects", "Subjects"], help: "Visualize through a table the Relations of this STAPlus service", helpEdit: "Create, edit or delete an Relation in a STAPlus service."},
+	Sensors: { singular: "Sensor", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "metadata", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Sensors of this STAPlus service.", helpEdit: "Create, edit or delete a Sensor in a STAPlus service."},
+	Things: { singular: "Thing", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "Locations", required: "false" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Things of this STAPlus service.", helpEdit: "Create, edit or delete a Thing in a STAPlus service."}
 };
 const STAEntitiesArray = Object.keys(STAEntities);
 const STAEntitiesType = {singular: "STA entity reading tool", plural: "STA entities reading tool", 
@@ -589,17 +589,35 @@ function getLinkRelInLinks(links, rel, type) {
 }
 
 function simplifyOGCAPICollections(collections){
-	var simpleCollecs=[], len=collections.length ? collections.length : 1;
+	var simpleCollecs=[], simpleCollec, s, len=collections.length ? collections.length : 1;
 	for (var i=0; i<len; i++) {
 		var collection=collections.length ? collections[i] : collections;
 		simpleCollecs.push({id: collection?.id,
 				title: collection?.title,
-				link: getLinkRelInLinks(collection?.links, "self", "application/json"),
-				itemsLink: getLinkRelInLinks(collection?.links, "items", "application/geo+json"),
-				extent: collection?.extent,
-				itemType: collection?.itemType,
-					storageCrs: collection?.storageCrs,
-				defaultStyle: collection?.defaultStyle});
+				link: getLinkRelInLinks(collection?.links, "self", "application/json")});
+		simpleCollec=simpleCollecs[simpleCollecs.length-1];
+		s=getLinkRelInLinks(collection?.links, "items", "application/geo+json");
+		if (s)
+			simpleCollec.itemsLink=s;
+		else {
+			s=getLinkRelInLinks(collection?.links, "items", "application/json");
+			if (s)
+				simpleCollec.itemsLink=s;
+		}
+		s=getLinkRelInLinks(collection?.links, "http://www.opengis.net/def/rel/ogc/1.0/coverage", "image/tiff; application=geotiff");
+		if (s)
+			simpleCollec.coverageLink=s;
+		s=getLinkRelInLinks(collection?.links, "http://www.opengis.net/def/rel/ogc/1.0/map", "image/png");
+		if (s)
+			simpleCollec.mapLink=s;
+		if (collection?.extent)
+			simpleCollec.extent=collection?.extent;
+		if (collection?.itemType)
+			simpleCollec.itemType=collection?.itemType;
+		if (collection?.storageCrs)
+			simpleCollec.storageCrs=collection?.storageCrs;
+		if (collection?.defaultStyle)
+			simpleCollec.defaultStyle=collection?.defaultStyle;
 	}
 	return simpleCollecs;
 }
@@ -804,7 +822,7 @@ function updateQueryAndTableArea(node) {
 }
 
 async function LoadJSONNodeSTAData(node, callback, url) {
-	var response, jsonData, options={};
+	var response, jsonData, options={headers:{"Accept": "application/json"}};
 	try {
 		var url_fetch;
 		if (url)
@@ -1800,6 +1818,7 @@ function GetOptionsSelectDialog(suggestedURLs) {
 			stas=suggestedURLs[g].STAs;
 			for (var i=0; i<stas.length; i++)
 				cdns.push('<option value="', stas[i].url, '">', stas[i].desc, '</option>');
+			cdns.push('</optgroup>');
 		}
 	}
 	return cdns.join("");  
@@ -1815,6 +1834,7 @@ function GetOptionsObjectSelectDialog(suggestedURLs) {
 			stas=suggestedURLs[g].URLs;
 			for (var i=0; i<stas.length; i++)
 				cdns.push("<option value='", JSON.stringify(stas[i], ""), "'>", stas[i].desc, "</option>");
+			cdns.push('</optgroup>');
 		}
 	}
 	return cdns.join("");  
@@ -4992,6 +5012,7 @@ function ShowMeaningTableDialog(node) {
 			vus=config.suggestedVarUoMs[g].varUoMs;
 			for (var j=0; j<vus.length; j++)
 				cdns.push("<option value='{\"g\":", g, ",\"i\":", j, "}'>", vus[j].varUoMdesc, "</option>");
+			cdns.push('<optgroup>');
 		}
 		cdns.push('</select>');				
 		document.getElementById("DialogMeaningVariableDropDown_"+i).innerHTML=cdns.join("");

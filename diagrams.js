@@ -125,7 +125,7 @@ function createDialogWithSelectWithGroupsScatterPlot(node) {
 							</td>							
 							<td> 
 								<label style="font-weight: bold;">Chart type</label> <br>
-								<label ><input type="radio" name="DialogCharType_${i}" id="DialogCharTypeLine_${i}"  ${(node.STAattributesToSelect.dataGroupsSelectedToScatterPlot[i].graphicType == "line") ? "checked" : ""} onclick="updateSelectInformationScatterPlot('${i}','graphicType','radio','"DialogCharTypeLine_${i}','${node.id}')" value="line"><label>Line</label><br>
+								<label ><input type="radio" name="DialogCharType_${i}" id="DialogCharTypeLine_${i}"  ${(node.STAattributesToSelect.dataGroupsSelectedToScatterPlot[i].graphicType == "line") ? "checked" : ""} onclick="updateSelectInformationScatterPlot('${i}','graphicType','radio','DialogCharTypeLine_${i}','${node.id}')" value="line"><label>Line</label><br>
 								<label><input type="radio" name="DialogCharType_${i}" id="DialogCharTypeScatter_${i}" ${(node.STAattributesToSelect.dataGroupsSelectedToScatterPlot[i].graphicType == "scatter") ? "checked" : ""} onclick="updateSelectInformationScatterPlot('${i}','graphicType','radio','DialogCharTypeScatter_${i}','${node.id}')" value="scatter"><label>Dots</label>
 							</td>
 						</tr>
@@ -284,7 +284,8 @@ function DrawScatterPlot(event) {
 				}
 
 			}
-			items.push({ x: record[selectedOptions.AxisX], y: record[selectedOptions.AxisY], group: e });
+			//var type= typeof  parseFloat(record[selectedOptions.AxisY].toFixed(1));
+			items.push({ x: record[selectedOptions.AxisX], y:record[selectedOptions.AxisY], group: e });
 		}
 			type=  dataGroups[e].graphicType;
 			(type=="line")?pointRadius=0:pointRadius=2;
@@ -304,16 +305,39 @@ function DrawScatterPlot(event) {
 			},
 			
 		);
+		
 		yAxisTodisplay[dataGroups[e].selectedYaxis]=true
 	}
 
 	if (ScatterPlotChart)
 		ScatterPlotChart.destroy();
 
+	//Y axis
 	var finalMinYLeft = minyLeft - (maxyLeft - minyLeft) * 0.025;
 	var finalMinYRight = minyRight - (maxyRight - minyRight) * 0.025;
 	var finalMaxYLeft = maxyLeft + (maxyLeft - minyLeft) * 0.025;
 	var finalMaxYRight = maxyRight + (maxyRight - minyRight) * 0.025;
+	if (finalMinYLeft==finalMaxYLeft){
+		finalMinYLeft++;
+		finalMaxYLeft--;
+	}
+	if (finalMinYRight==finalMaxYRight){
+		finalMinYRight++;
+		finalMaxYRight--;
+	}
+
+	//X axis
+	if (minx==maxx){
+		if ((axisXType=="isodatetime")){
+			maxx=new Date(maxx);
+			minx= new Date(minx);
+			maxx.setDate(maxx.getDate() + 1);
+			minx.setDate(minx.getDate() - 1);
+		}else{
+			maxx++;
+			minx--;
+		}
+	}
 
 	var axisYLabelRight = document.getElementById("DialogScatterPlotAxisYLabelRight").value;
 	var axisYLabelLeft = document.getElementById("DialogScatterPlotAxisYLabelLeft").value;
@@ -324,10 +348,9 @@ function DrawScatterPlot(event) {
 			type: "time",
 			time: {
 				unit: 'minute',  
-				stepSize: 1,  // Assegura que es mostrin les dates en intervals de 1 minut
-				tooltipFormat: 'yyyy-MM-dd HH:mm',  
+				tooltipFormat: 'yyyy-MM-dd HH:mm:ss',  
 				displayFormats: {
-					minute: 'yyyy-MM-dd HH:mm',  
+					minute: 'yyyy-MM-dd HH:mm:ss',  
 				}
 			},
 			title: {
@@ -350,7 +373,7 @@ function DrawScatterPlot(event) {
 		}
 	}
 
-
+	
 	var config = {
 		//type: type, //general diagram. If it have different types it is specified in the datasets
 		data: data,
@@ -363,7 +386,11 @@ function DrawScatterPlot(event) {
 				}
 			},
 			scales: {
-				x:axisX,
+				// x:axisX,
+				//  ticks: { //!!!!!!! 
+				// 	maxTicksLimit: 30,
+				//  	autoSkip: true
+				//   }
 			},
 		}
 
@@ -393,7 +420,10 @@ function DrawScatterPlot(event) {
 				text: axisYLabelLeft
 			},
 			max:finalMaxYLeft,
-			min:finalMinYLeft
+			min:finalMinYLeft,
+			// ticks: {
+			// 	maxTicksLimit: 30 // 👈 només 10 valors a l’eix
+			//   }
 
 		}
 	}
