@@ -282,6 +282,7 @@ async function HTTPJSONData(url, headersToGet, method, objToSend, headersToSend,
 			options.headers['Content-Type']=(mediaToSend) ? (mediaToSend) : "application/json";
 			options.body=(typeof objToSend === "object") ? JSON.stringify(objToSend) : objToSend;
 		}
+		//options.credentials='include';
 		response = await fetch(url, options);
 	}
 	catch (error) {

@@ -56,7 +56,9 @@ const ServicesAndAPIs = {sta: {name: "STA plus", description: "STA service", sta
 			edc: {name: "DataSpace cat.", description: "DataSpace cat.", startNode: true, help: "Connects to an Eclipse Data Connector (EDC) Catalogue and returns the list of assets available as a table."},
 			edcAsset: {name: "DataSpace asset", description: "DataSpace asset", help: "Prepares an Eclipse Data Connector (EDC) Asset."},
 			ImportCSV: {name: "CSV", description: "CSV", startNode: true, help: "Imports data from a CSV file and returns a table."},
-			ImportDBF: {name: "DBF", description: "DBF", startNode: true, help: "Imports data from a DBASE III+ or IV file and returns a table."},
+			ImportDBF: {name: "DBF", description: "DBF", startNode: true, help: "Imports data from a DBASE III+, IV or a extended DBF file and returns a table."},
+			ImportGPKG: {name: "GeoPackage", description: "GeoPackage", startNode: true, help: "Imports a GeoPackage Database into a list of of tables."},
+			ImportGPKGTable: {name: "GeoPackageTable", description: "GeoPack Table", startNode: true, help: "Imports a table in a GeoPackage database."},
 			ImportJSONLD: {name: "JSON-LD", description: "JSON-LD", startNode: true, help: "Imports data from a JSON-LD file and returns a table."},
 			ImportJSON: {name: "JSON", description: "JSON", startNode: true, help: "Imports data from a JSON file and returns a table."},
 			ImportGeoJSON: {name: "GeoJSON", description: "GeoJSON", startNode: true, help: "Imports the features of a GeoJSON and returns a table where each feature is a record. One of the columns contains the geometry JSON object."},
@@ -567,7 +569,7 @@ async function InitSTAPage() {
 
 	document.getElementById("ButtonsContextMenuObjects").innerHTML = s;
 
-	window.addEventListener("message", ProcessMessageFromMiraMonMapBrowser);
+	window.addEventListener("message", MessageSTAPage);
 	if (window.opener)
 		window.opener.postMessage(JSON.stringify({msg: "Tapis is listening"}), "*");
 }
@@ -968,7 +970,7 @@ function MakeHrefData(data, mediatype)
 	return savedFile;
 }
 
-//type should be "CSV", "DBF", "JSON", "JSONLD" or "GeoJSON"
+//type should be "CSV", "DBF", "GPKG", "JSON", "JSONLD" or "GeoJSON"
 function SelectImportFileSource(event, type) {
 	if (document.getElementById("DialogImport"+type+"SourceFile").checked) {
 		document.getElementById("DialogImport"+type+"SourceFileText").disabled=false;
@@ -981,7 +983,7 @@ function SelectImportFileSource(event, type) {
 	}
 }
 
-//type should be "CSV", "DBF", "JSON", "JSONLD" or "GeoJSON"
+//type should be "CSV", "DBF", "GPKG", "JSON", "JSONLD" or "GeoJSON"
 function SelectImportMeaningFileSource(event, type) {
 	if (document.getElementById("DialogImportMeaning"+type+"SourceFile").checked) {
 		document.getElementById("DialogImportMeaning"+type+"SourceFileText").disabled=false;
@@ -1269,6 +1271,75 @@ function ReadURLImportDBF() {
 			);	
 }
 
+function TransformBinaryGPKGToTable(buffer, url) {
+	ParseGPKGDatabase(buffer).then(function(gpkg) {
+		currentNode.STAdata=gpkg.records;
+		currentNode.STAdataAttributes=gpkg.attributes;
+		if (gpkg.records.length==0)
+			showInfoMessage("GeoPackage database has no tables.");
+		else
+			showInfoMessage("GeoPackage database table has been loaded.");
+		if (currentNode.STAdata) {
+			if (url)
+				currentNode.STAfileUrl=url;
+			if (gpkg.db)
+				currentNode.SQLiteDB=gpkg.db;  //This is an object with functions that cannot be saved as JSON afterwards
+			networkNodes.update(currentNode);
+			updateQueryAndTableArea(currentNode);
+			UpdateChildenTable(currentNode);
+		} else {
+			showInfoMessage("Geopackage parse error: " + e);
+			currentNode.STAdata=null;
+			networkNodes.update(currentNode);
+			return;
+		}
+	});
+}
+
+function TransformBinaryGPKGTableToTable(node, tableName) {
+	var gpkg=ParseGPKGTable(node.SQLiteDB, tableName);
+	node.STAdata=gpkg.records;
+	node.STAdataAttributes=gpkg.attributes;
+	if (gpkg.records.length==0)
+		showInfoMessage("GeoPackage table has no records.");
+	else
+		showInfoMessage("GeoPackage table has been loaded.");
+	if (node.STAdata) {
+		networkNodes.update(node);
+		updateQueryAndTableArea(node);
+		UpdateChildenTable(node);
+	} else {
+		showInfoMessage("Geopackage parse error: " + e);
+		node.STAdata=null;
+		networkNodes.update(node);
+		return;
+	}
+}
+
+
+function ReadFileImportGPKG(event) {
+	var input = event.target;
+
+	var reader = new FileReader();
+	reader.onload = function() {
+		TransformBinaryGPKGToTable(reader.result, null);
+	};
+	reader.readAsArrayBuffer(input.files[0]);
+}
+
+function ReadURLImportGPKG() {
+	HTTPBinaryData(document.getElementById("DialogImportGPKGSourceURLInput").value).then(
+				function(value) { 
+					showInfoMessage('Download GPKG completed.'); 
+					TransformBinaryGPKGToTable(value, document.getElementById("DialogImportGPKGSourceURLInput").value);
+				},
+				function(error) { 
+					showInfoMessage('Error downloading GPKG. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
+					console.log(error) ;
+				}
+			);	
+}
+
 function TransformTextJSONLDToTable(jsonldText, addGeo, addObs, url) {
 	try
 	{
@@ -1430,6 +1501,17 @@ function TransformGeoJSONFeatureToTable(feature, url) {
 		record.id=feature.id;
 	if (url)
 		record.itemLink=url+"/"+feature.id;
+	if (feature.assets) {  //STAC extension
+		var keys=Object.keys(feature.assets);
+		for (var k = 0; k < keys.length; k++) {
+			if (feature.assets[keys[k]].href)
+				record[keys[k]+"OpenLink"]=feature.assets[keys[k]].href;
+			if (feature.assets[keys[k]].alternate && feature.assets[keys[k]].alternate.Asset && feature.assets[keys[k]].alternate.Asset.href) {
+				record[keys[k]+"AssetLink"]=feature.assets[keys[k]].alternate.Asset.href;
+				record[keys[k]+"WalletUrl"]=feature.assets[keys[k]].alternate.Asset["facts:walletUrl"] ? feature.assets[keys[k]].alternate.Asset["facts:walletUrl"] : "https://wallet.dataspace.secd.eu";
+			}
+		}
+	}
 	Object.assign(record, deapCopy(feature.properties)); //JSON properties are directly copied into STAdata
 	record.geometry=deapCopy(feature.geometry);  //JSON geometry are directly copied into STAdata
 	return record;
@@ -3869,6 +3951,8 @@ function GetSelectRow(event) {
 			node.OGCType = "OGCAPIcollection";
 		else if (parentNode.OGCType=="OGCAPIitems")
 			node.OGCType = "OGCAPIitem";
+		else if (parentNode.SQLiteDB)
+			node.SQLiteDB = parentNode.SQLiteDB;
 		else if (parentNode.OGCType=="EDCCatalogue") {
 			node.OGCType = "EDCAsset";
 			node.EDCConsumerURL = parentNode.EDCConsumerURL;
@@ -4265,7 +4349,8 @@ function addSemanticsSTADataAttributes(dataAttributes, url) {
 }
 
 function isAttributeAnyURI(s) {
-	return (s == "url" || s == "link" || s == "itemsLink" || s == "itemLink" || s == "definition" || s.endsWith("@iot.selfLink") || s.endsWith("@iot.navigationLink"));
+	return (s == "url" || s == "link" || s == "itemsLink" || s == "itemLink" || s == "input_url" || s == "definition" || 
+		s.endsWith("OpenLink") || s.endsWith("AssetLink") || s.endsWith("WalletUrl") || s.endsWith("@iot.selfLink") || s.endsWith("@iot.navigationLink"));
 }
 
 function isAttributeSelfNavLink(s) {
@@ -5447,43 +5532,59 @@ function OpenMapMMN(url, geojson, geojsonSchema, geojsonStyle, geojsonDates){
 		DisplayMapMMN();
 	else
 	{
-		//window.addEventListener("message", ProcessMessageFromMiraMonMapBrowser);
+		//window.addEventListener("message", MessageSTAPage);
 		MiraMonMapBrowserVars.mmnURL=url;
 		MiraMonMapBrowserVars.mmn=window.open(url, "_blank", "width=1000,height=800");
 	}
 }
 
-function ProcessMessageFromMiraMonMapBrowser(event)
-{
+function MessageSTAPage(event) {
+	if (event.origin === walletURL) {
+		//console.log("data received: ", event.data);
+		if (event.data.message) {
+			if (event.data.message != "You must select a connection in your Wallet first!")
+				showInfoMessage("Error in wallet: " + event.data.message);
+		} else {
+			showInfoMessage("Credentials received");
+                	showInfoMessage(event.data['x-facts-key']);
+	                walletWindow.close();
+        	        walletWindow = null;
+                	for (var t of walletPostMessageTimer)
+                        	clearInterval(t);
+		
+		}
+		return;
+	}
+
 	if (MiraMonMapBrowserVars.mmnURL)  //Tapis has open MMN and is getting feedback
-{
-	if (!IsTrustedMiraMonMapBrowser(event, MiraMonMapBrowserVars.mmnURL))
-		return;
+	{
+		if (!IsTrustedMiraMonMapBrowser(event, MiraMonMapBrowserVars.mmnURL))
+			return;
 
-	try
-	{
-		var data=JSON.parse(event.data);
-	}
-	catch (e) 
-	{
-		showInfoMessage("JSON message parse error: " + e + " The response was:\n" + event.data);
-		return;
-	}
+		try
+		{
+			var data=JSON.parse(event.data);
+		}
+		catch (e) 
+		{
+			showInfoMessage("JSON message parse error: " + e + " The response was:\n" + event.data);
+			return;
+		}
 
-	if (data.msg === MMN_PM_IsListening)
-	{
-		showInfoMessage("MiraMon Map Browser is open and ready to show layers.");
-		DisplayMapMMN();
-		return;
-	}
+		if (data.msg === MMN_PM_IsListening)
+		{
+			showInfoMessage("MiraMon Map Browser is open and ready to show layers.");
+			DisplayMapMMN();
+			return;
+		}
 
-	if (data.msg === MMN_PM_Closed)
-	{
-		showInfoMessage("MiraMon Map Browser has been closed.");
-		MiraMonMapBrowserVars.mmn=null;
-		MiraMonMapBrowserVars.mmnURL=null;
-		return;
-	}
+		if (data.msg === MMN_PM_Closed)
+		{
+			showInfoMessage("MiraMon Map Browser has been closed.");
+			MiraMonMapBrowserVars.mmn=null;
+			MiraMonMapBrowserVars.mmnURL=null;
+			return;
+		}
 		return;
 	}
 	try
@@ -5504,9 +5605,6 @@ function ProcessMessageFromMiraMonMapBrowser(event)
 	}
 	createAndLoadImportGeoJSONNode(JSON.stringify(data.data),data.url)
 	return;
-	
-
-
 
 	/*if (data.msg === MMN_PM_CurrentLocationText)
 	{
@@ -5692,6 +5790,24 @@ var node;
 	addCircularImage(null, null, elementName, elementName+".png");
 }
 
+var walletURL=null;
+var walletWindow=null;
+var walletPostMessageTimer=[];
+var walletPostMessageCloseTimer=null;
+
+function walletPostMessageGetCredentials() {
+	//message to message window... "Requesting credentials."
+	walletWindow.postMessage('Please select a connection to be used by Tapis', 'https://wallet.dataspace.secd.eu');
+}
+
+function walletPostMessageClose() {
+	if (walletPostMessageCloseTimer && walletWindow && walletWindow.closed) {
+		clearInterval(walletPostMessageCloseTimer);
+                for (var t of walletPostMessageTimer)
+			clearInterval(t);
+	}
+}
+
 function OpenLink(event) {
 	event.preventDefault(); // We don't want to submit this form
 	var iEntity;
@@ -5730,10 +5846,18 @@ function OpenLink(event) {
 					if (i==nodeIds.length) { 
 						startingNodeContextId=nodeResource.id;
 						addCircularImage(null, null, "ogcAPIItems", "ogcAPIItems.png");
-						//··· Fer-ho
 						GetSTAURLEvent(null, AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + "/" + data[iRecord]["id"] + "/items", getURLQueryParams(node.STAURL)));
 					}
 				}
+			} else if (columnName.endsWith("AssetLink") && 
+				data[iRecord][columnName.substring(0,columnName.length-"AssetLink".length)+"WalletUrl"]) {
+				walletURL=data[iRecord][columnName.substring(0,columnName.length-"AssetLink".length)+"WalletUrl"];
+				showInfoMessage("Opening wallet...");
+				walletWindow = window.open(walletURL + "/connections/select", "_WALLET", 'popup=true');
+
+				// We cannot add an event handler here to wait for the page to be ready :(
+				walletPostMessageTimer.push(setInterval(walletPostMessageGetCredentials, "500"));
+				walletPostMessageCloseTimer = setInterval(walletPostMessageClose, 1000);				
 			}
 		} else {  //STA Entity
 			if (typeof data[iRecord]["@iot.id"]==="undefined")  //If this was not selected it is not possible to do this (or we could look for alternative ways to know it)
@@ -5781,11 +5905,10 @@ function ShowLinkDialog(nodeId, columnName, iRecord) {
 		return;
 	if (((node.image=="sta.png" || node.image=="staRoot.png") && columnName=="url") ||
 	    ((-1!=IdOfSTAEntity(node) || STAOperations[removeExtension(node.image)]) && 
-		 (columnName=="@iot.selfLink" || getSTAEntityNavLink(columnName)) || 
+	          (columnName=="@iot.selfLink" || getSTAEntityNavLink(columnName)) || 
 	    (node.image=="ogcAPICols.png" && (columnName=="link" || columnName=="itemsLink")) || 
-            (node.image=="ogcAPIItems.png" && (columnName=="itemLink"))
-	)
-	   ) {
+            (node.image=="ogcAPIItems.png" && (columnName=="itemLink" || columnName.endsWith("AssetLink") ))
+	   )) {
 		document.getElementById("DialogLinkLink").innerHTML=data[iRecord][columnName];
 		saveNodeDialog("DialogLink", node);
 		document.getElementById("DialogLinkIRecord").value=iRecord;
@@ -5920,11 +6043,21 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 		DoMergeExpandSTA(nodeTo);
 		return true;
 	}
-	if (tableNodes && nodeTo.image == "SortByTables.png") {
+	if (tableNodes && nodeTo.image == "SortByTables.png") {  //I believe this is not necessary because is not doing anything but the default. Marta, can you please try to remove it?
 		networkNodes.update(nodeTo);
 		if (addEdge)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
 		
+		return true;
+	}
+	if (nodeFrom.SQLiteDB && nodeTo.image == "ImportGPKGTable.png") {
+		nodeTo.SQLiteDB = nodeFrom.SQLiteDB;
+		if (nodeFrom.STAsecurity)
+			nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
+		networkNodes.update(nodeTo);
+		if (addEdge)
+			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
+		TransformBinaryGPKGTableToTable(nodeTo, nodeFrom.STAdata[0].name);
 		return true;
 	}
 	if (staNodes && nodeTo.image == "GeoFilterPolSTA.png") {
@@ -6047,7 +6180,6 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 		//var parentNode=GetFirstParentNode(currentNode);
 		if (nodeFrom) 
 			document.getElementById("DialogSTAURLInput").value = nodeTo.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(nodeFrom.STAURL) + "/items", getURLQueryParams(nodeFrom.STAURL));
-		//···
 		//document.getElementById("DialogSTAURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedOGCAPIurls);
 		networkNodes.update(nodeTo);
 
@@ -6055,7 +6187,7 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
 		saveNodeDialog("DialogSTAURL", nodeTo); 
 		if (nodeFrom)
-			GetSTAURLEvent(null, nodeTo.STAURL);//··· Fer-ho.
+			GetSTAURLEvent(null, nodeTo.STAURL);
 					
 		return true;
 	}
@@ -6317,6 +6449,29 @@ function networkDoubleClick(params) {
 				}
 			}
 			document.getElementById("DialogImportDBF").showModal();
+		}
+		else if (currentNode.image == "ImportGPKG.png") {
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode) {
+				// Has de table a dataURL and a schemaURL?, then I add this to the dialogbox.
+				var data=parentNode.STAdata;
+				if (!data || !data.length) 
+					alert("Parent node has no data loaded. It will be ignored.");
+				else if (data.length>1)
+					alert("Parent node has more than one row. Please select on row first. It will be ignored.");
+				else {
+					var record=data[0];
+					if (!record.dataURL)
+						alert("Parent node has no dataURL column. It will be ignored.");
+					else {
+						document.getElementById("DialogImportGPKGSourceFile").checked=false;
+						document.getElementById("DialogImportGPKGSourceURL").checked=true;
+						document.getElementById("DialogImportGPKGSourceURLInput").value=record.dataURL;
+						document.getElementById("DialogImportGPKGSourceURLButton").disabled=false;
+					}
+				}
+			}
+			document.getElementById("DialogImportGPKG").showModal();
 		}
 		else if (currentNode.image == "ImportGeoJSON.png") {
 			document.getElementById("DialogImportGeoJSONSourceURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedGeoJSONurls);
