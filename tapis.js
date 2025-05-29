@@ -1262,7 +1262,7 @@ function ReadURLImportDBF() {
 	HTTPBinaryData(document.getElementById("DialogImportDBFSourceURLInput").value).then(
 				function(value) { 
 					showInfoMessage('Download DBF completed.'); 
-					TransformBinaryDBFToTable(value, document.getElementById("DialogImportDBFSourceURLInput").value);
+					TransformBinaryDBFToTable(value.arrayBuf, document.getElementById("DialogImportDBFSourceURLInput").value);
 				},
 				function(error) { 
 					showInfoMessage('Error downloading DBF. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -1327,11 +1327,21 @@ function ReadFileImportGPKG(event) {
 	reader.readAsArrayBuffer(input.files[0]);
 }
 
-function ReadURLImportGPKG() {
-	HTTPBinaryData(document.getElementById("DialogImportGPKGSourceURLInput").value).then(
+function ReadURLImportGPKG(event, url, security) {
+	HTTPBinaryData(url ? url : document.getElementById("DialogImportGPKGSourceURLInput").value, ["Content-type"], null, null, security).then(
 				function(value) { 
-					showInfoMessage('Download GPKG completed.'); 
-					TransformBinaryGPKGToTable(value, document.getElementById("DialogImportGPKGSourceURLInput").value);
+					if (value.arrayBuf) {
+						if (responseHeaders["Content-type"]!="application/geopackage+sqlite3") {
+							showInfoMessage('Error downloading GPKG. <br>Unexpected media type: ' + responseHeaders["Content-type"]);
+							console.log('Error downloading GPKG. Unexpected media type: ' + responseHeaders["Content-type"]);
+						} else {
+							showInfoMessage('Download GPKG completed.'); 
+							TransformBinaryGPKGToTable(value, url ? url : document.getElementById("DialogImportGPKGSourceURLInput").value);
+						}
+					} else {
+						showInfoMessage('Error downloading GPKG. <br>Response: ' + value.text);
+						console.log("Error downloading GPKG.") ;
+					}
 				},
 				function(error) { 
 					showInfoMessage('Error downloading GPKG. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -1506,9 +1516,10 @@ function TransformGeoJSONFeatureToTable(feature, url) {
 		for (var k = 0; k < keys.length; k++) {
 			if (feature.assets[keys[k]].href)
 				record[keys[k]+"OpenLink"]=feature.assets[keys[k]].href;
-			if (feature.assets[keys[k]].alternate && feature.assets[keys[k]].alternate.Asset && feature.assets[keys[k]].alternate.Asset.href) {
-				record[keys[k]+"AssetLink"]=feature.assets[keys[k]].alternate.Asset.href;
-				record[keys[k]+"WalletUrl"]=feature.assets[keys[k]].alternate.Asset["facts:walletUrl"] ? feature.assets[keys[k]].alternate.Asset["facts:walletUrl"] : "https://wallet.dataspace.secd.eu";
+			if (feature.assets[keys[k]].alternate && feature.assets[keys[k]].alternate.FACTS_API_Key && feature.assets[keys[k]].alternate.FACTS_API_Key.href) {
+				record[keys[k]+"AssetLink"]=feature.assets[keys[k]].alternate.FACTS_API_Key.href;
+				record[keys[k]+"AssetType"]=feature.assets[keys[k]].alternate.FACTS_API_Key?.type ? feature.assets[keys[k]].alternate.FACTS_API_Key.type : "application/geopackage+sqlite3";
+				record[keys[k]+"WalletUrl"]=feature.assets[keys[k]].alternate.FACTS_API_Key?.auth?.schemes?.flows?.authorizationCode?.authorizationApi ? feature.assets[keys[k]].alternate.FACTS_API_Key.auth.schemes.flows.authorizationCode.authorizationApi : "https://wallet.dataspace.secd.eu";
 			}
 		}
 	}
@@ -3049,8 +3060,9 @@ function PopulateCreateUpdateDeleteEntity(entityName, currentNode) {
 			if (CriptoName && CriptoName!="Anonymous")
 				document.getElementById("dlgCreateUpdateDeleteEntity_authId").value=CriptoName;
 			else {
-				alert("To create a STA Party, you should login first.");
-				return false;
+				if (!confirm("To create a STA Party, you should login first. Do you want to try to continue without login?"))
+					return false;
+				document.getElementById("dlgCreateUpdateDeleteEntity_authId").value="";
 			}
 			document.getElementById("dlgCreateUpdateDeleteEntity_authId").readOnly=true;
 			document.getElementById("dlgCreateUpdateDeleteEntity_role").value="individual";
@@ -5551,7 +5563,16 @@ function MessageSTAPage(event) {
         	        walletWindow = null;
                 	for (var t of walletPostMessageTimer)
                         	clearInterval(t);
-		
+
+			if (assetType=="application/geopackage+sqlite3") {
+				startingNodeContextId=currentNode.id;
+				var node=addCircularImage(null, null, "ImportGPKG", "ImportGPKG.png");
+				saveNodeDialog("DialogSelectResource", node);
+				currentNode=node;
+				ReadURLImportGPKG(null, assetURL, {"x-facts-key" : event.data['x-facts-key']})
+			} else {
+				alert("Format not supported in this itinerary")  //We need to work on extending support for other formats.
+			}
 		}
 		return;
 	}
@@ -5792,6 +5813,8 @@ var node;
 
 var walletURL=null;
 var walletWindow=null;
+var assetURL = null;
+var assetType = null;
 var walletPostMessageTimer=[];
 var walletPostMessageCloseTimer=null;
 
@@ -5825,17 +5848,27 @@ function OpenLink(event) {
 		//Look for the root node.
 		//Add node and connection
 		var rootNode;
+		var parentNode=GetFirstParentNode(node);
+
 		if ((node.image=="sta.png" || node.image=="staRoot.png") && columnName=="url") {
 			var elementName=getFileName(data[iRecord][columnName]);
 			startingNodeContextId=node.id;
 			addCircularImage(null, null, elementName, elementName+".png");
-		} else if (node.image=="ogcAPICols.png" || node.image=="ogcAPIItems.png") {
+		} else if (
+			((node.image=="ogcAPICols.png" || 
+					(parentNode?.image=="ogcAPICols.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+				) && (columnName=="link" || columnName=="itemsLink")) || 
+			((node.image=="ogcAPIItems.png" || 
+					(parentNode?.image=="ogcAPIItems.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+				) && (columnName=="itemLink" || columnName.endsWith("AssetLink") ))
+			)
+		{
 			if (columnName=="link") {
 				startingNodeContextId=node.id;
 				AddSelectResourceIfNoThere(node, data[iRecord]["id"]);
 			} else if (columnName=="itemsLink" || columnName=="itemLink") {
 				startingNodeContextId=node.id;
-				var nodeResource=AddSelectResourceIfNoThere(node, data[iRecord]["id"]);
+				var nodeResource=(node.image=="ogcAPICols.png") ? AddSelectResourceIfNoThere(node, data[iRecord]["id"]) : node;				
 				if (columnName=="itemsLink") {
 					var nodeIds = network.getConnectedNodes(nodeResource.id, 'to'); 
 					for (var i = 0; i < nodeIds.length; i++) {
@@ -5850,10 +5883,14 @@ function OpenLink(event) {
 					}
 				}
 			} else if (columnName.endsWith("AssetLink") && 
-				data[iRecord][columnName.substring(0,columnName.length-"AssetLink".length)+"WalletUrl"]) {
+					data[iRecord][columnName.substring(0,columnName.length-"AssetLink".length)+"WalletUrl"]) {
+				startingNodeContextId=node.id;
+				currentNode=(node.image=="ogcAPIItems.png") ? AddSelectResourceIfNoThere(node, data[iRecord]["id"]) : node;
 				walletURL=data[iRecord][columnName.substring(0,columnName.length-"AssetLink".length)+"WalletUrl"];
 				showInfoMessage("Opening wallet...");
 				walletWindow = window.open(walletURL + "/connections/select", "_WALLET", 'popup=true');
+				assetURL = data[iRecord][columnName];
+				assetType =  data[iRecord][columnName.substring(0,columnName.length-"AssetLink".length)+"AssetType"] ? data[iRecord][columnName.substring(0,columnName.length-"AssetLink".length)+"AssetType"] : "application/geopackage+sqlite3";
 
 				// We cannot add an event handler here to wait for the page to be ready :(
 				walletPostMessageTimer.push(setInterval(walletPostMessageGetCredentials, "500"));
@@ -5903,11 +5940,16 @@ function ShowLinkDialog(nodeId, columnName, iRecord) {
 	var data=node.STAdata;
 	if (iRecord>=data.length)
 		return;
+	var parentNode=GetFirstParentNode(node);
 	if (((node.image=="sta.png" || node.image=="staRoot.png") && columnName=="url") ||
 	    ((-1!=IdOfSTAEntity(node) || STAOperations[removeExtension(node.image)]) && 
 	          (columnName=="@iot.selfLink" || getSTAEntityNavLink(columnName)) || 
-	    (node.image=="ogcAPICols.png" && (columnName=="link" || columnName=="itemsLink")) || 
-            (node.image=="ogcAPIItems.png" && (columnName=="itemLink" || columnName.endsWith("AssetLink") ))
+	    ((node.image=="ogcAPICols.png" || 
+			(parentNode?.image=="ogcAPICols.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+		) && (columnName=="link" || columnName=="itemsLink")) || 
+            ((node.image=="ogcAPIItems.png" || 
+			(parentNode?.image=="ogcAPIItems.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+		) && (columnName=="itemLink" || columnName.endsWith("AssetLink") ))
 	   )) {
 		document.getElementById("DialogLinkLink").innerHTML=data[iRecord][columnName];
 		saveNodeDialog("DialogLink", node);
@@ -8278,6 +8320,7 @@ function createAndLoadImportGeoJSONNode(data,url){
 	node.STAdataAttributes=attributes;
 	updateQueryAndTableArea(node);
 	networkNodes.update(node);
+
 	
 }
 
