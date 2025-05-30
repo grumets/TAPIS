@@ -113,20 +113,83 @@ function ParseEDCCatalog(catalogs) {
 				record.language=dataset["dct:language"];
 			if (dataset["dct:name"])
 				record.description=dataset["dct:name"];
-			if (dataset["dct:description"])
+			else if (dataset["dct:description"])
 				record.description=dataset["dct:description"];
+			else if (dataset["name"])
+				record.description=dataset["name"];
+			else if (dataset["description"])
+				record.description=dataset["description"];
 			if (dataset["dct:title"])
 				record.title=dataset["dct:title"];
+			else if (dataset["title"])
+				record.title=dataset["title"]; 
 			if (dataset["dct:publisher"] && dataset["dct:publisher"]["http://xmlns.com/foaf/0.1/homepage"])
 				record.publisher=dataset["dct:publisher"]["http://xmlns.com/foaf/0.1/homepage"];
 			if (dataset["dcat:version"])
 				record.version=dataset["dcat:version"];
 			if (dataset["dct:creator"] && dataset["dct:creator"]["http://xmlns.com/foaf/0.1/name"])
 				record.creator=dataset["dct:creator"] && dataset["dct:creator"]["http://xmlns.com/foaf/0.1/name"]
+			if (dataset["metadata"]){
+				var md=dataset["metadata"];
+				if (md["dct:abstract"])
+					record.abstract=md["dct:abstract"];
+				if (md["dct:accrualPeriodicity"])
+					record.updatePeriodicity=md["dct:accrualPeriodicity"];
+				if (md["dct:issued"])
+					record.creationDate=md["dct:issued"];
+				if (md["dct:language"])
+					record.language=md["dct:language"];
+				for (var i=0, j=1; i<md["dct:license"]?.length; i++) {
+					if (md["dct:license"][i]) {
+						record["license_"+j]=md["dct:license"][i];
+						j++;
+					}
+				}
+				if (md["dct:publisher"] && md["dct:publisher"]["@id"]) {
+					var publ=md["dct:publisher"]["@id"];
+					if (publ.startsWith("https://catalogue.grumets.cat/geonetwork/organization/"))
+						publ=publ.substring("https://catalogue.grumets.cat/geonetwork/organization/Sensor.Community".length);						
+					publ=decodeURIComponent(publ.replaceAll("%25", "%"))
+                        		record.publisher=publ;
+				}
+				if (md["dct:spatial"] && md["dct:spatial"]["http://www.opengis.net/rdf#asWKT"]) {
+					var extent=md["dct:spatial"]["http://www.opengis.net/rdf#asWKT"];
+					if (extent.startsWith("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>"))
+						extent=extent.substring("<http://www.opengis.net/def/crs/OGC/1.3/CRS84>".length);
+					if (extent.charAt(0)=='\n')
+						extent=extent.substring(1);
+					record.extent=extent.trim();
+				}
+				if (md["dct:updated"])
+					record.updateDate=md["dct:updated"];
+				if (md["dcat:dataQuality"])
+					record.quality=md["dcat:dataQuality"];
+				if (md["dcat:granularity"])
+					record.resolution=md["dcat:granularity"];
+				for (var i=0, j=1; i<md["dcat:keyword"]?.length; i++) {
+					if (md["dcat:keyword"][i]) {
+						record["keyword_"+j]=md["dcat:keyword"][i];
+						j++;
+					}
+				}
+				for (var i=0, j=1; i<md["dcat:theme"]?.length; i++) {
+					if (md["dcat:theme"][i]?.length && md["dcat:theme"][i]["@id"]) {
+						var topCat=md["dcat:theme"][i]["@id"];
+						if (topCat.startsWith("https://catalogue.grumets.cat/geonetwork/thesaurus/iso/topicCategory/"))
+							topCat=topCat.substring("https://catalogue.grumets.cat/geonetwork/thesaurus/iso/topicCategory/".length);
+						record["topicCategory_"+j]=topCat;
+						j++;
+					}
+				}
+				if (md["http://xmlns.com/foaf/0.1/thumbnail"] && md["http://xmlns.com/foaf/0.1/thumbnail"]["@id"])
+					record.imageUrl=decodeURIComponent(md["http://xmlns.com/foaf/0.1/thumbnail"]["@id"].replaceAll("%25", "%"));
+			}
 			if (dataset["dcat:landingPage"])
 				record.landingPage=dataset["dcat:landingPage"];
 			if (dataset["dcat:mediaType"])
 				record.mediaType=dataset["dcat:mediaType"];
+			else if (dataset["mediaType"])
+				record.mediaType=dataset["mediaType"];
 			else if (dataset["contenttype"])
 				record.mediaType=dataset["contenttype"];
 			records.push(record);

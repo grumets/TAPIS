@@ -3832,6 +3832,8 @@ function PopulateCreateUpdateDeleteRecord(currentNode, iRecord, verify) {
 				if (str!=value)
 					break;
 			} else if (cell!=value) {
+				if (typeof cell==="string" && cell.replaceAll('\n', '').replaceAll('\r', '')==value)
+					continue;
 				break;
 			} 
 		}
@@ -3855,9 +3857,9 @@ function PopulateCreateUpdateDeleteRecord(currentNode, iRecord, verify) {
 		else
 			value=cell;
 		cdns.push('<label for="dlgCreateUpdateDeleteRecord_', dataAttributesArray[a], '">', GetHTMLdataAttribute(dataAttributesArray[a], dataAttributes[dataAttributesArray[a]]), ': </label>',
-			'<input id="dlgCreateUpdateDeleteRecord_', dataAttributesArray[a], '" type="text" value="', value , '"><br>');
+			'<input id="dlgCreateUpdateDeleteRecord_', dataAttributesArray[a], '" type="text" size="', value.length ? (value.length>100 ? 100 : value.length) : 20, '" value="', value , '"><br>');
 	}
-	cdns.push('<input id="dlgCreateUpdateDeleteRecordInitialId" type="" value="', iRecord, '">');
+	cdns.push('<input id="dlgCreateUpdateDeleteRecordInitialId" type="hidden" value="', iRecord, '">');
 	document.getElementById("dlgCreateUpdateDeleteRecordNumber").value=iRecord+1;
 	document.getElementById("dlgCreateUpdateDeleteRecordLength").innerHTML=data.length;
 	document.getElementById("dlgCreateUpdateDeleteRecordProperties").innerHTML=cdns.join("");
@@ -6219,15 +6221,11 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 	if (tableNodes && nodeTo.image == "EditRecord.png") {
 		if (nodeFrom.STAdata){
 			nodeTo.STAdata = deapCopy(nodeFrom.STAdata); //necessary first time
-			if (nodeFrom.STAdataAttributes){
-						nodeTo.STAdataAttributes = deapCopy(nodeFrom.STAdataAttributes); //necessary first time
-						
-			}else{
-						nodeTo.STAdataAttributes = getDataAttributes(nodeTo.STAdata);
-					
-			}
-		}
-		
+			if (nodeFrom.STAdataAttributes)
+				nodeTo.STAdataAttributes = deapCopy(nodeFrom.STAdataAttributes); //necessary first time
+			else
+				nodeTo.STAdataAttributes = getDataAttributes(nodeTo.STAdata);
+		}		
 		networkNodes.update(nodeTo);
 		if (addEdge)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
@@ -6594,7 +6592,7 @@ function networkDoubleClick(params) {
 			var parentNodes=GetParentNodes(currentNode);
 			if (parentNodes && parentNodes[0]) {
 				if (parentNodes[0].STAdata)
-					ShowImageViewerDialog(parentNodes);
+					ShowImageViewerDialog(currentNode, parentNodes);
 				document.getElementById("DialogImageViewer").showModal();
 			}
 		}
