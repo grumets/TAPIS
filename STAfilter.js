@@ -1953,12 +1953,15 @@ function applyEvalAndFilterData(node) {
 
 		}
 
-		//it is a date?
-		var ItIsADate = new Date(dataValue);
-		if (eval(ItIsADate)) {
-			if (dataValue[dataValue.length - 1] == "Z" && sentenceToEvalInSTAtable.includes("getHours")) { //Erase Z in date to obtain the correct hour
-				dataValueWithoutZ = dataValue.slice(0, -1);
-				sentenceToEvalInSTAtable = sentenceToEvalInSTAtable.replaceAll(dataValue, dataValueWithoutZ.toString());
+		if (dataValue)
+		{
+			//it is a date?
+			var ItIsADate = new Date(dataValue);
+			if (ItIsADate) {
+				if (dataValue[dataValue.length - 1] == "Z" && sentenceToEvalInSTAtable.includes("getHours")) { //Erase Z in date to obtain the correct hour
+					dataValueWithoutZ = dataValue.slice(0, -1);
+					sentenceToEvalInSTAtable = sentenceToEvalInSTAtable.replaceAll(dataValue, dataValueWithoutZ.toString());
+				}
 			}
 		}
 
@@ -1992,7 +1995,10 @@ function ShowTableFilterRowsDialog(parentNode, node) {
 	saveNodeDialog("DialogFilterRows", node);
 
 	var data = parentNode.STAdata;
-		node.STAdata=deapCopy(data); //Put all data from parent in this node 
+	node.STAdata=deapCopy(data); //Put all data from parent in this node 
+	var data = parentNode.STAdata;
+	if (!node.STAdataAttributes)
+		node.STAdataAttributes=parentNode.STAdataAttributes ? deapCopy(parentNode.STAdataAttributes) : getDataAttributes(data);
 	if (node.image != "FilterRowsTable.png") {
 		node.STAURL=deapCopy(parentNode.STAURL); //Put all data from parent in this node 
 	}

@@ -639,6 +639,18 @@ function addOnlinesDigitalTransferOption(simpleUrlRecords, digitalTransfer, id, 
 			schemaURL: schema});
 		if (online['gmd:name'] && online['gmd:name']['gco:CharacterString'])
 			simpleUrlRecords[simpleUrlRecords.length-1].distribution=online['gmd:name']['gco:CharacterString'];
+
+		if (online['gmd:applicationProfile'] && online['gmd:applicationProfile']['gco:CharacterString']){
+			var applProf=online['gmd:applicationProfile']['gco:CharacterString'];
+			if (applProf.length && applProf.startsWith('hash:')){
+				var i=applProf.substring('hash:'.length).indexOf(':');
+				if (i>=0)
+				{	
+					simpleUrlRecords[simpleUrlRecords.length-1].file_hash=applProf.substring('hash:'.length + i + 1);
+					simpleUrlRecords[simpleUrlRecords.length-1].hash_alg=applProf.substring('hash:'.length, 'hash:'.length + i);
+				}
+			}
+		}
 		if (bbox.length)
 			simpleUrlRecords[simpleUrlRecords.length-1].extent=bbox;
 	}
@@ -1202,18 +1214,14 @@ function ReadURLImportCSV() {
 	var parentNode=GetFirstParentNode(currentNode);
 	currentNode.STAURL = document.getElementById("DialogImportCSVSourceURLInput").value;
 	currentNode.OGCType = "fileURL";
-	if (parentNode && parentNode.OGCType=="S3Bucket" && parentNode.STAdata && parentNode.STAdata[0].href==currentNode.STAURL) {
-		currentNode.STAAccessKey = parentNode.STAAccessKey;
-		currentNode.STASecretKey = parentNode.STASecretKey;
-		currentNode.STAS3Service = parentNode.STAS3Service;
+	if (parentNode && parentNode.OGCType=="S3Bucket" && parentNode.STAdata && parentNode.STAdata[0].href==currentNode.STAURL && parentNode.STAsecurity) {
+		currentNode.STAsecurity=deapCopy(parentNode.STAsecurity);
 		locationSTAURL=transformStringIntoLocation(currentNode.STAURL);
 	} else {
-		currentNode.STAAccessKey = null;
-		currentNode.STASecretKey = null;
-		currentNode.STAS3Service = null;
+		currentNode.STAsecurity=null;
 		locationSTAURL=null;
 	}
-	HTTPJSONData(currentNode.STAURL, null, null, null, locationSTAURL ? getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAAccessKey, currentNode.STASecretKey, currentNode.STAS3Service, "us-east-1") : null).then(
+	HTTPJSONData(currentNode.STAURL, null, null, null, locationSTAURL ? getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAsecurity.S3) : null).then(
 				function(value) { 
 					showInfoMessage('Download CSV completed.'); 
 					TransformTextCSVToTable(value.text, document.getElementById("DialogImportCSVSourceURLInput").value);
@@ -1331,12 +1339,12 @@ function ReadURLImportGPKG(event, url, security) {
 	HTTPBinaryData(url ? url : document.getElementById("DialogImportGPKGSourceURLInput").value, ["Content-type"], null, null, security).then(
 				function(value) { 
 					if (value.arrayBuf) {
-						if (responseHeaders["Content-type"]!="application/geopackage+sqlite3") {
-							showInfoMessage('Error downloading GPKG. <br>Unexpected media type: ' + responseHeaders["Content-type"]);
-							console.log('Error downloading GPKG. Unexpected media type: ' + responseHeaders["Content-type"]);
+						if (value.responseHeaders["Content-type"]!="application/geopackage+sqlite3") {
+							showInfoMessage('Error downloading GPKG. <br>Unexpected media type: ' + value.responseHeaders["Content-type"]);
+							console.log('Error downloading GPKG. Unexpected media type: ' + value.responseHeaders["Content-type"]);
 						} else {
 							showInfoMessage('Download GPKG completed.'); 
-							TransformBinaryGPKGToTable(value, url ? url : document.getElementById("DialogImportGPKGSourceURLInput").value);
+							TransformBinaryGPKGToTable(value.arrayBuf, url ? url : document.getElementById("DialogImportGPKGSourceURLInput").value);
 						}
 					} else {
 						showInfoMessage('Error downloading GPKG. <br>Response: ' + value.text);
@@ -1353,7 +1361,7 @@ function ReadURLImportGPKG(event, url, security) {
 function TransformTextJSONLDToTable(jsonldText, addGeo, addObs, url) {
 	try
 	{
-		var jsonld = JSON.parse(jsonldText);
+		var jsonld = typeof jsonldText === "object" ? jsonldText : JSON.parse(jsonldText);
 	}
 	catch (e) 
 	{
@@ -1405,21 +1413,17 @@ function ReadURLImportJSONLD() {
 		return;
 	currentNode.STAURL = document.getElementById("DialogImportJSONLDSourceURLInput").value.trim();
 	currentNode.OGCType = "fileURL";
-	if (parentNode && parentNode.OGCType=="S3Bucket" && parentNode.STAdata && parentNode.STAdata[0].href==currentNode.STAURL) {
-		currentNode.STAAccessKey = parentNode.STAAccessKey;
-		currentNode.STASecretKey = parentNode.STASecretKey;
-		currentNode.STAS3Service = parentNode.STAS3Service;
+	if (parentNode && parentNode.OGCType=="S3Bucket" && parentNode.STAdata && parentNode.STAdata[0].href==currentNode.STAURL && parentNode.STAsecurity) {
+		currentNode.STAsecurity = deapCopy(parentNode.STAsecurity);
 		locationSTAURL=transformStringIntoLocation(currentNode.STAURL);
 	} else {
-		currentNode.STAAccessKey = null;
-		currentNode.STASecretKey = null;
-		currentNode.STAS3Service = null;
+		currentNode.STAsecurity = null;
 		locationSTAURL=null;
 	}
-	HTTPJSONData(currentNode.STAURL, null, null, null, locationSTAURL ? getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAAccessKey, currentNode.STASecretKey, currentNode.STAS3Service, "us-east-1") : null).then(
+	HTTPJSONData(currentNode.STAURL, null, null, null, locationSTAURL ? getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAsecurity.S3) : null).then(
 				function(value) { 
 					showInfoMessage('Download JSONLD completed.'); 
-					TransformTextJSONLDToTable(value.text, document.getElementById("DialogImportJSONLDAddGeo").checked, document.getElementById("DialogImportJSONLDAddObs").checked, document.getElementById("DialogImportJSONLDSourceURLInput").value);
+					TransformTextJSONLDToTable(value.obj ? value.obj : value.text, document.getElementById("DialogImportJSONLDAddGeo").checked, document.getElementById("DialogImportJSONLDAddObs").checked, document.getElementById("DialogImportJSONLDSourceURLInput").value);
 				},
 				function(error) { 
 					showInfoMessage('Error downloading JSONLD. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -1482,18 +1486,14 @@ function ReadURLImportJSON() {
 		return;
 	currentNode.STAURL = document.getElementById("DialogImportJSONSourceURLInput").value.trim();
 	currentNode.OGCType = "fileURL";
-	if (parentNode && parentNode.OGCType=="S3Bucket" && parentNode.STAdata && parentNode.STAdata[0].href==currentNode.STAURL) {
-		currentNode.STAAccessKey = parentNode.STAAccessKey;
-		currentNode.STASecretKey = parentNode.STASecretKey;
-		currentNode.STAS3Service = parentNode.STAS3Service;
+	if (parentNode && parentNode.OGCType=="S3Bucket" && parentNode.STAdata && parentNode.STAdata[0].href==currentNode.STAURL && parentNode.STAsecurity) {
+		currentNode.STAsecurity = deapCopy(parentNode.STAsecurity);
 		locationSTAURL=transformStringIntoLocation(currentNode.STAURL);
 	} else {
-		currentNode.STAAccessKey = null;
-		currentNode.STASecretKey = null;
-		currentNode.STAS3Service = null;
+		currentNode.STAsecurity = null;
 		locationSTAURL=null;
 	}
-	HTTPJSONData(currentNode.STAURL, null, null, null, locationSTAURL ? getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAAccessKey, currentNode.STASecretKey, currentNode.STAS3Service, "us-east-1") : null).then(
+	HTTPJSONData(currentNode.STAURL, null, null, null, locationSTAURL ? getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAsecurity.S3) : null).then(
 				function(value) { 
 					showInfoMessage('Download JSON completed.'); 
 					TransformTextJSONToTable(value.obj, value.text, document.getElementById("DialogImportJSONSourceURLInput").value);
@@ -1763,11 +1763,53 @@ function GetSTAURLEvent(event, url) {
 	LoadJSONNodeSTAData(node);
 }
 
+async function AddMetadataToS3ServiceResponse(node) {
+	var obj, record;
+	showInfoMessage('Retrieving extra metadata from S3 Bucket. This may take some time...');
+	for (var i=0; i<node.STAdata.length; i++) {
+		record=node.STAdata[i];
+		var locationURL=transformStringIntoLocation(record.href);
+		//obj=await HTTPHead(record.href, ["X-Amz-Meta-Data", "X-Amz-Meta-Lake_id", "X-Amz-Meta-Project", "X-Amz-Meta-Starting-Date"], locationURL.hostname ? getAWSSignedHeaders(locationURL.hostname, locationURL.pathname, node.STAsecurity.S3) : null);
+		obj=await HTTPJSONData(record.href, ["X-Amz-Meta-Data", "X-Amz-Meta-Lake_id", "X-Amz-Meta-Project", "X-Amz-Meta-Starting-Date"], "GET-HEAD", null, 
+				locationURL.hostname ? getAWSSignedHeaders(locationURL.hostname, locationURL.pathname, node.STAsecurity.S3) : null);
+		if (obj?.responseHeaders) {
+			if (node.STAdataAttributes) {
+				if (obj.responseHeaders["X-Amz-Meta-Data"] && !node.STAdataAttributes["X-Amz-Meta-Data"])
+					node.STAdataAttributes["X-Amz-Meta-Data"]={type: "string", description: "Title"};
+				if (obj.responseHeaders["X-Amz-Meta-Lake_id"] && !node.STAdataAttributes["X-Amz-Meta-Lake_id"])
+					node.STAdataAttributes["X-Amz-Meta-Lake_id"]={type: "string", description: "Lake ID"};
+				if (obj.responseHeaders["X-Amz-Meta-Project"] && !node.STAdataAttributes["X-Amz-Meta-Project"])
+					node.STAdataAttributes["X-Amz-Meta-Project"]={type: "string", description: "Project"};
+				if (obj.responseHeaders["X-Amz-Meta-Starting-Date"] && node.STAdataAttributes["X-Amz-Meta-Starting-Date"])
+					node.STAdataAttributes["X-Amz-Meta-Starting-Date"]={type: "isodatatime", description: "X-Amz-Meta-Starting-Date"};
+			}
+			if (obj.responseHeaders["X-Amz-Meta-Data"])
+				record["X-Amz-Meta-Data"]=obj.responseHeaders["X-Amz-Meta-Data"];
+			if (obj.responseHeaders["X-Amz-Meta-Lake_id"])
+				record["X-Amz-Meta-Lake_id"]=obj.responseHeaders["X-Amz-Meta-Lake_id"];
+			if (obj.responseHeaders["X-Amz-Meta-Project"])
+				record["X-Amz-Meta-Project"]=obj.responseHeaders["X-Amz-Meta-Project"];
+			if (obj.responseHeaders["X-Amz-Meta-Starting-Date"])
+				record["X-Amz-Meta-Starting-Date"]=obj.responseHeaders["X-Amz-Meta-Starting-Date"];
+		}
+		//Add headers to the table record
+		if (i%5==0 || i+1==node.STAdata.length)
+		{
+			networkNodes.update(node);
+			if (currentNode.id==node.id)
+				updateQueryAndTableArea(node);
+		}
+	}
+	showInfoMessage('Metadata retrieval from the S3 Bucket completed.'); 
+}
+
 function TransformS3ServiceResponseToDataAttributes(node, text) {
 	if (node.OGCType == "S3Buckets")
 		node.STAdata=ParseS3BucketsList(node.STAURL, text);
-	else
+	else {
 		node.STAdata=ParseS3Bucket(node.STAURL, text);
+		AddMetadataToS3ServiceResponse(node, text);
+	}
 	networkNodes.update(node);
 	updateQueryAndTableArea(node);
 	UpdateChildenTable(node);
@@ -1788,15 +1830,15 @@ function GetDialogS3BucketEvent(event) {
 	
 	var previousSTAURL = currentNode.STAURL;
 	currentNode.STAURL = document.getElementById("DialogS3BucketURL").value;
-	currentNode.STAAccessKey = document.getElementById("DialogS3BucketAccessKey").value;
-	currentNode.STASecretKey = document.getElementById("DialogS3BucketSecretKey").value;
-	currentNode.STAS3Service = document.getElementById("DialogS3BucketS3Service").value;
+	currentNode.STAsecurity={S3: {accessKey: document.getElementById("DialogS3BucketAccessKey").value,
+				secretKey: document.getElementById("DialogS3BucketSecretKey").value,
+				service: document.getElementById("DialogS3BucketS3Service").value}};
 	networkNodes.update(currentNode);
 
 	//if childen nodes have also STAURL
 	UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
 	var locationSTAURL=transformStringIntoLocation(currentNode.STAURL);
-	HTTPJSONData(currentNode.STAURL, null, null, null, getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAAccessKey, currentNode.STASecretKey, currentNode.STAS3Service, "us-east-1")).then(
+	HTTPJSONData(currentNode.STAURL, null, null, null, getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAsecurity.S3)).then(
 				function(value) {
 					if (currentNode.OGCType == "S3Buckets")
 						showInfoMessage('S3 Service bucket list request completed.'); 
@@ -3970,9 +4012,7 @@ function GetSelectRow(event) {
 			node.EDCConsumerURL = parentNode.EDCConsumerURL;
 		} else if (parentNode.OGCType=="S3Buckets" || parentNode.OGCType=="S3Bucket") {
 			node.OGCType = parentNode.OGCType;
-			node.STAAccessKey = parentNode.STAAccessKey;
-			node.STASecretKey = parentNode.STASecretKey;
-			node.STAS3Service = parentNode.STAS3Service;
+			node.STAsecurity = parentNode.STAsecurity ? deapCopy(parentNode.STAsecurity) : null;
 		}
 	}
 	else
@@ -4047,9 +4087,7 @@ function GetSelectResource(event, resourceId) {
 			node.EDCConsumerURL = parentNode.EDCConsumerURL;
 		} else if (parentNode.OGCType=="S3Buckets" || parentNode.OGCType=="S3Bucket") {
 			node.OGCType = parentNode.OGCType;
-			node.STAAccessKey = parentNode.STAAccessKey;
-			node.STASecretKey = parentNode.STASecretKey;
-			node.STAS3Service = parentNode.STAS3Service;
+			node.STAsecurity = parentNode.STAsecurity ? deapCopy(parentNode.STAsecurity) : null;
 		}
 	}
 	else
@@ -6359,9 +6397,9 @@ function networkDoubleClick(params) {
 				var parentNode=GetFirstParentNode(currentNode);
 				if (parentNode && parentNode.OGCType=="S3Buckets" && parentNode.STAdata && parentNode.STAdata[0] && parentNode.STAdata[0].href) {
 					document.getElementById("DialogS3BucketURL").value = parentNode.STAdata[0].href;
-					document.getElementById("DialogS3BucketAccessKey").value = parentNode.STAAccessKey;
-					document.getElementById("DialogS3BucketSecretKey").value = parentNode.STASecretKey
-					document.getElementById("DialogS3BucketS3Service").value = parentNode.STAS3Service
+					document.getElementById("DialogS3BucketAccessKey").value = parentNode.STAsecurity.S3.accessKey;
+					document.getElementById("DialogS3BucketSecretKey").value = parentNode.STAsecurity.S3.secretKey
+					document.getElementById("DialogS3BucketS3Service").value = parentNode.STAsecurity.S3.service
 				}
 			}
 			document.getElementById("DialogS3BucketSelect").innerHTML = GetOptionsObjectSelectDialog(config.suggestedS3Buckets);
