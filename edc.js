@@ -198,7 +198,7 @@ function ParseEDCCatalog(catalogs) {
 	return records;
 }
 
-function EDCNegociateContract(node, EDCConsumerURL, offerId, counterPartyAddress) {
+function EDCNegociateContract(node, EDCConsumerURL, offerId, counterPartyAddress, mediaType) {
 	var obj={
 		"@context": {"edc": "https://w3id.org/edc/v0.0.1/ns/"},
 		"@type": "ContractRequest",
@@ -217,7 +217,7 @@ function EDCNegociateContract(node, EDCConsumerURL, offerId, counterPartyAddress
 				function(value) {
 					if (value.obj && value.obj["@type"] && value.obj["@type"]=="IdResponse" && value.obj["@id"]) {
 						showInfoMessage('EDC contract negociation iniciated...');
-						EDCWaitForNegociationCompletition(node, EDCConsumerURL, value.obj["@id"], 0);
+						EDCWaitForNegociationCompletition(node, EDCConsumerURL, value.obj["@id"], mediaType, 0);
 					} else {
 						showInfoMessage('EDC contract negociation failed: '+ JSON.stringify(value.obj));
 					}
@@ -229,11 +229,11 @@ function EDCNegociateContract(node, EDCConsumerURL, offerId, counterPartyAddress
 			);
 }
 
-function EDCWaitForNegociationCompletition(node, EDCConsumerURL, id, n) {
-	setTimeout(EDCVerifyNegociationCompletition, 1000, node, EDCConsumerURL, id, n);
+function EDCWaitForNegociationCompletition(node, EDCConsumerURL, id, mediaType, n) {
+	setTimeout(EDCVerifyNegociationCompletition, 1000, node, EDCConsumerURL, id, mediaType, n);
 }
 
-function EDCVerifyNegociationCompletition(node, EDCConsumerURL, id, n) {
+function EDCVerifyNegociationCompletition(node, EDCConsumerURL, id, mediaType, n) {
 	HTTPJSONData(EDCConsumerURL+"/management/v2/contractnegotiations/"+id).then(
 				function(value) {
 					if (!value.obj || !value.obj["@type"] || value.obj["@type"]!="ContractNegotiation" || !value.obj.state) {
@@ -245,7 +245,7 @@ function EDCVerifyNegociationCompletition(node, EDCConsumerURL, id, n) {
 							showInfoMessage('EDC contract negociation failed after ' + n + ' iterations');
 							return;
 						}
-						EDCWaitForNegociationCompletition(node, EDCConsumerURL, id, n+1);
+						EDCWaitForNegociationCompletition(node, EDCConsumerURL, id, mediaType, n+1);
 						return;
 					} 	
 					if (!value.obj.contractAgreementId) {
@@ -253,7 +253,7 @@ function EDCVerifyNegociationCompletition(node, EDCConsumerURL, id, n) {
 						return;
 					}				
 					showInfoMessage('EDC contract negociation successful.');
-					EDCRequestTransfer(node, EDCConsumerURL, value.obj.contractAgreementId, value.obj.counterPartyAddress)
+					EDCRequestTransfer(node, EDCConsumerURL, value.obj.contractAgreementId, value.obj.counterPartyAddress, mediaType)
 				},
 				function(error) { 
 					showInfoMessage('EDC contract negociation failed. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -262,7 +262,7 @@ function EDCVerifyNegociationCompletition(node, EDCConsumerURL, id, n) {
 			);
 }
 
-function EDCRequestTransfer(node, EDCConsumerURL, contractAgreementId, counterPartyAddress) {
+function EDCRequestTransfer(node, EDCConsumerURL, contractAgreementId, counterPartyAddress, mediaType) {
 	var obj={
 		"@context": {
 			"@vocab": "https://w3id.org/edc/v0.0.1/ns/"
@@ -284,7 +284,7 @@ function EDCRequestTransfer(node, EDCConsumerURL, contractAgreementId, counterPa
 				function(value) { 
 					if (value.obj && value.obj["@type"] && value.obj["@type"]=="IdResponse" && value.obj["@id"]) {
 						showInfoMessage('EDC transfer requested...');
-						EDCWaitForTransferStarted(node, EDCConsumerURL, value.obj["@id"], 0);
+						EDCWaitForTransferStarted(node, EDCConsumerURL, value.obj["@id"], mediaType, 0);
 					} else {
 						showInfoMessage('EDC transfer request failed' + (value.obj ? ': '+ JSON.stringify(value.obj) : '.'));
 					}
@@ -296,11 +296,11 @@ function EDCRequestTransfer(node, EDCConsumerURL, contractAgreementId, counterPa
 			);	
 }
 
-function EDCWaitForTransferStarted(node, EDCConsumerURL, id, n) {
-	setTimeout(EDCVerifyEDCTransferStarted, 1000, node, EDCConsumerURL, id, n);
+function EDCWaitForTransferStarted(node, EDCConsumerURL, id, mediaType, n) {
+	setTimeout(EDCVerifyEDCTransferStarted, 1000, node, EDCConsumerURL, id, mediaType, n);
 }
 
-function EDCVerifyEDCTransferStarted(node, EDCConsumerURL, id, n) {
+function EDCVerifyEDCTransferStarted(node, EDCConsumerURL, id, mediaType, n) {
 	HTTPJSONData(EDCConsumerURL+"/management/v3/transferprocesses/"+id).then(
 				function(value) {
 					if (!value.obj || !value.obj["@type"] || value.obj["@type"]!="TransferProcess" || !value.obj.state) {
@@ -316,7 +316,7 @@ function EDCVerifyEDCTransferStarted(node, EDCConsumerURL, id, n) {
 							showInfoMessage('EDC transfer request failed after ' + n + ' iterations');
 							return;
 						}
-						EDCWaitForTransferStarted(node, EDCConsumerURL, id, n+1);
+						EDCWaitForTransferStarted(node, EDCConsumerURL, id, mediaType, n+1);
 						return;
 					} 	
 					/*if (!value.obj.contractId) {
@@ -324,7 +324,7 @@ function EDCVerifyEDCTransferStarted(node, EDCConsumerURL, id, n) {
 						return;
 					}*/				
 					showInfoMessage('EDC transfer request start confirmed.');
-					EDCGetAddressToTransfer(node, EDCConsumerURL, id);
+					EDCGetAddressToTransfer(node, EDCConsumerURL, id, mediaType);
 				},
 				function(error) { 
 					showInfoMessage('EDC transfer request failed. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -333,7 +333,7 @@ function EDCVerifyEDCTransferStarted(node, EDCConsumerURL, id, n) {
 			);
 }
 
-function EDCGetAddressToTransfer(node, EDCConsumerURL, id) {
+function EDCGetAddressToTransfer(node, EDCConsumerURL, id, mediaType) {
 	HTTPJSONData(EDCConsumerURL+"/management/v3/edrs/"+id+"/dataaddress").then(
 				function(value) {
 					if (!value.obj || !value.obj["@type"] || value.obj["@type"]!="DataAddress" || !value.obj.endpoint || !value.obj.authorization) {
@@ -341,7 +341,7 @@ function EDCGetAddressToTransfer(node, EDCConsumerURL, id) {
 						return;
 					}
 					showInfoMessage('EDC URL for transfer obtained.');
-					EDCExectuteTransfer(node, value.obj.endpoint, value.obj.authorization);
+					EDCExectuteTransfer(node, value.obj.endpoint, value.obj.authorization, mediaType);
 				},
 				function(error) { 
 					showInfoMessage('EDC getting URL for transfer request failed. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -350,9 +350,10 @@ function EDCGetAddressToTransfer(node, EDCConsumerURL, id) {
 			);
 }
 
-function EDCExectuteTransfer(node, url, authorization) {
-	HTTPJSONData(url, ["Content-Type", "Content-Length"], null, null, {'Accept': '*/*', 'Authorization': authorization}).then(
-				function(value) {
+function EDCExectuteTransfer(node, url, authorization, mediaType) {
+	AddCircularImageInterpretingURL(url, mediaType, {Authorization: authorization});
+	//HTTPJSONData(url, ["Content-Type", "Content-Length"], null, null, {'Accept': '*/*', 'Authorization': authorization}).then(
+	/*			function(value) {
 					showInfoMessage('EDC Raw data transfer completed. It it is not automatically transformed into a table, use the relevant "format" tool to do so.');
 					node.STAURL=url;
 					if (!node.STAsecurity)
@@ -379,5 +380,5 @@ function EDCExectuteTransfer(node, url, authorization) {
 					showInfoMessage('EDC contract negociation failed. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
 					console.log(error);
 				}
-			);
+			);*/
 }

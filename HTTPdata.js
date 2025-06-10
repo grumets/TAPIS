@@ -175,12 +175,24 @@ function removeParamContentType(contentType) {
 
 
 var CriptoName=null, DisplayName="";
-function AddHeadersIfNeeded(options, security) {
-	if (!options.headers['Authorization']){
-		if (security && security.authorization) {
+
+function getHeadersFromSecurity(security, url) {
+	if (security.S3 /* && parentNode && parentNode.OGCType=="S3Bucket" && parentNode.STAdata && parentNode.STAdata[0].href==currentNode.STAURL*/) {
+		var locationURL=transformStringIntoLocation(url);
+		return getAWSSignedHeaders(locationURL.hostname, locationURL.pathname, security.S3);
+	}
+	if (security.Authorization)
+		return {Authorization: security.Authorization};
+	if (security.facts)
+		return currentNode.STAsecurity.facts;
+}
+
+function AddHeadersIfNeeded(options, security, url) {
+	if (!options.headers['Authorization'] && !options.headers['x-facts-key']) {
+		if (security) {
 			if (!options.headers)
 				options.headers={};
-			options.headers['Authorization']=security.authorization;
+			Object.assign(options.headers, getHeadersFromSecurity(security, url));
 		}
 		else
 		{
