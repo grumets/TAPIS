@@ -48,18 +48,17 @@
 /*
 Some things that I'm always looking for:
 Function to get the nodeId from a dialog: getNodeDialog(div_id) 
-Fucntion to include the nodeId as a hidden value in a dialog: saveNodeDialog(div_id, node)
+Function to include the nodeId as a hidden value in a dialog: saveNodeDialog(div_id, node)
 
-Function to execute a special table link in the graph: ShowLinkDialog(nodeId, columnName, iRecord)
 Function to open a link in the graph: OpenLink(event)
 Function to decide what is a link in the table view: isAttributeAnyURI(s)
-Function to decide what is a link in the table that is a special link in the graph: isAttributeAnyURINode()
+Function to decide what is a link in the table that is a special link in the graph: isAttributeAnyURINode() (used in isAttributeAnyURINodeId() that is used in ShowLinkDialog(nodeId, columnName, iRecord))
 */
 
 var config;
 
 const ServicesAndAPIs = {sta: {name: "STA plus", description: "STA service", startNode: true, help: "Connects to a SensorThings API or a STAplus instance and returns a table with the list of entities suported by the API."},
-			ogcAPICols: {name: "OGC API cols", description: "OAPI Collections", startNode: true, help: "Connects to the collections page of a OGC Web API instance and returns a table with the list collections available."},
+			ogcAPICols: {name: "OGC API collections", description: "OAPI Collections", startNode: true, help: "Connects to the collections page of a OGC Web API instance and returns a table with the list collections available."},
 			ogcAPIItems: {name: "OGC API items", description: "OAPI items", help: "Connects to a collection page on an OGC Web API Features or derivatives and returns a table with the items available. One of the columns contains the geometry JSON object."},
 			csw: {name: "Catalogue", description: "OGC CSW", startNode: true, help: "Connects to a OGC CSW cataloge service. The result is a table with a list of records in the catalogue that have data associated with them."},
 			s3Service: {name: "S3 Service", description: "S3 Service", startNode: true, help: "Connects to a Amazon S3 compatible service (e.g. MinIO) and return the list of buckets available as a table."},
@@ -236,7 +235,7 @@ function getConnectionSTAEntity(parentNode, node) {
 			return {error: "Parent node is not a STA entity"};
 	}
 
-	var nextEntity=removeExtension(node.image);
+	var nextEntity=removeFileExtension(node.image);
 
 	if (!STAEntities[nextEntity])
 		return {error: "Child node is not a STA entity"};
@@ -281,8 +280,8 @@ function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
 		return "The operation cannot be applied to the root of an STA. (Suggestion: connect a STA Entity first)";
 	if (parentNode.image=="sta.png" || parentNode.image=="staRoot.png" || parentNode.image=="edcAsset.png" || parentNode.image=="ogcAPICols.png" || parentNode.image=="csw.png")
 		return null;
-	if ((STAOperations[removeExtension(parentNode.image)] && STAOperations[removeExtension(parentNode.image)].leafNode==true) ||
-		(TableOperations[removeExtension(parentNode.image)] && TableOperations[removeExtension(parentNode.image)].leafNode==true))
+	if ((STAOperations[removeFileExtension(parentNode.image)] && STAOperations[removeFileExtension(parentNode.image)].leafNode==true) ||
+		(TableOperations[removeFileExtension(parentNode.image)] && TableOperations[removeFileExtension(parentNode.image)].leafNode==true))
 		return "Parent node is a leaf node and cannot be connected with any other node";
 	if ((node.image == "SelectRowSTA.png" || node.image == "SelectResourceSTA.png") && parentNode.STASelectedExpands && parentNode.STASelectedExpands.expanded && Object.keys(parentNode.STASelectedExpands.expanded).length)
 		return "'Select Row' or 'Select Resource' for STA node cannot be connected to an expanded branch. Use 'Filter row' for STA instead or select a row before expanding";
@@ -293,7 +292,7 @@ function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
 		return null;
 	if (!parentNode.STAURL)
 		return null;
-	if (node.image == "MergeExpandsSTA.png" && STAOperations[removeExtension(parentNode.image)])
+	if (node.image == "MergeExpandsSTA.png" && STAOperations[removeFileExtension(parentNode.image)])
 		return null;
 	var getCon=getConnectionSTAEntity(parentNode, node)
 	if (getCon.error)
@@ -1282,8 +1281,19 @@ function ReadFileImportDBF(event) {
 }
 
 
-function ReadURLImportDBF() {
-	HTTPBinaryData(document.getElementById("DialogImportDBFSourceURLInput").value).then(
+function ReadURLImportDBF(event, url, security) {
+	var node=getNodeDialog("DialogImportDBF");
+	var parentNode=GetFirstParentNode(node);
+	node.STAURL = url ? url : document.getElementById("DialogImportDBFSourceURLInput").value;
+	node.OGCType = "fileURL";
+	if (security)
+		node.STAsecurity=security;
+	else if (parentNode.STAsecurity)
+		node.STAsecurity=deapCopy(parentNode.STAsecurity);
+	else
+		node.STAsecurity=null;
+
+	HTTPBinaryData(node.STAURL, null, null, null, getHeadersFromSecurity(node.STAsecurity, url)).then(
 				function(value) { 
 					showInfoMessage('Download DBF completed.'); 
 					TransformBinaryDBFToTable(value.arrayBuf, document.getElementById("DialogImportDBFSourceURLInput").value);
@@ -1529,6 +1539,38 @@ function IsJSONaSTARootPage(json, jsonText) {
 	return false;
 }
 
+async function IsJSONaOGCAPI(json, jsonText) {
+	if (!json)
+	{
+		try
+		{
+			json = JSON.parse(jsonText);
+		}
+		catch (e) 
+		{
+			showInfoMessage("JSON parse error: " + e + "\n File content fragment:\n" + jsonText.substring(0, 1000));
+			return false;
+		}
+	}
+	if (!json.links || !json.links.length)
+		return false;
+	for (var i=0; i<json.links.length; i++) {
+		if (json.links[i] && json.links[i].rel.endsWith("http://www.opengis.net/def/rel/ogc/1.0/conformance") && json.links[i].href)
+		{
+			var response=await HTTPJSONData(json.links[i].href);
+			if (response.obj && response.obj.conformsTo && response.obj.conformsTo.length && 
+				(0<=response.obj.conformsTo.indexOf("http://www.opengis.net/spec/ogcapi-common-1/1.0/conf/core") || 
+				 0<=response.obj.conformsTo.indexOf("http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core") || 
+				 0<=response.obj.conformsTo.indexOf("http://www.opengis.net/spec/ogcapi-coverage-1/1.0/conf/core")
+				))
+				return true;
+			return false;
+		}
+	}
+	return false;
+}
+
+
 function ReadURLImportJSON(event, url, security) {
 	var node=getNodeDialog("DialogImportJSON");
 	var parentNode=GetFirstParentNode(node);
@@ -1544,7 +1586,7 @@ function ReadURLImportJSON(event, url, security) {
 		node.STAsecurity=null;
 
 	HTTPJSONData(node.STAURL, null, null, null, getHeadersFromSecurity(node.STAsecurity, url)).then(
-				function(value) {
+				async function(value) {
 					if (typeof value.ok !== undefined && value.ok===false) {
 						showInfoMessage('Error downloading JSON');
 						return; 
@@ -1554,6 +1596,13 @@ function ReadURLImportJSON(event, url, security) {
 						delete node.OGCType;
 						node.image = "staRoot.png";
 						node.label = "STA root";
+						networkNodes.update(node);
+						LoadJSONNodeSTAData(node);
+					} else if (await IsJSONaOGCAPI(value.obj, value.text)) {
+						node.OGCType = "OGCAPIcollections";
+						node.image = "ogcAPICols.png";
+						node.label = "OGC API Collections";
+						node.STAURL += "/collections";
 						networkNodes.update(node);
 						LoadJSONNodeSTAData(node);
 					} else  //Pending: If the response is a JSONLD, we should redirect it to the other transformation and change the node image.
@@ -1877,36 +1926,38 @@ function TransformS3ServiceResponseToDataAttributes(node, text) {
 	UpdateChildenTable(node);
 }
 
-function GetDialogS3BucketEvent(event) {
-	event.preventDefault(); // We don't want to submit this form
+function GetDialogS3BucketEvent(event, url, security) {
+	if (event)
+		event.preventDefault(); // We don't want to submit this form
 	document.getElementById("DialogS3Bucket").close(document.getElementById("DialogS3BucketURL").value);
+	var node=getNodeDialog("DialogS3Bucket");
 
 	if (false==ChangeToHTTPS(true))
 		return;
 
-	var parentNode=GetFirstParentNode(currentNode);
+	var parentNode=GetFirstParentNode(node);
 	if (parentNode && parentNode.OGCType=="S3Buckets")
-		currentNode.OGCType = "S3Bucket";
+		node.OGCType = "S3Bucket";
 	else
-		currentNode.OGCType = "S3Buckets";
+		node.OGCType = "S3Buckets";
 	
-	var previousSTAURL = currentNode.STAURL;
-	currentNode.STAURL = document.getElementById("DialogS3BucketURL").value;
-	currentNode.STAsecurity={S3: {accessKey: document.getElementById("DialogS3BucketAccessKey").value,
+	var previousSTAURL = node.STAURL;
+	node.STAURL = url ? url : document.getElementById("DialogS3BucketURL").value;
+	node.STAsecurity=security ? security : {S3: {accessKey: document.getElementById("DialogS3BucketAccessKey").value,
 				secretKey: document.getElementById("DialogS3BucketSecretKey").value,
 				service: document.getElementById("DialogS3BucketS3Service").value}};
-	networkNodes.update(currentNode);
+	networkNodes.update(node);
 
 	//if childen nodes have also STAURL
-	UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
-	var locationSTAURL=transformStringIntoLocation(currentNode.STAURL);
-	HTTPJSONData(currentNode.STAURL, null, null, null, getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, currentNode.STAsecurity.S3)).then(
+	UpdateChildenSTAURL(node, node.STAURL, previousSTAURL);
+	var locationSTAURL=transformStringIntoLocation(node.STAURL);
+	HTTPJSONData(node.STAURL, null, null, null, getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, node.STAsecurity.S3)).then(
 				function(value) {
-					if (currentNode.OGCType == "S3Buckets")
+					if (node.OGCType == "S3Buckets")
 						showInfoMessage('S3 Service bucket list request completed.'); 
 					else
 						showInfoMessage('S3 Bucket content request completed.'); 
-					TransformS3ServiceResponseToDataAttributes(currentNode, value.text);
+					TransformS3ServiceResponseToDataAttributes(node, value.text);
 				},
 				function(error) { 
 					showInfoMessage('Error in requesting S3 Bucket root folder. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -4326,9 +4377,9 @@ async function UpdateChildenLoadJSONCallback(parentNode) {
 			//pensar com es podria fer.
 			showInfoMessage("Automatic update of SelectColumns not implemented for table nodes.");
 		}
-		else if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || STAOperations[removeExtension(node.image)].callSTALoad)
+		else if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || STAOperations[removeFileExtension(node.image)].callSTALoad)
 		{
-			showInfoMessage("Updating "+ removeExtension(node.image) + " ...");
+			showInfoMessage("Updating "+ removeFileExtension(node.image) + " ...");
 			await LoadJSONNodeSTAData(node);
 		}
 		else if (node.image == "OneValueSTA.png")
@@ -5643,6 +5694,8 @@ function OpenMapMMN(url, geojson, geojsonSchema, geojsonStyle, geojsonDates){
 }
 
 function AddCircularImageInterpretingURL(url, mediatype, security) {
+	if (!mediatype)
+		mediatype=getMediaTypeForURLExtension(url);
 	if (mediatype=="application/geopackage+sqlite3") {
 		startingNodeContextId=currentNode.id;
 		var node=addCircularImage(null, null, "ImportGPKG", "ImportGPKG.png");
@@ -5672,6 +5725,12 @@ function AddCircularImageInterpretingURL(url, mediatype, security) {
 		//node.STAdata=Papa.parse(value.text, {header: true, dynamicTyping: true, skipEmptyLines: true}).data;
 		//Papa.parse transforms ISO dates to javascript Dates. I revert this to ISO date expressed in text.
 		//TransformDatesToISO(currentNode.STAdata);
+	} else if (mediatype=="application/dbase" || mediatype=="application/x-dbase" || mediatype=="application/dbf" || mediatype=="application/x-dbf") {
+		startingNodeContextId=currentNode.id;
+		var node=addCircularImage(null, null, "ImportDBF", "ImportDBF.png");
+		saveNodeDialog("DialogImportDBF", node);
+		currentNode=node;
+		ReadURLImportDBF(event, url, security);
 	} else {
 		node.STAdata=[{"Content-Type": value.responseHeaders["Content-Type"], "Content-Length": value.responseHeaders["Content-Length"]}];
 		showInfoMessage("Media type (a.k.a format) not supported in this itinerary")  //We need to work on extending support for other formats.
@@ -5869,7 +5928,7 @@ function getNoQueryParentNodeSTAEntity(node) {
 	if (node.image=="SelectRowSTA.png" || node.image=="SelectResourceSTA.png")
 		return node;
 	//Is one of the nodes that adds a query param?
-	var staOperation=STAOperations[removeExtension(node.image)];
+	var staOperation=STAOperations[removeFileExtension(node.image)];
 	if (!staOperation || !staOperation.addSTAQuery)
 		return null;
 	var parentNode=GetFirstParentNode(node);
@@ -5887,7 +5946,7 @@ function getRootParentNodeSTAEntity(node) {
 		return null;
 	if (-1!=IdOfSTAEntity(node))
 		return getRootParentNodeSTAEntity(parentNode);
-	var staOperation=STAOperations[removeExtension(node.image)];
+	var staOperation=STAOperations[removeFileExtension(node.image)];
 	if (staOperation)
 		return getRootParentNodeSTAEntity(parentNode);
 	return null;
@@ -6060,13 +6119,49 @@ function OpenLink(event) {
 				var nodeSelect=AddSelectRowIfNoThere(node, data[iRecord]["assetId"], iRecord); //Select the iRecord 
 				startingNodeContextId=nodeSelect.id;
 				currentNode=addCircularImage(null, null, "edcAsset", "edcAsset.png");
-			} else if (
+			} else /*if (
 				(node.image=="edcAsset.png" || 
 						(parentNode?.image=="edcAsset.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
-					) && (columnName=="assetId")) {
+					) && (columnName=="assetId"))*/ {
 				startingNodeContextId=node.id;
 				//AddSelectResourceIfNoThere(node, data[iRecord]["id"]); Select the iRecord 
 			}
+		} else if (  //S3Service
+				((node.image=="s3Service.png" || 
+						(parentNode?.image=="s3Service.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+					) && (columnName=="bucketName")) || 
+				((node.image=="s3Bucket.png" || 
+						(parentNode?.image=="s3Bucket.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+					) && (columnName=="assetId"))
+				){
+			if (
+				(node.image=="s3Service.png" || 
+						(parentNode?.image=="s3Service.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+					) && (columnName=="bucketName")) {
+				startingNodeContextId=node.id;
+				var nodeSelect=AddSelectRowIfNoThere(node, data[iRecord]["bucketName"], iRecord); //Select the iRecord 
+				startingNodeContextId=nodeSelect.id;
+				currentNode=addCircularImage(null, null, "s3Bucket", "s3Bucket.png");
+			} else /*if (
+				(node.image=="edcAsset.png" || 
+						(parentNode?.image=="edcAsset.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+					) && (columnName=="assetId"))*/ {
+				startingNodeContextId=node.id;
+				//AddSelectResourceIfNoThere(node, data[iRecord]["id"]); Select the iRecord 
+			}
+		} else if (node.image=="s3Bucket.png" && columnName=="href") {
+			startingNodeContextId=node.id;
+			currentNode=AddSelectRowIfNoThere(node, data[iRecord]["href"], iRecord); //Select the iRecord 
+			startingNodeContextId=currentNode.id;
+			AddCircularImageInterpretingURL(data[iRecord]["href"], null, currentNode.STAsecurity);
+		} else if (  //GeoPackage
+				(node.image=="ImportGPKG.png" || 
+						(parentNode?.image=="ImportGPKG.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+					) && (columnName=="tableName")){
+			startingNodeContextId=node.id;
+			var nodeSelect=AddSelectRowIfNoThere(node, data[iRecord]["tableName"], iRecord); //Select the iRecord 
+			startingNodeContextId=nodeSelect.id;
+			currentNode=addCircularImage(null, null, "ImportGPKGTable", "ImportGPKGTable.png");
 		} else {  //STA Entity
 			if (typeof data[iRecord]["@iot.id"]==="undefined")  //If this was not selected it is not possible to do this (or we could look for alternative ways to know it)
 				return;
@@ -6088,7 +6183,7 @@ function OpenLink(event) {
 				if (i==nodeIds.length) {
 					for (var i = 0; i < nodeIds.length; i++) {
 						var nodeChild = networkNodes.get(nodeIds[i])
-						if (removeExtension(nodeChild.image)==entityName) {
+						if (removeFileExtension(nodeChild.image)==entityName) {
 							OpenLinkSTAEntity(nodeChild, data[iRecord]["@iot.id"], columnName);
 							break;
 						}
@@ -6129,7 +6224,7 @@ function isAttributeAnyURINodeId(columnName, nodeId) {
 function isAttributeAnyURINode(columnName, node, parentNode) {
 	if ((node.image=="sta.png" || node.image=="staRoot.png") && columnName=="url")
 		return true;
-	if ((-1!=IdOfSTAEntity(node) || STAOperations[removeExtension(node.image)]) && 
+	if ((-1!=IdOfSTAEntity(node) || STAOperations[removeFileExtension(node.image)]) && 
 	          (columnName=="@iot.selfLink" || getSTAEntityNavLink(columnName)))
 		return true;
 	if ((node.image=="ogcAPICols.png" || 
@@ -6139,6 +6234,16 @@ function isAttributeAnyURINode(columnName, node, parentNode) {
         if ((node.image=="ogcAPIItems.png" || 
 			(parentNode?.image=="ogcAPIItems.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
 		) && (columnName=="itemLink" || columnName.endsWith("AssetLink") ))
+		return true;
+	if ((node.image=="s3Service.png" || 
+			(parentNode?.image=="s3Service.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+		) && columnName=="bucketName")
+		return true;
+	if (node.image=="s3Bucket.png" && columnName=="href")
+		return true;
+	if ((node.image=="ImportGPKG.png" || 
+			(parentNode?.image=="ImportGPKG.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+		) && columnName=="tableName")
 		return true;
 	if (node.image=="edc.png" && columnName=="assetId")  //This is not a link per se so it is not in isAttributeAnyURI()
 		return true;
@@ -6302,7 +6407,30 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 		networkNodes.update(nodeTo);
 		if (addEdge)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
-		TransformBinaryGPKGTableToTable(nodeTo, nodeFrom.STAdata[0].name);
+		TransformBinaryGPKGTableToTable(nodeTo, nodeFrom.STAdata[0].tableName);
+		return true;
+	}
+	if (nodeTo.image == "s3Bucket.png") {
+		if (nodeFrom.STAsecurity)
+			nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
+		nodeTo.STAURL = nodeFrom.STAdata[0].href;
+		nodeTo.OGCType = "S3Bucket";
+		networkNodes.update(nodeTo);
+		if (addEdge)
+			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
+		//GetDialogS3BucketEvent(null, nodeFrom.STAdata[0].href, nodeTo.STAsecurity)
+
+		var locationSTAURL=transformStringIntoLocation(nodeTo.STAURL);
+		HTTPJSONData(nodeTo.STAURL, null, null, null, getAWSSignedHeaders(locationSTAURL.hostname, locationSTAURL.pathname, nodeTo.STAsecurity.S3)).then(
+				function(value) {
+					showInfoMessage('S3 Bucket content request completed.'); 
+					TransformS3ServiceResponseToDataAttributes(nodeTo, value.text);
+				},
+				function(error) { 
+					showInfoMessage('Error in requesting S3 Bucket root folder. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
+					console.log(error) ;
+				}
+			);	
 		return true;
 	}
 	if (staNodes && nodeTo.image == "GeoFilterPolSTA.png") {
@@ -6541,6 +6669,7 @@ function networkDoubleClick(params) {
 		else if (currentNode.image == "s3Service.png") {
 			if (false==ChangeToHTTPS(true))
 				return;
+			saveNodeDialog("DialogS3Bucket", currentNode);
 			document.getElementById("divTitleDialogS3Bucket").innerHTML = "S3 Service";
 			if (currentNode.STAURL)
 				document.getElementById("DialogS3BucketURL").value = currentNode.STAURL;
@@ -6550,6 +6679,7 @@ function networkDoubleClick(params) {
 		else if (currentNode.image == "s3Bucket.png") {
 			if (false==ChangeToHTTPS(true))
 				return;
+			saveNodeDialog("DialogS3Bucket", currentNode);
 			document.getElementById("divTitleDialogS3Bucket").innerHTML = "S3 Bucket";
 			if (currentNode.STAURL)
 				document.getElementById("DialogS3BucketURL").value = currentNode.STAURL;
@@ -7041,7 +7171,7 @@ function networkDoubleClick(params) {
 			currentNode.image == "ObservationGroup.png" || currentNode.image == "Relation.png") {
 			startingNodeContextId=currentNode.id;
 			if (GetFirstParentNode(currentNode)) {
-				if (PopulateCreateUpdateDeleteEntity(getSTAEntityPlural(removeExtension(currentNode.image), true), currentNode))
+				if (PopulateCreateUpdateDeleteEntity(getSTAEntityPlural(removeFileExtension(currentNode.image), true), currentNode))
 					document.getElementById("DialogCreateUpdateDeleteEntity").showModal();
 			}
 		}else if (currentNode.image == "MultiDatastream.png"){
