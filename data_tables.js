@@ -872,6 +872,9 @@ function getHTMLCharacterAttributeType(type) {
 		case "object":
 			cdns.push('Fuchsia');
 			break;
+		case "geometry":
+			cdns.push('Tan');
+			break;
 		case "undefined": 
 			cdns.push('LightGrey');
 			break;
@@ -904,6 +907,9 @@ function getHTMLCharacterAttributeType(type) {
 			break;
 		case "object":
 			cdns.push('O');
+			break;
+		case "geometry":
+			cdns.push('G');
 			break;
 		case "undefined":
 			cdns.push('U'); 
@@ -1463,4 +1469,105 @@ function buildPivotTable(data, rows, columns, values, aggregation){
  	}		
 }
 
+function ReplaceTextInTable(data, dataAttributes, searchValue, replaceValue, numbersAsText, datesAsText, column) {
+	var dataLenght=data.length;
+	var attributes=(dataAttributes)?dataAttributes:getDataAttributesSimple(data);
+	var textToCompare;
+
+	if (column) {
+			for (var i=0;i<dataLenght;i++){
+				if (attributes[column].type=="string" || attributes[column].type== "anyURI" ){
+					if (data[i][column].includes(searchValue))data[i][column]=data[i][column].replaceAll(searchValue,replaceValue);
+				}else if (attributes[column].type=="number" || attributes[column].type=="integer"){ //integer: ni NaN ni decimal
+					if (numbersAsText){
+						textToCompare=data[i][column].toString();
+						if (textToCompare!= null && textToCompare!=undefined){
+							if (textToCompare.includes(searchValue)){
+								textToCompare=textToCompare.replaceAll (searchValue, replaceValue);
+								if (!isNaN(textToCompare)){ //result number
+									if (attributes[column].type=="integer")data[i][column] =parseInt(textToCompare);
+									else data[i][column] =parseFloat(textToCompare);
+								}else{ //result:string
+									data[i][column]=textToCompare;
+								}
+								
+							}
+						}
+					}else{
+						if (attributes[column].type=="number" ){
+							if (data[i][column] ==parseFloat(searchValue)) data[i][column] = parseFloat(replaceValue);
+						}else{ //integer
+							if (data[i][column] ==parseInt(searchValue)) data[i][column] = parseInt(replaceValue);
+						}
+					}
+				}else if (dataAttributes &&  attributes[column].type=="isodatetime"){
+					if (datesAsText){ // No validation of the final result will be performed,  since it just returns a text!!
+						textToCompare=data[i][column].toString();
+						if (textToCompare.includes(searchValue)){	
+							data[i][column]=textToCompare.replaceAll (searchValue, replaceValue);
+						}
+					}else{ //evaluate all result
+						var searchalueDate= new Date(searchValue);
+						var replaceValueDate=new Date(replaceValue);
+						if (!isNaN(searchalueDate.getTime()) && !isNaN(replaceValueDate.getTime())) {
+							if (data[i][column] ==searchValue) data[i][column] = replaceValue;
+						}else{
+							return "The values introduced are not dates; replacement will not be possible."
+						}					
+					}
+					
+				}
+				
+			}
+	} else {
+		var attributesAsKeys=Object.keys(attributes);
+		for (var i=0;i<dataLenght;i++){
+			for (var e=0;e<attributesAsKeys.length;e++){
+				column=attributesAsKeys[e];
+				if (attributes[column].type=="string" || attributes[column].type== "anyURI" ){
+					if (data[i][column].includes(searchValue))data[i][column]=data[i][column].replaceAll(searchValue,replaceValue);
+				}else if (attributes[column].type=="number" || attributes[column].type=="integer"){ //integer: ni NaN ni decimal
+					if (numbersAsText){
+						textToCompare=data[i][column].toString();
+						if (textToCompare!= null && textToCompare!=undefined){
+							if (textToCompare.includes(searchValue)){
+								textToCompare=textToCompare.replaceAll (searchValue, replaceValue);
+								if (!isNaN(textToCompare)){ //result number
+									if (attributes[column].type=="integer")data[i][column] =parseInt(textToCompare);
+									else data[i][column] =parseFloat(textToCompare);
+								}else{ //result:string
+									data[i][column]=textToCompare;
+								}
+							}
+						}
+					} else {
+						if (attributes[column].type=="number" ){
+							if (data[i][column] ==parseFloat(searchValue))data[i][column] = parseFloat(replaceValue);
+						}else{ //integer
+							if (data[i][column] ==parseInt(searchValue))data[i][column] = parseInt(replaceValue);
+						}
+					}
+				} else if (dataAttributes && attributes[column].type=="isodatetime") {
+					if (datesAsText){ // No validation of the final result will be performed,  since it just returns a text!!
+						textToCompare=data[i][column].toString();
+						if (textToCompare.includes(searchValue)){	
+							data[i][column]=textToCompare.replaceAll (searchValue, replaceValue);
+						}
+					}else{ //evaluate all result
+						var searchalueDate= new Date(searchValue);
+						var replaceValueDate=new Date(replaceValue);
+						if (!isNaN(searchalueDate.getTime()) && !isNaN(replaceValueDate.getTime())) {
+							if (data[i][column] ==searchValue) data[i][column] = replaceValue;
+						}else{
+							return "The values introduced are not dates; replacement will not be possible."
+						}
+					}
+					
+				}
+								
+			}
+		}
+	}
+	return data;
+}
 

@@ -50,6 +50,11 @@ Some things that I'm always looking for:
 Function to get the nodeId from a dialog: getNodeDialog(div_id) 
 Function to include the nodeId as a hidden value in a dialog: saveNodeDialog(div_id, node)
 
+Function to redraw the table view: updateQueryAndTableArea(node);
+Function to show and informative message in the screen: showInfoMessage();
+
+Function to get the character representing the column type getHTMLCharacterAttributeType();
+
 Function to open a link in the graph: OpenLink(event)
 Function to decide what is a link in the table view: isAttributeAnyURI(s)
 Function to decide what is a link in the table that is a special link in the graph: isAttributeAnyURINode() (used in isAttributeAnyURINodeId() that is used in ShowLinkDialog(nodeId, columnName, iRecord))
@@ -126,6 +131,7 @@ const TableOperations = {Table: {description: "View Table", leafNode: true, help
 			SelectColumnsTable: {description: "Select Columns", help: "Obtains a table only with the selected columns. Not recommended for SensorThings API or a STAplus entities as it removes the STA URL."},
 			SelectRowTable: {description: "Select Row", help: "Obtains a table only with the selected record. Not recommended for SensorThings API or a STAplus entities as it removes the STA URL."},
 			FilterRowsTable: {description: "Filter Rows", help: "Obtain a table with the records that match the contitions. Not recommended for SensorThings API or a STAplus entities as it removes the STA URL."},
+			Replace:{description:"Replace", help: "Find and replace text, numbers, or data in one column or across the whole table"},
 			JoinTables: {description: "Join Tables", help:"Creates a single table that is the result of joining two tables using some selected column values in both tables to defined the merge criteria."},
 			ConcatenateTables: {description: "Concatenate Columns", help: "Create a single table by adding the records of the second table to the first one. The columns with the same name in both tables are merged in a sigle column."},
 			GroupBy: {description: "Group by", help: "Creates a table will the columns containng selected statistics of the aggregation of some records that have the same values other selected columns."},
@@ -136,15 +142,23 @@ const TableOperations = {Table: {description: "View Table", leafNode: true, help
 			PivotTable: {description: "Pivot table", help:"Create a new table where some column content is transponsed into new columns" },
 			ColumnStatistics: {description:"Columns statistics", help: "Create a table where, for each column the main statistics for the column values of all records are recorded."},
 			SeparateColumns: {description: "Separate Columns", help: "Splits a column containing a JSON object into separated new columns and removes the original column."},
-			ScatterPlot: {description: "Scatter Plot", leafNode: true, help: "Creates a scatter plot with a the values of the column of a table."},
-			BarPlot: {description: "Bar Plot", leafNode: true, help: "Create a bar or pie chart with a the values of the column of a table."},
-			ImageViewer: {description: "Image Viewer", leafNode: true, help: "Shows the pictures referenced by a column. Assumes that the content of the column are url to images supported by the browser (commonly in JPEG or PNG format)."},
 			SaveTable: {description: "Save Table", leafNode: true, help: "Saves the table contained in the node as a CSV (and CSVW if the column definition is semantically enriched; see &#39;meaning&#39;)."},
 			SaveLayer: {description: "Save Layer", leafNode: true, help: "Saves the table as a GeoJSON. It requires two columns with a latitude and longitude values."},
-			OpenMap: {description: "Open Map", leafNode: true, help: "Opens a table as a map in a map browser interface. It requires two columns with a latitude and longitude values."},
-			guf: {description: "Feedback", help: "Retreives the geospatial user feedback related to the single row present in the table (e.g. a record forma CSW catalogue). It also allows for adding or editing feedback. It uses the NiMMbus repository and interface."}};
+			guf: {description: "Feedback", help: "Retreives the geospatial user feedback related to the single row present in the table (e.g. a record forma CSW catalogue). It also allows for adding or editing feedback. It uses the NiMMbus repository and interface."}
+		};
+	
 const TableOperationsArray = Object.keys(TableOperations);
 const TableOperationsType = {singular: "Generic table tool", plural: "Generic table tools"};
+
+const tableStatisticsVisualize ={
+	ColumnStatistics: {description:"Columns statistics", leafNode: true, help: "Create a table where, for each column the main statistics for the column values of all records are recorded."},
+	ScatterPlot: {description: "Scatter Plot", leafNode: true, help: "Creates a scatter plot with a the values of the column of a table."},
+	BarPlot: {description: "Bar Plot", leafNode: true, help: "Create a bar or pie chart with a the values of the column of a table."},
+	ImageViewer: {description: "Image Viewer", leafNode: true, help: "Shows the pictures referenced by a column. Assumes that the content of the column are url to images supported by the browser (commonly in JPEG or PNG format)."},
+	OpenMap: {description: "Open Map", leafNode: true, help: "Opens a table as a map in a map browser interface. It requires two columns with a latitude and longitude values."}
+}
+const tableStatisticsVisualizeArray = Object.keys(tableStatisticsVisualize);
+const tableStatisticsVisualizeType = {singular: " Table tool for statistics and visualization", plural: "Table tools for statistics and visualization"};
 
 function IdOfSTAEntity(node) {
 	for (var i = 0; i < STAEntitiesArray.length; i++) {
@@ -542,48 +556,90 @@ async function InitSTAPage() {
 	}
 	
 	PlaceButtonsSTAEntities();
-	var s = ServicesAndAPIsType.plural + ":<br>";
-	for (var i = 0; i < ServicesAndAPIsArray.length; i++) {
-		s += textOperationButton("DialogContextMenu", "ContextMenu", ServicesAndAPIsArray[i], ServicesAndAPIs[ServicesAndAPIsArray[i]].name, ServicesAndAPIs[ServicesAndAPIsArray[i]].description, ServicesAndAPIs[ServicesAndAPIsArray[i]].help, ServicesAndAPIs[ServicesAndAPIsArray[i]], "Data Input tool", ServicesAndAPIsType.singular);
-		s += (i+1)%nCol==0 || i == ServicesAndAPIsArray.length-1 ? "<br>" : " ";
-	}
-	s += "<small><br></small>" + STAEntitiesType.plural + ":<br>";
-	for (var i = 0; i < STAEntitiesArray.length; i++) {
-		s += textOperationButton("DialogContextMenu", "ContextMenu", STAEntitiesArray[i], STAEntitiesArray[i], STAEntitiesArray[i], STAEntities[STAEntitiesArray[i]].help, null, STAEntitiesType.singular);
-		s += (i+1)%nCol==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
-	}
-	s += "<small><br></small>" + STAEntitiesType.pluralEdit+ ":<br>";
-	for (var i = 0; i < STAEntitiesArray.length; i++)
-	{
-		s += textOperationButton("DialogContextMenu", "ContextMenu", STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].helpEdit, null, STAEntitiesType.singularEdit);
-		s += (i+1)%nCol==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ";
-	}
-	s += "<small><br></small>" + STASpecialQueriesType.plural + ":<br>";
-	for (var i = 0; i < STASpecialQueriesArray.length; i++)
-	{
-		s += textOperationButton("DialogContextMenu", "ContextMenu", STASpecialQueriesArray[i], STASpecialQueriesArray[i], STASpecialQueries[STASpecialQueriesArray[i]].description, STASpecialQueries[STASpecialQueriesArray[i]].help, null, STASpecialQueriesType.singular);
-		s += (i+1)%nCol==0 || i == STASpecialQueriesArray.length-1 ? "<br>" : " ";
-	}
-	s += "<small><br></small>" + STAOperationsType.plural + ":<br>";
-	for (var i = 0; i < STAOperationsArray.length; i++)
-	{
-		s += textOperationButton("DialogContextMenu", "ContextMenu", STAOperationsArray[i], STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].help, STAOperations[STAOperationsArray[i]], STAOperationsType.singular);
-		s += (i+1)%nCol==0 || i == STAOperationsArray.length-1 ? "<br>" : " ";
-	}
-	s += "<small><br></small>" + TableOperationsType.plural + "<br>";
-	for (var i = 0; i < TableOperationsArray.length; i++)
-	{
-		s += textOperationButton("DialogContextMenu", "ContextMenu", TableOperationsArray[i], TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].help, TableOperations[TableOperationsArray[i]], TableOperationsType.singular);
-		s += (i+1)%nCol==0 || i == TableOperationsArray.length-1 ? "<br>" : " ";
-	}
-
-	document.getElementById("ButtonsContextMenuObjects").innerHTML = s;
-
+	PopulateContextMenu();
 	window.addEventListener("message", MessageSTAPage);
 	if (window.opener)
 		window.opener.postMessage(JSON.stringify({msg: "Tapis is listening"}), "*");
 }
 
+function PopulateContextMenu(nodeId){ //Chage to show only linkable nodes
+	var parentNode= networkNodes.get(nodeId);
+	var node = {image:""};
+	const nCol=7;
+	var provisional="";
+	var cdns=[];
+	var generalBox= "<div class='SectionButtonsContextMenu'><div class='TitleButtonsContextMenu' style='background-color: COLOR;'>TITLE</div><div class='ButtonsButtonsContextMenu'>CONTENT</div></div><br>";
+
+	provisional=[];
+	for (var i = 0; i < ServicesAndAPIsArray.length; i++) { //mirar com gestionar aquests			
+		provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", ServicesAndAPIsArray[i], ServicesAndAPIs[ServicesAndAPIsArray[i]].name, ServicesAndAPIs[ServicesAndAPIsArray[i]].description, ServicesAndAPIs[ServicesAndAPIsArray[i]].help, ServicesAndAPIs[ServicesAndAPIsArray[i]], "Data Input tool", ServicesAndAPIsType.singular),
+				(i+1)%nCol==0 || i == ServicesAndAPIsArray.length-1 ? "<br>" : " ");
+	}
+	cdns.push(generalBox.replace("TITLE", ServicesAndAPIsType.plural).replace("COLOR", "rgb(127,217,255)").replace("CONTENT", provisional.join("")));
+	
+	provisional=[];
+	for (var i = 0; i < STAEntitiesArray.length; i++) {
+		node.image= STAEntitiesArray[i]+".png";
+		if (!nodeId ||reasonNodeDoesNotFitWithPrevious(node, parentNode)==null)
+			provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", STAEntitiesArray[i], STAEntitiesArray[i], STAEntitiesArray[i], STAEntities[STAEntitiesArray[i]].help, null, STAEntitiesType.singular), 
+				(i+1)%nCol==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ");
+	}
+	if (provisional.length>1)
+		cdns.push(generalBox.replace("TITLE", STAEntitiesType.plural).replace("COLOR", "rgb(127,217,255)").replace("CONTENT", provisional.join("")));
+
+	provisional=[];
+	for (var i = 0; i < STAEntitiesArray.length; i++) {
+		node.image= STAEntitiesArray[i]+".png";
+		if ( !nodeId ||reasonNodeDoesNotFitWithPrevious(node, parentNode)==null)
+			provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].helpEdit, null, STAEntitiesType.singularEdit),
+				(i+1)%nCol==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ");
+	}
+	if (provisional.length>1)
+		cdns.push(generalBox.replace("TITLE", STAEntitiesType.pluralEdit).replace("COLOR", "rgb(127,217,255)").replace("CONTENT", provisional.join("")));
+
+	provisional=[];
+	for (var i = 0; i < STASpecialQueriesArray.length; i++) {
+		node.image= STASpecialQueriesArray[i]+".png";
+		if ( !nodeId ||reasonNodeDoesNotFitWithPrevious(node, parentNode)==null)
+			provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", STASpecialQueriesArray[i], STASpecialQueriesArray[i], STASpecialQueries[STASpecialQueriesArray[i]].description, STASpecialQueries[STASpecialQueriesArray[i]].help, null, STASpecialQueriesType.singular),
+				(i+1)%nCol==0 || i == STASpecialQueriesArray.length-1 ? "<br>" : " ");
+	}
+	if (provisional.length>1)
+		cdns.push(generalBox.replace("TITLE",STASpecialQueriesType.plural).replace("COLOR", "rgb(127,217,255)").replace("CONTENT", provisional.join("")));
+
+	provisional=[];
+	for (var i = 0; i < STAOperationsArray.length; i++) {
+		node.image= STAOperationsArray[i]+".png";
+		if ( !nodeId ||reasonNodeDoesNotFitWithPrevious(node, parentNode)==null)
+			provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", STAOperationsArray[i], STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].description, STAOperations[STAOperationsArray[i]].help, STAOperations[STAOperationsArray[i]], STAOperationsType.singular),
+				(i+1)%nCol==0 || i == STAOperationsArray.length-1 ? "<br>" : " ");
+	}
+	if (provisional.length>1)
+		cdns.push(generalBox.replace("TITLE",STAOperationsType.plural).replace("COLOR", "rgb(127,217,255)").replace("CONTENT", provisional.join("")));
+
+	provisional=[];
+	for (var i = 0; i < TableOperationsArray.length; i++) {
+		node.image= TableOperationsArray[i]+".png";
+		if ( !nodeId || reasonNodeDoesNotFitWithPrevious(node, parentNode)==null)
+			provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", TableOperationsArray[i], TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].help, TableOperations[TableOperationsArray[i]], TableOperationsType.singular),
+				(i+1)%nCol==0 || i == TableOperationsArray.length-1 ? "<br>" : " ");
+	}
+	if (provisional.length>1)
+		cdns.push(generalBox.replace("TITLE",TableOperationsType.plural).replace("COLOR","rgb(183,183,183)").replace("CONTENT", provisional.join("")));
+
+	provisional=[];
+	for (var i = 0; i < tableStatisticsVisualizeArray.length; i++) {
+		node.image= tableStatisticsVisualizeArray[i]+".png";
+		if (!nodeId || reasonNodeDoesNotFitWithPrevious(node, parentNode)==null)
+			provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", tableStatisticsVisualizeArray[i], tableStatisticsVisualize[tableStatisticsVisualizeArray[i]].description, tableStatisticsVisualize[tableStatisticsVisualizeArray[i]].description, tableStatisticsVisualize[tableStatisticsVisualizeArray[i]].help, tableStatisticsVisualize[tableStatisticsVisualizeArray[i]], tableStatisticsVisualizeType.singular),
+				(i+1)%nCol==0 || i == tableStatisticsVisualizeArray.length-1 ? "<br>" : " ");
+	}
+	if (provisional.length>1)
+		cdns.push(generalBox.replace("TITLE",tableStatisticsVisualizeType.plural).replace("COLOR","rgb(183,183,183)").replace("CONTENT", provisional.join("")));
+
+	//cdns.push("</div>");
+	document.getElementById("ButtonsContextMenuObjects").innerHTML = cdns.join("");
+}
 
 //Works with JSON links.
 //'type' is optional
@@ -998,10 +1054,23 @@ function SelectImportFileSource(event, type) {
 		document.getElementById("DialogImport"+type+"SourceFileText").disabled=false;
 		document.getElementById("DialogImport"+type+"SourceURLInput").disabled=true;
 		document.getElementById("DialogImport"+type+"SourceURLButton").disabled=true;
+		if (type=="JSON"){
+			document.getElementById("DialogImportJSONInputSeveralRecords").disabled=true;
+			document.getElementById("DialogImportJSONSourceURLButtonMulti").disabled=true;
+		}
+
 	} else /*if (document.getElementById("DialogImport"+type+"SourceURL").checked)*/ {
-		document.getElementById("DialogImport"+type+"SourceFileText").disabled=true;
-		document.getElementById("DialogImport"+type+"SourceURLInput").disabled=false;
-		document.getElementById("DialogImport"+type+"SourceURLButton").disabled=false;
+		if (document.getElementById("DialogImportJSONSourceURLList").checked){
+			document.getElementById("DialogImportJSONSourceFileText").disabled=true;
+			document.getElementById("DialogImportJSONSourceURLInput").disabled=true;
+			document.getElementById("DialogImportJSONSourceURLButton").disabled=true;
+			document.getElementById("DialogImportJSONInputSeveralRecords").disabled=false;
+			document.getElementById("DialogImportJSONSourceURLButtonMulti").disabled=false;
+		}else{
+			document.getElementById("DialogImport"+type+"SourceFileText").disabled=true;
+			document.getElementById("DialogImport"+type+"SourceURLInput").disabled=false;
+			document.getElementById("DialogImport"+type+"SourceURLButton").disabled=false;
+		}
 	}
 }
 
@@ -1460,7 +1529,7 @@ function ReadURLImportJSONLD(event, url, security) {
 			);	
 }
 
-function TransformTextJSONToTable(json, jsonText, url, node) {
+function TransformTextJSONToTable(json, jsonText, url,node,lastOne) {
 	if (!json)
 	{
 		try
@@ -1475,37 +1544,82 @@ function TransformTextJSONToTable(json, jsonText, url, node) {
 			return;
 		}
 	}
-	var result=ParseJSON(json)
+	var result=ParseJSON(json);
+	
+	if(node.STAdata && lastOne!="onlyOne"&& lastOne!="firstOne"){
+		node.STAdata.push(...result);
+	}else{
 	node.STAdata=result;
-	if (node.STAdata.length==0)
-		showInfoMessage("JSON resulted in no records.");
-	else
-		showInfoMessage("JSON has been loaded.");
-	if (node.STAdata) {
-		node.STAdataAttributes=getDataAttributes(node.STAdata);
-		if (url)
-			node.STAfileUrl=url;
-		networkNodes.update(node);
-		updateQueryAndTableArea(node);
-		UpdateChildenTable(node);
-	} else {
-		showInfoMessage("JSON parse error: " + e + "\n File content fragment:\n" + jsonText.substring(0,1000));
-		node.STAdata=null;
-		networkNodes.update(node);
-		return;
+	}
+
+	if (lastOne=="yes" || lastOne=="onlyOne"){
+		if (node.STAdata.length==0)
+			showInfoMessage("JSON resulted in no records.");
+		else
+			showInfoMessage("JSON has been loaded.");
+		if (node.STAdata) {
+			node.STAdataAttributes=getDataAttributes(node.STAdata);
+			if (url)
+				node.STAfileUrl=url;
+			networkNodes.update(node);
+			updateQueryAndTableArea(node);
+			UpdateChildenTable(node);
+		} else {
+			showInfoMessage("JSON parse error: " + e + "\n File content fragment:\n" + jsonText.substring(0,1000));
+			node.STAdata=null;
+			networkNodes.update(node);
+			return;
+		}
 	}
 }
 
-function ReadFileImportJSON(event) {
+async function ReadFileImportJSON(event) {
 	var input = event.target;
-	var node=getNodeDialog("DialogImportJSON");
-	var reader = new FileReader();
-	reader.onload = function() {
-		TransformTextJSONToTable(null, reader.result, null, node);
+	var lastOne="no";
+	var node= getNodeDialog("DialogImportJSON");
+	var filesKeys= Object.keys(input.files);
+	var file, text, attributes, data;
+	if (filesKeys.length>1){
+		for (var i=0;i<filesKeys.length;i++){
+			if(i==0){
+				lastOne="firstOne";
+			}
+			else if (i == filesKeys.length-1){
+				lastOne="yes";
+			}else {
+				lastOne="no";
+			};
+			file= input.files[filesKeys[i]];
+			text=await  file.text();
+			TransformTextJSONToTable(null, text, null,node, lastOne);
+			
+			if (i == filesKeys.length-1){
+				if (node.STAdata){
+					data=node.STAdata;	
+					attributes= getDataAttributesSimple(node.STAdata); 
+					for (var a =0;a<data.length;a++){  //all Data with all columns
+						for (var c = 0;c<attributes.length;c++){
+							if (!data[a].hasOwnProperty(attributes[c])){
+								data[a][attributes[c]]=undefined;
+		}
+						}	
+					}
+				}
 		showInfoMessage("JSON has been loaded.");
-	};
-	reader.readAsText(input.files[0]);   //By default it assumes "UTF8" as encoding
+				networkNodes.update(node);
+				updateQueryAndTableArea(node);
+				UpdateChildenTable(node);
+			}
+		}
+	}else{
+		file= input.files[0];
+		text=await  file.text();
+		TransformTextJSONToTable(null, text, null,node, lastOne);
+		updateQueryAndTableArea(node);
+		showInfoMessage("JSON has been loaded.");
+	}
 }
+
 
 //I was forced to implement it like this because STA 1.0 does not have any conformance section.
 function IsJSONaSTARootPage(json, jsonText) {
@@ -1615,41 +1729,47 @@ function ReadURLImportJSON(event, url, security) {
 			);	
 }
 
-function TransformGeoJSONFeatureToTable(feature, url) {
-	var record={};
-	if (feature.id)
-		record.id=feature.id;
-	if (url)
-		record.itemLink=url+"/"+feature.id;
-	if (feature.assets) {  //STAC extension
-		var keys=Object.keys(feature.assets);
-		for (var k = 0; k < keys.length; k++) {
-			if (feature.assets[keys[k]].href)
-				record[keys[k]+"OpenLink"]=feature.assets[keys[k]].href;
-			if (feature.assets[keys[k]].alternate && feature.assets[keys[k]].alternate.FACTS_API_Key && feature.assets[keys[k]].alternate.FACTS_API_Key.href) {
-				record[keys[k]+"AssetLink"]=feature.assets[keys[k]].alternate.FACTS_API_Key.href;
-				record[keys[k]+"AssetType"]=feature.assets[keys[k]].alternate.FACTS_API_Key?.type ? feature.assets[keys[k]].alternate.FACTS_API_Key.type : "application/geopackage+sqlite3";
-				record[keys[k]+"WalletUrl"]=feature.assets[keys[k]].alternate.FACTS_API_Key?.auth?.schemes?.flows?.authorizationCode?.authorizationApi ? feature.assets[keys[k]].alternate.FACTS_API_Key.auth.schemes.flows.authorizationCode.authorizationApi : "https://wallet.dataspace.secd.eu";
+
+async function ReadURLImportJSONMultiple(event){
+	var locationSTAURL, data=[], dataRecibed, attributes=[], attributesRecibed, newAttribute=false;
+	var node= getNodeDialog("DialogImportJSON");
+	if (!document.getElementById("DialogImportJSONInputSeveralRecords").value.trim())
+		return;
+	node.STAURL = document.getElementById("DialogImportJSONSourceURLInput").value.trim(); // i això, perque en seran diverses?? 
+	node.OGCType = "fileURL"; //és en plural, el deixem així?
+	var urlsArray= document.getElementById("DialogImportJSONInputSeveralRecords").value.trim().split(",");
+	for (var i=0;i<urlsArray.length;i++){
+		dataRecibed= await loadAPIDataWithReturn(urlsArray[i], "ImportJSONMultiple")
+		if (dataRecibed!= null && dataRecibed!=undefined && Object.keys(dataRecibed).length!=0){
+			attributesRecibed= Object.keys(getDataAttributesSimple(dataRecibed));
+			if (attributes.length!=0){
+				for (var e=0;e<attributesRecibed.length;e++){
+					if (!attributes.includes(attributesRecibed[e])){
+						attributes.push(attributesRecibed[e]);
+						newAttribute=true;
+					}
+				}
+			}else{
+				attributes.push(...attributesRecibed);
 			}
+			data.push(...dataRecibed);
 		}
 	}
-	Object.assign(record, deapCopy(feature.properties)); //JSON properties are directly copied into STAdata
-	record.geometry=deapCopy(feature.geometry);  //JSON geometry are directly copied into STAdata
-	return record;
-}
+	if (newAttribute==true){ //add all columns in all records
+		for (var a =0;a<data.length;a++){
+			for (var c = 0;c<attributes.length;c++){
+				if (!data[a].hasOwnProperty(attributes[c])){
+					data[a][attributes[c]]=undefined;
+				}
+			}
+		}
+	};
 
-function TransformGeoJSONToTable(geojson, url) {
-var data=[], feature;				
-
-	if (geojson.type && geojson.type=="FeatureCollection") {
-		for (var i=0; i<geojson.features.length; i++)
-			data.push(TransformGeoJSONFeatureToTable(geojson.features[i], url))
-	} else if (geojson.type && geojson.type=="Feature") {
-		data.push(TransformGeoJSONFeatureToTable(geojson, url))
-	} else 
-		return null;
-	
-	return data;
+	node.STAdata= data;
+	node.STAdataAttributes=getDataAttributes(data);
+	networkNodes.update(node);
+	updateQueryAndTableArea(node);
+	UpdateChildenTable(node);
 }
 
 function TransformTextGeoJSONToTable(jsonText, url, node) {
@@ -1683,10 +1803,13 @@ function TransformTextGeoJSONToTable(jsonText, url, node) {
 				node.STAdataAttributes=retorn.dataAttributes;
 			}
 		}
+	} else {
+		node.STAdataAttributes=getDataAttributes(node.STAdata);
 	}
 	if (url)
 		node.STAfileUrl=url;				
 	networkNodes.update(node);
+	updateQueryAndTableArea(node);
 	UpdateChildenTable(node);
 }
 
@@ -2148,6 +2271,7 @@ function ShowUploadObservationsSelects(node) {
 		var data = parentNode.STAdata;
 		var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
 		PopulateSelectSaveLayerDialog("DialogUploadObservationsPlace", dataAttributes, "place");
+		//PopulateSelectSaveLayerDialog("DialogUploadObservationsGeometry", dataAttributes, "feature");
 		PopulateSelectSaveLayerDialog("DialogUploadObservationsLongitude", dataAttributes, "long");
 		PopulateSelectSaveLayerDialog("DialogUploadObservationsLatitude", dataAttributes, "lat");
 		PopulateSelectSaveLayerDialog("DialogUploadObservationsTime", dataAttributes, "phenomenonTime");
@@ -2159,6 +2283,7 @@ function ShowUploadObservationsSelects(node) {
 function GetSelectedOptionsUploadObservations(){
 	var selectedOptions={};
 	selectedOptions.place=document.getElementById("DialogUploadObservationsPlaceSelect").value;
+	//selectedOptions.geometry=document.getElementById("DialogUploadObservationsGeoemetrySelect").value;
 	selectedOptions.longitude=document.getElementById("DialogUploadObservationsLongitudeSelect").value;
 	selectedOptions.latitude=document.getElementById("DialogUploadObservationsLatitudeSelect").value;
 	selectedOptions.time=document.getElementById("DialogUploadObservationsTimeSelect").value;
@@ -3917,6 +4042,60 @@ async function GetDeleteEntity(entityName, id){
 		showInfoMessage("Error deleting"+ STAEntities[entityName].singular +" "+id);
 }
 
+
+function changeDialogReplaceTextInTableRadiobutton(source){
+	if (source=="all"){
+		document.getElementById("dlgDialogReplaceTextInTable_select").disabled=true;
+	}else{ //column
+		document.getElementById("dlgDialogReplaceTextInTable_select").disabled=false;
+	}
+}
+
+function populateReplace(node){
+	saveNodeDialog("DialogReplaceTextInTable", node);
+	var select= document.getElementById("dlgDialogReplaceTextInTable_select");
+	var attributes=Object.keys(node.STAdataAttributes);
+	var cdns=[];
+	for (var i=0;i<attributes.length;i++){
+		cdns.push(`<option value="${attributes[i]}">${attributes[i]} </option>`);
+	}
+	select.innerHTML=cdns.join("");
+}
+
+function ReplaceTextInTableApplyButton(event){
+	event.preventDefault();
+	var node= getNodeDialog("DialogReplaceTextInTable");
+	var searchValue=document.getElementById("dlgDialogReplaceTextInTable_input_search").value;
+	var replaceValue=document.getElementById("dlgDialogReplaceTextInTable_input_replace").value;
+	var numbersAsText=(document.getElementById("dlgDialogReplaceTextInTable_checkbox_numbersAsText").checked) ? true : false;
+	var datesAsText=(document.getElementById("dlgDialogReplaceTextInTable_checkbox_datesAsText").checked) ? true : false;
+	if (document.getElementById("dlgDialogReplaceTextInTable_radiobutton_all").checked){ //all
+		var data=ReplaceTextInTable(node.STAdata, node.STAdataAttributes, searchValue, replaceValue, numbersAsText, datesAsText);
+		if (typeof data === "string") 
+			alert(data);
+		else {
+			node.STAdata=data;
+			networkNodes.update(node);
+			updateQueryAndTableArea(node);
+			UpdateChildenTable(node);
+			document.getElementById("DialogReplaceTextInTable").close()
+		}
+
+	} else { //column
+		var select=document.getElementById("dlgDialogReplaceTextInTable_select");
+		var data=ReplaceTextInTable(node.STAdata, node.STAdataAttributes, searchValue, replaceValue, numbersAsText, datesAsText, select.options[select.selectedIndex].value);
+		if (typeof data === "string") 
+			alert(data);
+		else {
+			node.STAdata=data;
+			networkNodes.update(node);
+			updateQueryAndTableArea(node);
+			UpdateChildenTable(node);
+			document.getElementById("DialogReplaceTextInTable").close()
+		}
+	}
+}
+
 function PopulateCreateUpdateDeleteRecord(currentNode, iRecord, verify) {
 	var cdns=[];
 	var data= currentNode.STAdata;
@@ -4432,13 +4611,17 @@ function getJSONSchemaTypeFromAttributeType(t) {
 	return t;
 }
 
+//It also detects objects that are geometries.
 function getJSONTypeOrISODatetime(s) {
 	var type=getJSONType(s), numberReturned;
-	if (type =="string" && s.length>0)
-	{ 
+	if (type =="string" && s.length>0) { 
 		numberReturned=fragmentStartsWithISODate(s, 0);
 		if (s.length==numberReturned) 
 			return "isodatetime";
+	}
+	else if (type =="object" && s.coordinates && s.type && isGeoJSONGeometryType(s.type))
+	{ 
+		return "geometry";
 	}
 	return type;
 }
@@ -4462,7 +4645,7 @@ function modifyDataAttributeTypeNewRecord(dataAttributeType, type) {
 }
 
 //Creates dataAttributes and determines the "type" attribute.
-//Possible values are the usual JSON types ("string", "boolean", "array", "null", "object", "undefined", "integer", "number")
+//Possible values are the usual JSON types ("string", "boolean", "array", "null", "object", "geometry" "undefined", "integer", "number")
 // plus "isodatetime" and "anyURI"
 // Any changes to this function should be applied to getDataAttributeType(data)
 
@@ -4619,7 +4802,15 @@ function GetGeoJSON(data, selectedOptions) {
 	{
 		for (var i = 0; i < data.length; i++) {
 			var a=data[i];
-			geojson.features.push({
+			if (selectedOptions.geometry)
+				geojson.features.push({
+					"type": "Feature",
+					"geometry": (a[selectedOptions.geometry] && typeof a[selectedOptions.geometry]==="string" ? JSON.parse(a[selectedOptions.geometry]) : a[selectedOptions.geometry]),
+					"properties": {
+					}
+				});				
+			else
+				geojson.features.push({
 					"type": "Feature",
 					"geometry": {
 						"type": "Point",
@@ -5166,6 +5357,7 @@ function ShowSaveLayerDialogSelects(node, descripUoM) {
 		var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
 		var s, elem;
 		PopulateSelectSaveLayerDialog("DialogSaveLayerPlace", dataAttributes, "FeatureOfInterest/description");
+		PopulateSelectSaveLayerDialog("DialogSaveLayerGeometry", dataAttributes, "FeatureOfInterest/feature");
 		PopulateSelectSaveLayerDialog("DialogSaveLayerLongitude", dataAttributes, "FeatureOfInterest/feature/coordinates_0");
 		PopulateSelectSaveLayerDialog("DialogSaveLayerLatitude", dataAttributes, "FeatureOfInterest/feature/coordinates_1");
 		PopulateSelectSaveLayerDialog("DialogSaveLayerTime", dataAttributes, "phenomenonTime");
@@ -5188,6 +5380,7 @@ function ShowSaveLayerDialogSelects(node, descripUoM) {
 function GetSelectedOptionsSaveLayer(descripUoM){
 	var selectedOptions={};
 	selectedOptions.place=document.getElementById("DialogSaveLayerPlaceSelect").value;
+	selectedOptions.geometry=document.getElementById("DialogSaveLayerGeometrySelect").value;
 	selectedOptions.longitude=document.getElementById("DialogSaveLayerLongitudeSelect").value;
 	selectedOptions.latitude=document.getElementById("DialogSaveLayerLatitudeSelect").value;
 	selectedOptions.time=document.getElementById("DialogSaveLayerTimeSelect").value;
@@ -5285,6 +5478,7 @@ function GetMeaningTable() {
 	if (newName.length!=0)	changeAttributeNameAndData(data, newName,dataAttributes);
 	return dataAttributes;
 }
+
 function changeAttributeNameAndData(data, newName,dataAttributes){ //newName (old att name, new)
 	var n=data.length, m=newName.length ;
 	for (var i=0;i<n;i++){ //change data
@@ -6527,6 +6721,23 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
 		return true;
 	}
+	if (tableNodes && nodeTo.image == "Replace.png") {
+		if (nodeFrom.STAdata){
+			nodeTo.STAdata = deapCopy(nodeFrom.STAdata); 
+			if (nodeFrom.STAdataAttributes){
+						nodeTo.STAdataAttributes = deapCopy(nodeFrom.STAdataAttributes); //necessary first time
+						
+			}else{
+						nodeTo.STAdataAttributes = getDataAttributes(nodeTo.STAdata);
+					
+			}
+		}
+		
+		networkNodes.update(nodeTo);
+		if (addEdge)
+			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
+		return true;
+	}
 	if (tableNodes && nodeTo.image == "edcAsset.png") {
 		if (nodeFrom && !nodeFrom.STAdata || !(nodeFrom.STAdata.length>0))
 			return false;
@@ -6856,6 +7067,7 @@ function networkDoubleClick(params) {
 		}
 		else if (currentNode.image == "ImportGeoJSON.png") {
 			document.getElementById("DialogImportGeoJSONSourceURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedGeoJSONurls);
+			saveNodeDialog("DialogImportGeoJSON", currentNode);
 			document.getElementById("DialogImportGeoJSON").showModal();
 		}
 		else if (currentNode.image == "Table.png") {
@@ -7197,6 +7409,14 @@ function networkDoubleClick(params) {
 			}else{
 				alert("Parent node must have data to edite it");
 			}
+		}else if (currentNode.image == "Replace.png") {
+			//startingNodeContextId=currentNode.id;
+			if (currentNode.STAdata) {
+					populateReplace(currentNode);
+					document.getElementById("DialogReplaceTextInTable").showModal();
+			}else{
+				alert("Parent node must have data to replace it");
+			}
 		}
 	}
 }
@@ -7205,6 +7425,8 @@ function networkContext(params) {
 	params.event.preventDefault();  //https://stackoverflow.com/questions/38258940/open-an-extension-popup-html-list-on-right-click-of-node-contextmenu-in-visj
 
 	var nodeId = network.getNodeAt(params.pointer.DOM); //params.nodes is not useful here as params.nodes are the selected ones and not the ones rightclicked.
+	//rewrite DialogContextMenu
+	PopulateContextMenu (nodeId);
 	if (nodeId) {
 		startingNodeContextId = nodeId;
 		document.getElementById("DialogContextMenu").showModal();
@@ -7446,7 +7668,7 @@ function openURLNetwork(event) {
 			);	
 }
 
-function saveNetwork(event){
+function saveNetwork(event) {
 	var pos=network.getPositions()
 	var posArray=Object.keys(pos);
 	var data={nodes:[], edges:[]};
@@ -7496,6 +7718,7 @@ async function reloadSTA(event) {
 		}
 	}
 }
+
 //General to addColumns
 function cancelButtonRecoveryOldData(event){
 	event.preventDefault();
@@ -7510,6 +7733,7 @@ function cancelButtonRecoveryOldData(event){
 		document.getElementById("DialogColumnsCalculator").close();
 	}
 }
+
 function deleteRowInColumnsBoxTable(number){
 	event.preventDefault(); 
 	var copyWithoutNumber=[],n=currentNode.STAcolumnsList.length, c=currentNode.STAnewColumnsToAdd.length,columsnListNew=[];
@@ -7537,9 +7761,9 @@ function deleteRowInColumnsBoxTable(number){
 		drawTableInColumnBoxTableInAggregateColumns();
 	} else{
 		drawTableInColumnBoxTableInCalculatorColumns();
-	}
-	
+	}	
 }
+
 function columnExistInTheTable(columnName){
 	var columnList=	currentNode.STAcolumnsList;
 	var n= columnList.length, columnNameExist=false;
@@ -7557,6 +7781,7 @@ function columnExistInTheTable(columnName){
 
 	return columnNameExist;
 }
+
 function createColumnListToAddColumns(){
 	var dataKeys= Object.keys(currentNode.STAdata[0]);
 	currentNode.STAcolumnsList=dataKeys;
@@ -7629,6 +7854,7 @@ function drawTableInColumnBoxTableInCreateColumns(){
 	cdns=[tableHTML];
 	spanColumnsListAggregateColumns.innerHTML=cdns;
 }
+
 function addColumnsToTableInCreateColumns(){
 	event.preventDefault();
 		var n=currentNode.STAnewColumnsToAdd.length;
@@ -8006,15 +8232,12 @@ var mousePosition = textAreaFormulaColumnsCalculator.getAttribute("data-mousePos
 		character==")"
 	}
 
-
-
-
-if (character == "attributeSelected") {
-	var selector = document.getElementById("calculator_selectColumns");
-	character = selector.options[selector.selectedIndex].value;
-}
-textAreaFormulaColumnsCalculator.value = [text.slice(0, mousePosition), character, text.slice(mousePosition)].join('');
-textAreaFormulaColumnsCalculator.setAttribute("data-mousePosition", parseInt(mousePosition) + character.length); //If there is no click, next button will be written after this.
+	if (character == "attributeSelected") {
+		var selector = document.getElementById("calculator_selectColumns");
+		character = selector.options[selector.selectedIndex].value;
+	}
+	textAreaFormulaColumnsCalculator.value = [text.slice(0, mousePosition), character, text.slice(mousePosition)].join('');
+	textAreaFormulaColumnsCalculator.setAttribute("data-mousePosition", parseInt(mousePosition) + character.length); //If there is no click, next button will be written after this.
 }
 
 function addColumnToListColumnsCalculator(event){
@@ -8048,12 +8271,13 @@ function fillCalculatorColumVariablesList(){ //omplir el desplegable
 
 	for (var i=0;i<n;i++){
 		//cdns.push(`<option value= ${dataKeys[i]}>${dataKeys[i]}</option>`);
-		if (dataAttributes[dataAttributesKeys[i]]['type']=="number"||dataAttributes[dataAttributesKeys[i]]['type']=="integer") cdns.push(`<option value= ${dataAttributesKeys[i]}>${dataAttributesKeys[i]}</option>`);
+		if (dataAttributes[dataAttributesKeys[i]]['type']=="number"||dataAttributes[dataAttributesKeys[i]]['type']=="integer"||dataAttributes[dataAttributesKeys[i]]['type']=="isodatetime") cdns.push(`<option value= ${dataAttributesKeys[i]}>${dataAttributesKeys[i]}</option>`);
 	}
 	select.innerHTML=cdns.join("");
 
 	
 }
+
 function drawTableInColumnBoxTableInCalculatorColumns(){
 	var spanColumnsListAggregateColumns=document.getElementById("spanColumnsListCalculatorColumns");
 	var cdns;
@@ -8090,7 +8314,6 @@ function addColumnsToTableInColumnsCalculator(){
 	networkNodes.update(currentNode);
 	showInfoMessage("New columns have been added");
 	document.getElementById("DialogColumnsCalculator").close();
-
 }
 
 function createColumnStatistics(event){
@@ -8367,11 +8590,9 @@ function takeParentsInformationInGeoDistance(){
 		cdns.push(`<option value="${entityRouteToFeature[i]}">${entityRouteToFeature[i]}</option>`);
 	}
 	entityRouteToFeatureSelect.innerHTML=cdns.join(""); 
-
-
-	
 	return true;
 }
+
 async function GetGeoDistanceFilter(event){
 	event.preventDefault(); 
 	var distanceValue= document.getElementById("geoDistance_input_value").value;
@@ -8410,7 +8631,7 @@ function writeValueInInputGeoDistance(value){
 	document.getElementById("geoDistance_input_coordinate"+value).value= currentNode.STAcolumnsValuesGeoDistance[selectValue]
 }
 
-function PopulateFilterRowsByTimePropertySelect(){
+function PopulateFilterRowsByTimePropertySelect() {
 	var parentNodes= GetParentNodes(currentNode)
 	if (parentNodes && parentNodes.length==1){
 		var idNode=IdOfSTAEntity(parentNodes[0]);  //There is new member to do this. (JM) Need to correct this.
@@ -8451,6 +8672,7 @@ function PopulateFilterRowsByTimePropertySelect(){
 	}
 
 }
+
 async function filterRowsByTimeOkButton(){
 	event.preventDefault();
 	//agafar la info del select i les dates
@@ -8489,6 +8711,7 @@ async function filterRowsByTimeOkButton(){
 	}
 	
 }
+
 function prepareUrlToApplyFilter(){
 	var url;
 	//var previousSTAURL = currentNode.STAURL;
@@ -8504,6 +8727,7 @@ function prepareUrlToApplyFilter(){
 
 	return url;
 }
+
 function applyTemporalFilter(url, dateFrom, dateTo, property){
 	currentNode.STAURL=url +" "+ property+ " ge "+dateFrom +" and "+ property+ " le "+dateTo;
 	LoadJSONNodeSTAData(currentNode);

@@ -250,7 +250,7 @@ async function loadAPIDataWithReturn(url, reasonForData) { // Ask API to  "FIllS
 
 	try {
 		data = await response.json();
-		if (reasonForData == "EntitiesFilterRow") {
+		if (reasonForData == "EntitiesFilterRow"|| reasonForData=="ImportJSONMultiple") {
 			data = (typeof data.value !== "undefined") ? data.value : [data];
 		} else if (reasonForData == "OGCAPIConformance") {
 			data = (typeof data !== "undefined") ? data["conformsTo"] : [data];
@@ -1996,7 +1996,6 @@ function ShowTableFilterRowsDialog(parentNode, node) {
 
 	var data = parentNode.STAdata;
 	node.STAdata=deapCopy(data); //Put all data from parent in this node 
-	var data = parentNode.STAdata;
 	if (!node.STAdataAttributes)
 		node.STAdataAttributes=parentNode.STAdataAttributes ? deapCopy(parentNode.STAdataAttributes) : getDataAttributes(data);
 	if (node.image != "FilterRowsTable.png") {
