@@ -68,7 +68,7 @@ const ServicesAndAPIs = {sta: {name: "STA plus", description: "STA service", sta
 			ImportCSV: {name: "CSV", description: "CSV", startNode: true, help: "Imports data from a CSV file and returns a table."},
 			ImportDBF: {name: "DBF", description: "DBF", startNode: true, help: "Imports data from a DBASE III+, IV or a extended DBF file and returns a table."},
 			ImportGPKG: {name: "GeoPackage", description: "GeoPackage", startNode: true, help: "Imports a GeoPackage Database into a list of of tables."},
-			ImportGPKGTable: {name: "GeoPackageTable", description: "GeoPack Table", startNode: true, help: "Imports a table in a GeoPackage database."},
+			ImportGPKGTable: {name: "GeoPackageTable", description: "GeoPack Table", help: "Imports a table in a GeoPackage database."},
 			ImportJSONLD: {name: "JSON-LD", description: "JSON-LD", startNode: true, help: "Imports data from a JSON-LD file and returns a table."},
 			ImportJSON: {name: "JSON", description: "JSON", startNode: true, help: "Imports data from a JSON file and returns a table."},
 			ImportGeoJSON: {name: "GeoJSON", description: "GeoJSON", startNode: true, help: "Imports the features of a GeoJSON and returns a table where each feature is a record. One of the columns contains the geometry JSON object."},
@@ -6065,11 +6065,16 @@ function OpenLink(event) {
 					) && (columnName=="link" || columnName=="itemsLink")) || 
 				((node.image=="ogcAPIItems.png" || 
 						(parentNode?.image=="ogcAPIItems.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+
 					) && (columnName=="itemLink" || columnName.endsWith("AssetLink") ))
 				){
 			if (columnName=="link") {
-				startingNodeContextId=node.id;
-				AddSelectResourceIfNoThere(node, data[iRecord]["id"]);
+				if (parentNode?.image=="ogcAPICols.png" && (node.image=="SelectRowsTable.png" || node.image=="SelectRowsSTA.png" || node.image=="SelectResourceSTA.png"))
+					;
+				else {
+					startingNodeContextId=node.id;
+					AddSelectResourceIfNoThere(node, data[iRecord]["id"]);
+				}
 			} else if (columnName=="itemsLink" || columnName=="itemLink") {
 				startingNodeContextId=node.id;
 				var nodeResource=(node.image=="ogcAPICols.png") ? AddSelectResourceIfNoThere(node, data[iRecord]["id"]) : node;				
@@ -6528,7 +6533,7 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 		networkNodes.update(nodeTo);
 		if (addEdge)
 			networkEdges.add([{ from: nodeFrom.id, to: nodeTo.id, arrows: "from" }]);
-		EDCNegociateContract(nodeTo, nodeFrom.EDCConsumerURL, nodeFrom.STAdata[0].offerId, nodeFrom.STAdata[0].counterPartyAddress, nodeFrom.STAdata[0].mediaType);
+		EDCNegociateContract(nodeTo, nodeFrom.EDCConsumerURL, nodeFrom.STAdata[0].assetId, nodeFrom.STAdata[0].offerId, nodeFrom.STAdata[0].counterPartyAddress, nodeFrom.STAdata[0].participantId, nodeFrom.STAdata[0].mediaType);
 		return true;
 	}
 	if (tableNodes && nodeTo.image == "ogcAPICols.png") {
