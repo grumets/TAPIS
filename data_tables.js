@@ -1571,3 +1571,145 @@ function ReplaceTextInTable(data, dataAttributes, searchValue, replaceValue, num
 	return data;
 }
 
+function AddColumnGeoFromAnother(data, dataAttributes, selectedOptions) {
+var columnCreated=false, record, json, point;
+
+	if (selectedOptions.radioIn=="WKT" || selectedOptions.radioOut=="WKT")
+		var wkt = new Wkt.Wkt();
+	if (selectedOptions.radioIn=="JSON") {
+		for (var i=0; i<data.length; i++)
+		{
+			record=data[i];
+			if (!record[selectedOptions.JSONIn])
+				continue;
+			json=typeof record[selectedOptions.JSONIn] === "object" ? record[selectedOptions.JSONIn] : JSON.parse(record[selectedOptions.JSONIn]);
+			if (selectedOptions.radioOut=="JSON") {
+				record[selectedOptions.nameOut]=record[selectedOptions.JSONIn];
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="WKT") {
+				wkt.read(JSON.stringify(json));
+				record[selectedOptions.nameOut]=wkt.write();
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="Geohash") {
+				//JSON-->Geohash
+				point=getFirstCoordinateGeoJSONGeometry(json);
+				record[selectedOptions.nameOut]=ngeohash_encode(point[1], point[0]);
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="LL") {
+				//JSON-->LL (only if points)
+				point=getFirstCoordinateGeoJSONGeometry(json);
+				record[selectedOptions.nameOut]=point[0];
+				record[selectedOptions.latitudeOut]=point[1];
+				columnCreated=true;
+			}
+		}
+	}
+	else if (selectedOptions.radioIn=="WKT") {
+		for (var i=0; i<data.length; i++)
+		{
+			record=data[i];
+			if (!record[selectedOptions.WKTIn])
+				continue;
+			wkt.read(record[selectedOptions.WKTIn]);
+			json=wkt.toJson();
+			if (selectedOptions.radioOut=="JSON") {
+				record[selectedOptions.nameOut]=json;
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="WKT") {
+				record[selectedOptions.nameOut]=record[selectedOptions.WKTIn];
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="Geohash") {
+				//JSON-->Geohash
+				point=getFirstCoordinateGeoJSONGeometry(json);
+				record[selectedOptions.nameOut]=ngeohash_encode(point[1], point[0]);
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="LL") {
+				//JSON-->LL (only if points)
+				point=getFirstCoordinateGeoJSONGeometry(json);
+				record[selectedOptions.nameOut]=point[0];
+				record[selectedOptions.latitudeOut]=point[1];
+				columnCreated=true;
+			}
+		}
+	}
+	else if (selectedOptions.radioIn=="Geohash") {
+		for (var i=0; i<data.length; i++)
+		{
+			record=data[i];
+			if (!record[selectedOptions.geohashIn])
+				continue;
+			point=ngeohash_decode(record[selectedOptions.geohashIn]);
+			json={type:"Point", coordinates:[point.longitude, point.latitude]};
+			if (selectedOptions.radioOut=="JSON") {
+				record[selectedOptions.nameOut]=json;
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="WKT") {
+				wkt.read(JSON.stringify(json));
+				record[selectedOptions.nameOut]=wkt.write();
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="Geohash") {
+				record[selectedOptions.nameOut]=record[selectedOptions.geohashIn];
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="LL") {
+				//JSON-->LL (only if points)
+				point=getFirstCoordinateGeoJSONGeometry(json);
+				record[selectedOptions.nameOut]=point[0];
+				record[selectedOptions.latitudeOut]=point[1];
+				columnCreated=true;
+			}
+		}
+	}
+	else if (selectedOptions.radioIn=="LL") {
+		for (var i=0; i<data.length; i++)
+		{
+			record=data[i];
+			if (!record[selectedOptions.longitudeIn] || !record[selectedOptions.latitudeIn])
+				continue;
+			json={type:"Point", coordinates:[record[selectedOptions.longitudeIn], record[selectedOptions.latitudeIn]]};
+			if (selectedOptions.radioOut=="JSON") {
+				record[selectedOptions.nameOut]=json;
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="WKT") {
+				wkt.read(JSON.stringify(json));
+				record[selectedOptions.nameOut]=wkt.write();
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="Geohash") {
+				record[selectedOptions.nameOut]=ngeohash_encode(record[selectedOptions.latitudeIn], record[selectedOptions.longitudeIn]);
+				columnCreated=true;
+			}
+			else if (selectedOptions.radioOut=="LL") {
+				//JSON-->LL (only if points)
+				record[selectedOptions.nameOut]=record[selectedOptions.longitudeIn];
+				record[selectedOptions.latitudeOut]=record[selectedOptions.latitudeIn];
+				columnCreated=true;
+			}
+		}
+	}
+	if (columnCreated==true) {
+		dataAttributes[selectedOptions.nameOut]={};
+		if (selectedOptions.radioOut=="JSON")
+			dataAttributes[selectedOptions.nameOut].type="geometry";
+		else if (selectedOptions.radioOut=="WKT")
+			dataAttributes[selectedOptions.nameOut].type="geometry";
+		else if (selectedOptions.radioOut=="Geohash")
+			dataAttributes[selectedOptions.nameOut].type="string";
+		else if (selectedOptions.radioOut=="LL") {
+			dataAttributes[selectedOptions.nameOut].type="number";
+			dataAttributes[selectedOptions.latitudeOut].type="number";
+		}
+		return 0;
+	}
+	return 1;
+}
+

@@ -26,6 +26,7 @@
 	<script type="text/javascript" src="papaparse.min.js" async defer></script>
 	<script type="text/javascript" src="crypto-js.min.js" async defer></script> 
 	<script type="text/javascript" src="wicket.js" async defer></script>
+	<script type="text/javascript" src="ngeohash.js" async defer></script>
 	<script type="text/javascript" src="hello.all.min.js"></script>
 	<script type="text/javascript" src="authenix.js" async defer></script>
 	<script type="text/javascript" src="mmn_postmessage.js" async defer></script>
@@ -1340,6 +1341,55 @@
 				<span id="DialogSaveLayerSave"></span>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
+		</form>
+	</dialog>
+
+	<dialog id="DialogAddColumnGeo">
+		<form name="DialogAddColumnGeoForm">
+			Add column with tranformed geometry
+			<fieldset>
+				<legend>Input</legend>
+				<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LL" value="JSON" id="DialogAddColumnGeoRadioJSON">GeoJSON Geometry:
+					<span id="DialogAddColumnGeoJSON"></span>
+				</label>
+				<br>
+				<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LL" value="WKT" id="DialogAddColumnGeoRadioWKT">Well Known Text:
+					<span id="DialogAddColumnGeoWKT"></span>
+				</label>
+				<br>
+				<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LL" value="Geohash" id="DialogAddColumnGeoRadioGeohash">Geohash:
+					<span id="DialogAddColumnGeoGeohash"></span>
+				</label>
+				<br>
+				<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LL" value="LL" id="DialogAddColumnGeoRadioLL" checked="checked">Point coordinates:</label>
+				<fieldset>
+				<label>Longitude:
+					<span id="DialogAddColumnGeoLongitude"></span>
+				</label>
+				<br>
+				<label>Latitude:
+					<span id="DialogAddColumnGeoLatitude"></span>
+				</label>
+				</fieldset>
+			</fieldset>
+			<br>
+			<fieldset>
+				<fieldset>
+					<legend>Type:</legend>
+					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="JSON" id="DialogAddColumnGeoRadioJSONOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioJSONOut");' checked="checked">GeoJSON Geometry</label><br>
+					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="WKT" id="DialogAddColumnGeoRadioWKTOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioWKTOut");' >Well Known Text</label><br>
+					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="Geohash" id="DialogAddColumnGeoRadioGeohashOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioGeohashOut");' >Geohash</label><br>
+					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="LL" id="DialogAddColumnGeoRadioLLOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioLLOut");' >Point coordinates</label>
+				</fieldset>
+				<legend>New columns</legend>
+				<label><span id="DialogAddColumnGeoNameOut">Column name:</span><input type="text" size="30" id="DialogAddColumnGeoNameText" value="Geometry"></input><br>
+				<label><span id="DialogAddColumnGeoLatitudeNameOut" style="display:none;">Latitude:</span><input type="text" size="30" id="DialogAddColumnGeoLatitudeNameText" value="Latitude" style="display:none;"></input> 
+			</fieldset>
+			<div class="center">
+				<button value="ok" formmethod="dialog" onClick="GetAddColumnGeo(event)">Add</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+			<input type="hidden" id="DialogAddColumnGeoNodeId"></input>
 		</form>
 	</dialog>
 

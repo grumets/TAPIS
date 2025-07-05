@@ -138,6 +138,7 @@ const TableOperations = {Table: {description: "View Table", leafNode: true, help
 			SortByTables: {description: "Sort by", callSTALoad: true, help: "Gets a table with data sorted by a given criteria."},
 			AggregateColumns: {description: "Aggregate Columns", help: "Adds a new column to a table with the aggregation of other previous selected columns."},
 			CreateColumns: {description: "Create Columns", help: "Adds a new column to your table. This column can be left empty, filled with a constant value or filled with an autoincremental value."},
+			AddColumnGeo: {description: "Add geospatial column", help: "Adds a new geospatial column to your table that is a format transformation of a preexisting geospatial column. The column can be a GeoJSON geometry, a Well Known Text, a Geohash or a pair of longitude/latitude columns."},
 			ColumnsCalculator: {description: "Columns calculator", help: "Adds a new column to your table where for each record the new column contains the result of an operation involving other column values of that record."},
 			PivotTable: {description: "Pivot table", help:"Create a new table where some column content is transponsed into new columns" },
 			ColumnStatistics: {description:"Columns statistics", help: "Create a table where, for each column the main statistics for the column values of all records are recorded."},
@@ -5798,6 +5799,66 @@ function getCSVReadParams(csvw){
 	return csvw.dialect;
 }
 
+function GetSelectedOptionsAddColumnGeo(){
+	var selectedOptions={};
+	//selectedOptions.radioIn=document.getElementById("DialogAddColumnGeoRadioJSON_WKT_geohash_LL").value;
+	selectedOptions.radioIn=document.DialogAddColumnGeoForm.DialogAddColumnGeoRadioJSON_WKT_geohash_LL.value;
+	selectedOptions.JSONIn=document.getElementById("DialogAddColumnGeoJSONSelect").value;
+	selectedOptions.WKTIn=document.getElementById("DialogAddColumnGeoWKTSelect").value;
+	selectedOptions.geohashIn=document.getElementById("DialogAddColumnGeoGeohashSelect").value;
+	selectedOptions.longitudeIn=document.getElementById("DialogAddColumnGeoLongitudeSelect").value;
+	selectedOptions.latitudeIn=document.getElementById("DialogAddColumnGeoLatitudeSelect").value;
+
+	selectedOptions.radioOut=document.DialogAddColumnGeoForm.DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut.value;
+	selectedOptions.nameOut=document.getElementById("DialogAddColumnGeoNameText").value;
+	selectedOptions.latitudeOut=document.getElementById("DialogAddColumnGeoLatitudeNameText").value;
+
+	return selectedOptions;
+}
+
+function GetAddColumnGeo(event) {
+	event.preventDefault(); // We don't want to submit this form
+	document.getElementById("DialogAddColumnGeo").close();
+	var node=getNodeDialog("DialogAddColumnGeo");
+	var selectedOptions=GetSelectedOptionsAddColumnGeo();
+	AddColumnGeoFromAnother(node.STAdata, node.STAdataAttributes, selectedOptions);
+	networkNodes.update(node);
+	updateQueryAndTableArea(node);
+	UpdateChildenTable(node);
+}
+
+function ShowAddColumnGeoDialog(node) {
+	var dataAttributes=currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(node.STAdata);
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeoJSON", dataAttributes, "geometry");
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeoWKT", dataAttributes, "wkt");
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeoGeohash", dataAttributes, "geohash");
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeoLongitude", dataAttributes, "long");
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeoLatitude", dataAttributes, "lat");
+
+	saveNodeDialog("DialogAddColumnGeo", node);
+	ChangeAddColumnGeoRadioOut();
+}
+
+function ChangeAddColumnGeoRadioOut(event) {
+	if (document.getElementById("DialogAddColumnGeoRadioJSONOut").checked || 
+	    document.getElementById("DialogAddColumnGeoRadioWKTOut").checked ||
+	    document.getElementById("DialogAddColumnGeoRadioGeohashOut").checked) {
+		document.getElementById("DialogAddColumnGeoNameOut").innerHTML="Column name:";
+		//document.getElementById("DialogAddColumnGeoLatitudeNameOut").innetHTML=""; 
+		document.getElementById("DialogAddColumnGeoLatitudeNameOut").style.display="none";
+		document.getElementById("DialogAddColumnGeoLatitudeNameText").style.display="none";
+	}
+	else
+	{
+		document.getElementById("DialogAddColumnGeoNameOut").innerHTML="Longitude:";
+		document.getElementById("DialogAddColumnGeoNameText").value="Longitude";
+		document.getElementById("DialogAddColumnGeoLatitudeNameOut").innetHTML="Latitude";
+		document.getElementById("DialogAddColumnGeoLatitudeNameOut").style.display="inline-block";
+		document.getElementById("DialogAddColumnGeoLatitudeNameText").style.display="inline-block";
+	}
+}
+
+
 function SaveLayer(event) {
 	event.preventDefault(); // We don't want to submit this form
 	document.getElementById("DialogSaveLayer").close();
@@ -7313,7 +7374,6 @@ function networkDoubleClick(params) {
 				document.getElementById("DialogCreateColumns").showModal();
 			 }		
 		}
-
 		else if (currentNode.image == "AggregateColumns.png") {
 			var parentNode=GetFirstParentNode(currentNode);
 			createColumnListToAddColumns();//create columnsList including columns in the table 
@@ -7357,7 +7417,17 @@ function networkDoubleClick(params) {
 				document.getElementById("DialogColumnsCalculator").showModal();
 			}
 		}
+		else if (currentNode.image == "AddColumnGeo.png") {
+			var parentNode=GetFirstParentNode(currentNode);
+			
+			if (parentNode.STAdata && !currentNode.STAdata)
+				currentNode.STAdata=deapCopy(parentNode.STAdata);
+			if (parentNode.STAdataAttributes && !currentNode.STAdataAttributes)
+				currentNode.STAdataAttributes=deapCopy(parentNode.STAdataAttributes);
 
+			ShowAddColumnGeoDialog(currentNode);
+			document.getElementById("DialogAddColumnGeo").showModal();
+		}
 		else if (currentNode.image =="ConcatenateTables.png") {
 			document.getElementById("DialogConcatenateTables").showModal();
 		}
