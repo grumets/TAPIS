@@ -82,20 +82,21 @@ const ServicesAndAPIsArray = Object.keys(ServicesAndAPIs);
 const ServicesAndAPIsType = {singular: "Data input tool", plural: "Data input tools"};
 
 const STAEntities = {
-	Campaigns: { singular: "Campaign", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "License", required: "false" }, {name:"ObservationGroups", required:"false"}], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "classification", dataType: "string", required: "false" }, { name: "termsOfUse", dataType: "string", required: "true" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "true" }, { name: "url", dataType: "URI", required: "false" }, { name: "startTime", dataType: "isodatetime", required: "false" }, { name: "endTime", dataType: "isodatetime", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Campaigns of this STAPlus service.", helpEdit: "Create, edit or delete an Campaign in a STAPlus service."},
-	Datastreams: { singular: "Datastream", entities: [{ name: "Party", required: "true" }, { name: "Sensor", required: "true" }, { name: "ObservedProperty", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Thing", required: "true" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "observationType", dataType: "string", required: "true" }, { name: "unitOfMeasurement", dataType: "JSON", required: "true" }, { name: "observedArea", dataType: "object", required: "false" }, { name: "phenomenonTime", dataType: "data_isoperiod", required: "false" }, { name: "resultTime", dataType: "data_isoperiod", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Datastreams of this STAPlus service.", helpEdit: "Create, edit or delete a Datastream in a STAPlus service."},
-	FeaturesOfInterest: { singular: "FeatureOfInterest", entities: [{ name: "Observations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "feature", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }],help:"Visualize through a table the FeaturesOfInterest of this STAPlus service.", helpEdit: "Create, edit or delete a FeatureOFInterest in a STAPlus service." },
-	HistoricalLocations: { singular: "HistoricalLocation", entities: [{ name: "Thing", required: "true" }, { name: "Locations", required: "true" }], properties: [{ name: "time", dataType: "isodatetime", required: "true" }], help:"Visualize through a table the HistoricalLocations of this STAPlus service" },
-	Licenses: { singular: "License", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "definition", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "logo", dataType: "string", required: "false" }, { name: "attributionText", dataType: "JSON", required: "false" }],help: "Visualize through a table the Licenses of this STAPlus service.", helpEdit: "Create, edit or delete a License in a STAPlus service."},
-	Locations: { singular: "Location", entities: [{ name: "Things", required: "false" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "location", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Locations of this STAPlus service.", helpEdit: "Create, edit or delete a Location in a STAPlus service."},
-	MultiDatastreams: { singular: "MultiDatastream", entities: [{ name: "Party", required: "true" }, { name: "Sensor", required: "true" }, { name: "ObservedProperty", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Thing", required: "true" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "observationType", dataType: "string", required: "true" }, { name: "unitOfMeasurement", dataType: "JSON", required: "true" }, { name: " observedArea", dataType: "object", required: "false" }, { name: "phenomenonTime", dataType: "data_isoperiod", required: "false" }, { name: "resultTime", dataType: "data_isoperiod", required: "false" }, { name: "multiObservationDataType", dataType: "JSON", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }],help:"Visualize through a table the MultiDatastreams of this STAPlus service.", helpEdit: "Create, edit or delete a MultiDatastream in a STAPlus service."},
-	ObservationGroups: { singular: "ObservationGroup", entities: [{ name: "Party", required: "true" }, { name: "Campaigns", required: "false" }, { name: "License", required: "false" }, { name: "Observations", required: "false" }, { name: "Relations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "purpose", dataType: "string", required: "false" }, { name: "creationTime", dataType: "isodatetime", required: "false" }, { name: "endTime", dataType: "isodatetime", required: "false" }, { name: "termsOfUsed", dataType: "string", required: "false" }, { name: "privacyPolicy", dataType: "string", required: "false" }, { name: "dataQuality", dataType: "JSON", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }],help: "Visualize through a table the ObservationGroups of this STAPlus service.", helpEdit: "Create, edit or delete an ObservationGroup in a STAPlus service."},
-	Observations: { singular: "Observation", entities: [{ name: "Datastream", required: "true" }, { name: "MultiDatastream", required: "true" }, { name: "FeatureOfInterest", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Subjects", required: "false" }, { name: "Objects", required: "false" }], properties: [{ name: "phenomenonTime", dataType: "object", required: "true" }, { name: "resultTime", dataType: "isodatetime", required: "true" }, { name: "result", dataType: "", required: "true" }, { name: "resultQuality", dataType: "object", required: "false" }, { name: "validTime", dataType: "data_isoperiod", required: "false" }, { name: "parameters", dataType: "JSON", required: "false" }], entityRelations: ["Object", "Subject"], help:"Visualize through a table the Observations of this STAPlus service.", helpEdit: "Create, edit or delete an Observation in a STAPlus service."},
-	ObservedProperties: { singular: "ObservedProperty", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "definition", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the ObservedProperties of this STAPlus service.", helpEdit: "Create, edit or delete an ObservedProperty in a STAPlus service."},
-	Parties: { singular: "Party", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Campaigns", required: "false" }, { name: "ObservationGroups", required: "false" }, { name: "Things", required: "false" }], properties: [{ name: "description", dataType: "string", required: "false" }, { name: "authId", dataType: "string", required: "false" }, { name: "role", dataType: "PartyRoleCode", required: "true" }, { name: "displayName", dataType: "string", required: "false" }], help: "Visualize through a table the Parties of this STAPlus service.", helpEdit: "Create, edit or delete a Party in a STAPlus service."},
-	Relations: { singular: "Relation", entities: [{ name: "Object", required: "true" }, { name: "Subject", required: "true" }, { name: "ObservationGroups", required: "false" }], properties: [{ name: "role", dataType: "URI", required: "true" }, { name: "description", dataType: "string", required: "false" }, { name: "externalObject", dataType: "URI", required: "false" }, { name: "properties", dataType: "JSON", required: "false" }], entityRelations: ["Objects", "Subjects"], help: "Visualize through a table the Relations of this STAPlus service", helpEdit: "Create, edit or delete an Relation in a STAPlus service."},
-	Sensors: { singular: "Sensor", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "encodingType", dataType: "string", required: "true" }, { name: "metadata", dataType: "", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Sensors of this STAPlus service.", helpEdit: "Create, edit or delete a Sensor in a STAPlus service."},
-	Things: { singular: "Thing", entities: [{ name: "Datastreams", required: "false" }, { name: "MultiDatastreams", required: "false" }, { name: "Party", required: "true" }, { name: "Locations", required: "false" }, { name: "HistoricalLocations", required: "false" }], properties: [{ name: "name", dataType: "string", required: "true" }, { name: "description", dataType: "string", required: "true" }, { name: "properties", dataType: "JSON", required: "false" }], help: "Visualize through a table the Things of this STAPlus service.", helpEdit: "Create, edit or delete a Thing in a STAPlus service."}
+	Campaigns: { singular: "Campaign", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}, {name: "Party", required: true}, {name: "License", required: false}, {name:"ObservationGroups", required:"false"}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "classification", dataType: "string", required: false}, {name: "termsOfUse", dataType: "string", required: true}, {name: "privacyPolicy", dataType: "string", required: false}, {name: "creationTime", dataType: "isodatetime", required: true}, {name: "url", dataType: "URI", required: false}, {name: "startTime", dataType: "isodatetime", required: false}, {name: "endTime", dataType: "isodatetime", required: false}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Campaigns of this STAPlus service.", helpEdit: "Create, edit or delete an Campaign in a STAPlus service."},
+	Cells: { singular: "Cell", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}, {name: "Observations", required: false}], properties: [{name: "zoneId", dataType: "string", required: true}, {name: "zoneLevel", dataType: "integer", required: false}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Cells of this STAPlus service.", helpEdit: "Create, edit or delete a Cell in a STAPlus service."},
+	Datastreams: { singular: "Datastream", entities: [{name: "Party", required: false}, {name: "Sensor", required: true}, {name: "ObservedProperty", required: true}, {name: "Campaigns", required: false}, {name: "License", required: false}, {name: "Observations", required: false}, {name: "Thing", required: true}, {name: "Cells", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "observationType", dataType: "string", required: true}, {name: "unitOfMeasurement", dataType: "JSON", required: true}, {name: "observedArea", dataType: "object", required: false}, {name: "phenomenonTime", dataType: "data_isoperiod", required: false}, {name: "resultTime", dataType: "data_isoperiod", required: false}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Datastreams of this STAPlus service.", helpEdit: "Create, edit or delete a Datastream in a STAPlus service."},
+	FeaturesOfInterest: { singular: "FeatureOfInterest", entities: [{name: "Observations", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "encodingType", dataType: "string", required: true}, {name: "feature", dataType: "", required: true}, {name: "properties", dataType: "JSON", required: false}],help:"Visualize through a table the FeaturesOfInterest of this STAPlus service.", helpEdit: "Create, edit or delete a FeatureOFInterest in a STAPlus service." },
+	HistoricalLocations: { singular: "HistoricalLocation", entities: [{name: "Thing", required: true}, {name: "Locations", required: true}], properties: [{name: "time", dataType: "isodatetime", required: true}], help:"Visualize through a table the HistoricalLocations of this STAPlus service" },
+	Licenses: { singular: "License", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}, {name: "Campaigns", required: false}, {name: "ObservationGroups", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "definition", dataType: "URI", required: true}, {name: "description", dataType: "string", required: true}, {name: "logo", dataType: "string", required: false}, {name: "attributionText", dataType: "JSON", required: false}],help: "Visualize through a table the Licenses of this STAPlus service.", helpEdit: "Create, edit or delete a License in a STAPlus service."},
+	Locations: { singular: "Location", entities: [{name: "Things", required: false}, {name: "HistoricalLocations", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "encodingType", dataType: "string", required: true}, {name: "location", dataType: "", required: true}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Locations of this STAPlus service.", helpEdit: "Create, edit or delete a Location in a STAPlus service."},
+	MultiDatastreams: { singular: "MultiDatastream", entities: [{name: "Party", required: false}, {name: "Sensor", required: true}, {name: "ObservedProperty", required: true}, {name: "Campaigns", required: false}, {name: "License", required: false}, {name: "Observations", required: false}, {name: "Thing", required: true}, {name: "Cells", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "observationType", dataType: "string", required: true}, {name: "unitOfMeasurement", dataType: "JSON", required: true}, {name: " observedArea", dataType: "object", required: false}, {name: "phenomenonTime", dataType: "data_isoperiod", required: false}, {name: "resultTime", dataType: "data_isoperiod", required: false}, {name: "multiObservationDataType", dataType: "JSON", required: true}, {name: "properties", dataType: "JSON", required: false}],help:"Visualize through a table the MultiDatastreams of this STAPlus service.", helpEdit: "Create, edit or delete a MultiDatastream in a STAPlus service."},
+	ObservationGroups: { singular: "ObservationGroup", entities: [{name: "Party", required: true}, {name: "Campaigns", required: false}, {name: "License", required: false}, {name: "Observations", required: false}, {name: "Relations", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "purpose", dataType: "string", required: false}, {name: "creationTime", dataType: "isodatetime", required: false}, {name: "endTime", dataType: "isodatetime", required: false}, {name: "termsOfUsed", dataType: "string", required: false}, {name: "privacyPolicy", dataType: "string", required: false}, {name: "dataQuality", dataType: "JSON", required: false}, {name: "properties", dataType: "JSON", required: false}],help: "Visualize through a table the ObservationGroups of this STAPlus service.", helpEdit: "Create, edit or delete an ObservationGroup in a STAPlus service."},
+	Observations: { singular: "Observation", entities: [{name: "Datastream", required: true}, {name: "MultiDatastream", required: true}, {name: "FeatureOfInterest", required: false}, {name: "ObservationGroups", required: false}, {name: "Cells", required: false}, {name: "Subjects", required: false}, {name: "Objects", required: false}], properties: [{name: "phenomenonTime", dataType: "object", required: true}, {name: "resultTime", dataType: "isodatetime", required: true}, {name: "result", dataType: "", required: true}, {name: "resultQuality", dataType: "object", required: false}, {name: "validTime", dataType: "data_isoperiod", required: false}, {name: "parameters", dataType: "JSON", required: false}], entityRelations: ["Object", "Subject"], help:"Visualize through a table the Observations of this STAPlus service.", helpEdit: "Create, edit or delete an Observation in a STAPlus service."},
+	ObservedProperties: { singular: "ObservedProperty", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "definition", dataType: "URI", required: true}, {name: "description", dataType: "string", required: true}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the ObservedProperties of this STAPlus service.", helpEdit: "Create, edit or delete an ObservedProperty in a STAPlus service."},
+	Parties: { singular: "Party", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}, {name: "Campaigns", required: false}, {name: "ObservationGroups", required: false}, {name: "Things", required: false}], properties: [{name: "description", dataType: "string", required: false}, {name: "authId", dataType: "string", required: false}, {name: "role", dataType: "PartyRoleCode", required: true}, {name: "displayName", dataType: "string", required: false}], help: "Visualize through a table the Parties of this STAPlus service.", helpEdit: "Create, edit or delete a Party in a STAPlus service."},
+	Relations: { singular: "Relation", entities: [{name: "Object", required: true}, {name: "Subject", required: true}, {name: "ObservationGroups", required: false}], properties: [{name: "role", dataType: "URI", required: true}, {name: "description", dataType: "string", required: false}, {name: "externalObject", dataType: "URI", required: false}, {name: "properties", dataType: "JSON", required: false}], entityRelations: ["Objects", "Subjects"], help: "Visualize through a table the Relations of this STAPlus service", helpEdit: "Create, edit or delete an Relation in a STAPlus service."},
+	Sensors: { singular: "Sensor", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "encodingType", dataType: "string", required: true}, {name: "metadata", dataType: "", required: true}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Sensors of this STAPlus service.", helpEdit: "Create, edit or delete a Sensor in a STAPlus service."},
+	Things: { singular: "Thing", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}, {name: "Party", required: true}, {name: "Locations", required: false}, {name: "HistoricalLocations", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Things of this STAPlus service.", helpEdit: "Create, edit or delete a Thing in a STAPlus service."}
 };
 const STAEntitiesArray = Object.keys(STAEntities);
 const STAEntitiesType = {singular: "STA entity reading tool", plural: "STA entities reading tool", 
@@ -2961,13 +2962,13 @@ function PopulateCreateUpdateDeleteEntityMultiDatastreams(entityName, currentNod
 				return false;
 			}
 			if (parentEntityName != entityName && returnIndexEntityRelatedInSTAEntity(entityName, parentEntityName) == -1 && returnIndexEntityRelatedInSTAEntity(entityName, STAEntities[parentEntityName].singular) == -1) {
-				alert("Parent node (" + STAEntities[parentEntityName].singular + ") is not a/an Multidatastream or is directly related to a/an Multidatastream");
+				alert("Parent node (" + STAEntities[parentEntityName].singular + ") is not a/an MultiDatastream or is directly related to a/an MultiDatastream");
 				return false;
 			}
 			if (parentEntityName == entityName) { //Update or delete
 				actionToDo = "update_delete";
 				if (i > 1) {
-					alert("One parent node is the same as the entity Multidatastream. This is for update or delete the entity. In this case, only one parent node is allowed.");
+					alert("One parent node is the same as the entity MultiDatastream. This is for update or delete the entity. In this case, only one parent node is allowed.");
 					return false;
 				}
 				var record = parentNode.STAdata[0]; //Info from parentNode used to complete in update
@@ -3066,9 +3067,9 @@ function PopulateCreateUpdateDeleteEntityMultiDatastreams(entityName, currentNod
 		'<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_observationType" data-STArequired="true" style=" font-weight: bold;">observationType*:</label>',
 		'<input id="dlgCreateUpdateDeleteEntity_MultiDatastreams_observationType" type="text" style="width:510px" data-STArequired="true" readonly value="http://www.opengis.net/def/observationType/OGC-OM/2.0/OM_ComplexObservation"><br>');//observationType
 
-	for (var a = 0; a < number; a++) { //Parts to be repeated: (ObservedProperties,unitOfmeasurement,multiobservationDataType)
+	for (var a = 0; a < number; a++) { //Parts to be repeated: (ObservedProperties,unitOfmeasurement,multiObservationDataType)
 
-		cdns.push('<div style="background-color:#F0F0F2; padding:10px; margin-top:15px"><span style="margin-top:5px; margin-bottom:5px; font-weight: bold; font-style: italic; ">multidatastream ' + (a + 1) + '</span><br><br>');
+		cdns.push('<div style="background-color:#F0F0F2; padding:10px; margin-top:15px"><span style="margin-top:5px; margin-bottom:5px; font-weight: bold; font-style: italic; ">field ' + (a + 1) + '</span><br><br>');
 		if (actionToDo == "create"){
 			cdns.push('<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_observedPropertiesSelect' + a + '">Select the <b>observedProperty </b>corresponding*:</label>',
 			'<select id="dlgCreateUpdateDeleteEntity_MultiDatastreams_observedPropertiesSelect' + a + '">');
@@ -3081,8 +3082,8 @@ function PopulateCreateUpdateDeleteEntityMultiDatastreams(entityName, currentNod
 			}
 		}
 		cdns.push('</select><br>');
-		cdns.push('<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_multiobservationDataType' + a + '" data-STArequired="true" style="font-weight: bold;">multiobservationDataType*:</label>',
-			'<input id="dlgCreateUpdateDeleteEntity_MultiDatastreams_multiobservationDataType' + a + '" type="text" style="width:300px" data-STArequired="true"><br>'); //multiobservationDataType
+		cdns.push('<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_multiObservationDataType' + a + '" data-STArequired="true" style="font-weight: bold;">multiObservationDataType*:</label>',
+			'<input id="dlgCreateUpdateDeleteEntity_MultiDatastreams_multiObservationDataType' + a + '" type="text" style="width:300px" data-STArequired="true"><br>'); //multiObservationDataType
 		cdns.push('<fieldset>', //unitOfmeasurement
 			'<legend> unitOfmeasurement:</legend>',
 			'<label for="dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_name_' + a + '" style="font-weight: bold;">name:</label>',
@@ -3115,7 +3116,7 @@ function PopulateCreateUpdateDeleteEntityMultiDatastreams(entityName, currentNod
 			document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_definition_"+i).value= (STAdata.unitOfMeasurements[i].definition)?STAdata.unitOfMeasurements[i].definition:"";
 			document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_symbol_"+i).value= (STAdata.unitOfMeasurements[i].symbol)?STAdata.unitOfMeasurements[i].symbol:"";
 			
-			document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_multiobservationDataType"+i).value= (STAdata.multiObservationDataTypes[i])?STAdata.multiObservationDataTypes[i]:"";
+			document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_multiObservationDataType"+i).value= (STAdata.multiObservationDataTypes[i])?STAdata.multiObservationDataTypes[i]:"";
 		}
 		//Properties
 		
@@ -3228,8 +3229,8 @@ function PopulateCreateUpdateDeleteEntity(entityName, currentNode) {
 			//For the moment in supporting only a point
 			cdns.push('<fieldset>',
 				'<legend>', STAEntities[entityName].properties[i].name, ' (point):</legend>',
-				'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" style=" font-weight: bold;">', 'longitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" type="text" data-STArequired="'+STAEntities[entityName].properties[i].required+'"><br>',
-				'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude"style=" font-weight: bold;">', 'latitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude" type="text" data-STArequired="'+STAEntities[entityName].properties[i].required+'"><br>',
+				'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" style=" font-weight: bold;">', 'longitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_longitude" type="text" data-STArequired="'+(STAEntities[entityName].properties[i].required ? "true" : "false")+'"><br>',
+				'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude"style=" font-weight: bold;">', 'latitude: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_latitude" type="text" data-STArequired="'+(STAEntities[entityName].properties[i].required ? "true" : "false")+'"><br>',
 				'</fieldset>',
 				'<br>');
 			continue;	
@@ -3237,9 +3238,9 @@ function PopulateCreateUpdateDeleteEntity(entityName, currentNode) {
 		if (entityName=="Datastreams"  && STAEntities[entityName].properties[i].name=="unitOfMeasurement") { //Datastream unitOfMeasurement
 			cdns.push('<fieldset>',
 				'<legend>', STAEntities[entityName].properties[i].name, ':</legend>', //Quins volem que siguin required? perque al esquema diu que es required el unitOfMeasurement sencer, no desglosa
-				'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" style=" font-weight: bold;" data-STArequired="'+STAEntities[entityName].properties[i].required+'">', 'name: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" type="text"><br>',
-				'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" style=" font-weight: bold;">', 'symbol: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" type="text" data-STArequired="'+STAEntities[entityName].properties[i].required+'"><br>',
-				'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" style=" font-weight: bold;">', 'definition: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" type="text" data-STArequired="'+STAEntities[entityName].properties[i].required+'"><br>',
+				'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" style=" font-weight: bold;" data-STArequired="'+(STAEntities[entityName].properties[i].required ? "true" : "false")+'">', 'name: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_name" type="text"><br>',
+				'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" style=" font-weight: bold;">', 'symbol: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_symbol" type="text" data-STArequired="'+(STAEntities[entityName].properties[i].required ? "true" : "false")+'"><br>',
+				'<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" style=" font-weight: bold;">', 'definition: </label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_definition" type="text" data-STArequired="'+(STAEntities[entityName].properties[i].required ? "true" : "false")+'"><br>',
 				'</fieldset>',
 				'<br>');
 			continue;
@@ -3252,29 +3253,29 @@ function PopulateCreateUpdateDeleteEntity(entityName, currentNode) {
 			continue;
 		}
 		//Attributes in general
-		cdns.push('<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" data-STArequired='+STAEntities[entityName].properties[i].required+' style=" font-weight: bold;">', (STAEntities[entityName].properties[i].required=='true')? STAEntities[entityName].properties[i].name+'*':STAEntities[entityName].properties[i].name, ': </label>');
+		cdns.push('<label for="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" data-STArequired='+(STAEntities[entityName].properties[i].required ? "true" : "false")+' style=" font-weight: bold;">', (STAEntities[entityName].properties[i].required=="true")? STAEntities[entityName].properties[i].name+'*':STAEntities[entityName].properties[i].name, ': </label>');
 
 
 		//Special inputs with calendar
 		if (STAEntities[entityName].properties[i].name=="time"||STAEntities[entityName].properties[i].name=="creationTime"||STAEntities[entityName].properties[i].name=="startTime"||STAEntities[entityName].properties[i].name=="endTime"||(STAEntities[entityName].properties[i].name=="resultTime" && entityName=="Observations")){
-			cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar')" data-STArequired="${STAEntities[entityName].properties[i].required}">`);
+			cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar')" data-STArequired="`+(STAEntities[entityName].properties[i].required? "true" : "false")+'">');
 			cdns.push('<label>Generate with this: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}')"><br>`);
 		}else if (STAEntities[entityName].properties[i].name=="validTime"||(STAEntities[entityName].properties[i].name=="resultTime" && entityName=="Datastreams")){
-			cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar',2,'input')" data-STArequired="${STAEntities[entityName].properties[i].required}">`);
+			cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar',2,'input')" data-STArequired="` + (STAEntities[entityName].properties[i].required ? "true" : "false")+'">');
 			cdns.push('<label>Generate with this: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',2,'calendar')">`);
 			cdns.push('<label> and: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar2" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',2,'calendar')"><br>`);
 
 		}else if(STAEntities[entityName].properties[i].name=="phenomenonTime"){
-			cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ or YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar',3,'input')" data-STArequired="${STAEntities[entityName].properties[i].required}">`);
+			cdns.push('<label>Date:</label><input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name,'" type="text" placeholder="YYYY-MM-DDTHH:MM:SSZ or YYYY-MM-DDTHH:MM:SSZ/YYYY-MM-DDTHH:MM:SSZ" style="width:300px" onChange="', `addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar',3,'input')" data-STArequired="` + (STAEntities[entityName].properties[i].required ? "true" : "false") + '">');
 			cdns.push('<label>Generate with this: </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',3,'calendar')">`);
 			cdns.push('<label> and: </label ><label style="font-size:15px;font-style: italic">(to create a period)  </label><input type="datetime-local" id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '_createEntityInputCalendar3" onChange="',`addTimeToOtherInputCreateEntities('dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}_createEntityInputCalendar','dlgCreateUpdateDeleteEntity_${STAEntities[entityName].properties[i].name}',3,'calendar')"><br>`);
 
 		}else if (STAEntities[entityName].properties[i].name!="multiObservationDataType"){
-			cdns.push('<input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" type="text" style="width:300px" data-STArequired="'+STAEntities[entityName].properties[i].required+'"><br>');
+			cdns.push('<input id="dlgCreateUpdateDeleteEntity_', STAEntities[entityName].properties[i].name, '" type="text" style="width:300px" data-STArequired="'+(STAEntities[entityName].properties[i].required ? "true" : "false")+'"><br>');
 		}
 
-		if (entityName=="MultiDatastreams" && STAEntities[entityName].properties[i].name=="multiObservationDataType") { //Multidatastream, multiObservationDataType
-			cdns.push(`<span style= "font-style: italic"> (separate them with ; )</span><br><textarea  id= "dlgCreateUpdateDeleteEntity_multiObservationDataType_textAreaList" rows="4" cols="50" style= "font-family: Arial;" data-starequired="${STAEntities[entityName].properties[i].required}"></textarea>`);
+		if (entityName=="MultiDatastreams" && STAEntities[entityName].properties[i].name=="multiObservationDataType") { //MultiDatastream, multiObservationDataType
+			cdns.push(`<span style= "font-style: italic"> (separate them with ; )</span><br><textarea  id= "dlgCreateUpdateDeleteEntity_multiObservationDataType_textAreaList" rows="4" cols="50" style= "font-family: Arial;" data-starequired="` + (STAEntities[entityName].properties[i].required ? "true" : "false")+ '"></textarea>');
 		}
 
 
@@ -3487,7 +3488,7 @@ function createEntitiesInCreateEntity(currentNode,entitiesParentArray){
 
 						} else if (getSTAEntityPlural(entitiesLinked[e].name, false) == "MultiDatastreams" && datastream != "linked") {
 							entitiesRequired.push(`<span style="font-weight: bold;">Datastreams/MultiDatastreams`, (entitiesLinked[e].required == "true")?'*: <span style="color: red; font-style: italic" >You need to link one</span></span>':': <span style="color: #897F7F; font-style: italic" >none</span>', '</span> <br>');
-							if (entitiesLinked[e].required == "true")entitiesRequiedNotLinked.push("Datastream or Multidatastream");
+							if (entitiesLinked[e].required == "true")entitiesRequiedNotLinked.push("Datastream or MultiDatastream");
 						}
 					}
 				}
@@ -3625,7 +3626,7 @@ function obtainDataInEntitiesCreationAndUpdate(operation,entityName){
 				return false;
 			}
 }
-function obtainDataInMultidatastreamsCreationAndUpdate(operation){
+function obtainDataInMultiDatastreamsCreationAndUpdate(operation){
 	if (operation=="create"){
 		var obj= currentNode.STAentitiesObject;
 	}else{
@@ -3664,7 +3665,7 @@ function obtainDataInMultidatastreamsCreationAndUpdate(operation){
 		}
 		
 
-		multiObservationDataTypes.push(document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_multiobservationDataType"+i).value)
+		multiObservationDataTypes.push(document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_multiObservationDataType"+i).value)
 		
 		unitOfMeasurements.push({"name":document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_name_"+i).value,
 								"definition":document.getElementById("dlgCreateUpdateDeleteEntity_MultiDatastreams_unitOfMeasurement_definition_"+i).value,
@@ -3720,7 +3721,7 @@ function GetCreateEntityMultiDatastream(event){
 				continue;
 			}
 	}
-	var obj = obtainDataInMultidatastreamsCreationAndUpdate("create");
+	var obj = obtainDataInMultiDatastreamsCreationAndUpdate("create");
 
 	if (obj!=false){
 		showInfoMessage("Creating a/an "+ STAEntities[entityName].singular +"...");
@@ -3971,7 +3972,7 @@ async function GetUpdateEntity(event){
 
 async function GetUpdateEntityMultiDatastream(event){
 	event.preventDefault(); 
-	var obj = obtainDataInMultidatastreamsCreationAndUpdate("update");
+	var obj = obtainDataInMultiDatastreamsCreationAndUpdate("update");
 	var id = parseInt(document.getElementById("dlgCreateUpdateDeleteEntity_id").value);
 	var parentNodes=GetParentNodes(currentNode);
 	var parentEntityName=getSTAEntityPlural(getSTAURLLastEntity(parentNodes[0].STAURL), false);
@@ -7322,10 +7323,9 @@ function networkDoubleClick(params) {
 				document.getElementById("DialogFilterRows").showModal();
 			}
 		}
-		else if (currentNode.image == "FilterRowsByTime.png"){
-							
-			if (PopulateFilterRowsByTimePropertySelect())document.getElementById("DialogFilterRowsByTime").showModal();
-			
+		else if (currentNode.image == "FilterRowsByTime.png"){							
+			if (PopulateFilterRowsByTimePropertySelect())
+				document.getElementById("DialogFilterRowsByTime").showModal();			
 		}
 		else if (currentNode.image == "SortBySTA.png") {
 			var parentNode=GetFirstParentNode(currentNode);
@@ -7454,7 +7454,7 @@ function networkDoubleClick(params) {
 			currentNode.image == "Thing.png" || currentNode.image == "Location.png" || 
 			currentNode.image == "HistoricalLocation.png" || currentNode.image == "Datastream.png" || 
 			currentNode.image == "Party.png" || 
-			currentNode.image == "Campaign.png" || currentNode.image == "License.png" || 
+			currentNode.image == "Campaign.png" || currentNode.image == "Cell.png" || currentNode.image == "License.png" || 
 			currentNode.image == "ObservationGroup.png" || currentNode.image == "Relation.png") {
 			startingNodeContextId=currentNode.id;
 			if (GetFirstParentNode(currentNode)) {
@@ -8512,20 +8512,21 @@ function concatenateTables() {
 }
 
 const RouteToLocation={
-Parties: ["Things/Locations/location", "Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location" ],
-Sensors: ["Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location"],
-ObservedProperties: ["Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location"],
-Things: ["Locations/location"], 
-Observations:["Datastream/Thing/Locations/location", "MultiDatastream/Thing/Locations/location"],
-Locations:["location"],
-FeaturesOfInterest:["Observations/Datastream/Thing/Locations/location", "Observations/multiDatastream/Thing/Locations/location"],
-HistoricalLocations: ["Location/location", "Things/Locations/location"],
-Datastreams:["Thing/Locations/location"],
-MultiDatastreams:["Thing/Locations/location"],
-Campaigns: ["Datastreams/Thing/Locations/location","MultiDatastreams/Thing/Locations/location", "License/Datastreams/Thing/Locations/location", "License/MultiDatastreams/Thing/Locations/location","ObservationGroups/Observations/Datastream/Thing/Locations/location","ObservationGroups/License/Datastreams/Thing/Locations/location","ObservationGroups/License/MultiDatastreams/Thing/Locations/location", "ObservationGroups/Observations/MultiDatastream/Thing/Locations/location"],
-Licenses: [ "Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location"],
-ObservationGroups: ["Campaigns/Datastreams/Thing/Locations/location","Campaigns/MultiDatastreams/Thing/Locations/location", "Campaigns/License/Datastreams/Thing/Locations/location", "Campaigns/License/MultiDatastreams/Thing/Locations/location", "Observations/Datastream/Thing/Locations/location", "Observations/MultiDatastream/Thing/Locations/location"] 
-//Relations: []
+	Parties: ["Things/Locations/location", "Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location" ],
+	Sensors: ["Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location"],
+	ObservedProperties: ["Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location"],
+	Things: ["Locations/location"], 
+	Observations:["Datastream/Thing/Locations/location", "MultiDatastream/Thing/Locations/location"],
+	Locations:["location"],
+	FeaturesOfInterest:["Observations/Datastream/Thing/Locations/location", "Observations/multiDatastream/Thing/Locations/location"],
+	HistoricalLocations: ["Location/location", "Things/Locations/location"],
+	Datastreams:["Thing/Locations/location"],
+	MultiDatastreams:["Thing/Locations/location"],
+	Cells: ["Datastreams/Thing/Locations/location","MultiDatastreams/Thing/Locations/location", "Observations/Datastreams/Thing/Locations/location", "Observations/MultiDatastreams/Thing/Locations/location"],
+	Campaigns: ["Datastreams/Thing/Locations/location","MultiDatastreams/Thing/Locations/location", "License/Datastreams/Thing/Locations/location", "License/MultiDatastreams/Thing/Locations/location","ObservationGroups/Observations/Datastream/Thing/Locations/location","ObservationGroups/License/Datastreams/Thing/Locations/location","ObservationGroups/License/MultiDatastreams/Thing/Locations/location", "ObservationGroups/Observations/MultiDatastream/Thing/Locations/location"],
+	Licenses: [ "Datastreams/Thing/Locations/location", "MultiDatastreams/Thing/Locations/location"],
+	ObservationGroups: ["Campaigns/Datastreams/Thing/Locations/location","Campaigns/MultiDatastreams/Thing/Locations/location", "Campaigns/License/Datastreams/Thing/Locations/location", "Campaigns/License/MultiDatastreams/Thing/Locations/location", "Observations/Datastream/Thing/Locations/location", "Observations/MultiDatastream/Thing/Locations/location"] 
+	//Relations: []
 }
 const RouteToFeature={
 	Parties: ["Datastreams/Observations/FeatureOfInterest/feature","MultiDatastreams/Observations/FeatureOfInterest/feature","Things/Datastreams/Observations/FeatureOfInterest/feature","Things/MultiDatastreams/Observations/FeatureOfInterest/feature"],
@@ -8538,7 +8539,8 @@ const RouteToFeature={
 	HistoricalLocations: ["Things/Datastreams/Observations/FeatureOfInterest/feature","Things/MultiDatastreams/Observations/FeatureOfInterest/feature"],
 	Datastreams: ["Observations/FeatureOfInterest/feature"],
 	MultiDatastreams:["Observations/FeatureOfInterest/feature"],
-	Campaigns:["License/ObservationGroups/Observations/FeatureOfInterest/feature",	"License/Datastreams/Observations/FeatureOfInterest/feature","License/MultiDatastreams/Observations/FeatureOfInterest/feature","ObservationGroups/Observations/FeatureOfInterest/feature"],
+	Campaigns:["License/ObservationGroups/Observations/FeatureOfInterest/feature", "License/Datastreams/Observations/FeatureOfInterest/feature","License/MultiDatastreams/Observations/FeatureOfInterest/feature","ObservationGroups/Observations/FeatureOfInterest/feature"],
+	Cells:["Observations/FeatureOfInterest/feature", "Datastreams/Observations/FeatureOfInterest/feature","MultiDatastreams/Observations/FeatureOfInterest/feature"],
 	Licenses:["Datastreams/Observations/FeatureOfInterest/feature","MultiDatastreams/Observations/FeatureOfInterest/feature", "ObservationGroups/Observations/FeatureOfInterest/feature" ], 
 	ObservationGroups:[	"Campaigns/License/Datastreams/Observations/FeatureOfInterest/feature","Campaigns/License/MultiDatastreams/Observations/FeatureOfInterest/feature",	"Campaigns/Datastreams/Observations/FeatureOfInterest/feature", "Campaigns/MultiDatastreams/Observations/FeatureOfInterest/feature","License/Datastreams/Observations/FeatureOfInterest/feature", "License/MultiDatastreams/Observations/FeatureOfInterest/feature","Observations/Datastream/Observations/FeatureOfInterest/feature", "Observations/MultiDatastream/Observations/FeatureOfInterest/feature"]
 	//Relations: []
@@ -8702,45 +8704,47 @@ function writeValueInInputGeoDistance(value){
 }
 
 function PopulateFilterRowsByTimePropertySelect() {
+var entityName;
 	var parentNodes= GetParentNodes(currentNode)
 	if (parentNodes && parentNodes.length==1){
-		var idNode=IdOfSTAEntity(parentNodes[0]);  //There is new member to do this. (JM) Need to correct this.
+		//var idNode=IdOfSTAEntity(parentNodes[0]);  //There is new member to do this. (JM) Need to correct this.
+		if (parentNodes[0].STAEntityName)
+			entityName=getSTAEntityPlural(parentNodes[0].STAEntityName);
+		else
+		{
+			var idNode=IdOfSTAEntity(parentNodes[0].STAEntityName);
+		
 			if (idNode<0){
 				alert("It is necessary to link only one node with data from STA source");
 				return false;
-			}else{
-				if (STAEntitiesArray[idNode]!="Observations"){
-					document.getElementById("aggregateDataYes").disabled=true;
-					document.getElementById("filterRowsByTimeSelectAggregation").disabled=true;
-					document.getElementById("aggregateDataYes_label").style.color="#b6b5b5";
-				}
-				else{
-					 document.getElementById("aggregateDataYes").disabled=false;
-					 document.getElementById("filterRowsByTimeSelectAggregation").disabled=false;
-					 document.getElementById("aggregateDataYes_label").style.color="#000000";
-				}
-				document.getElementById("filterRowsByTimeSelectProperty").innerHTML="";
-				if (STAEntitiesArray[idNode]=="Datastreams" ||STAEntitiesArray[idNode]=="MultiDatastreams"||STAEntitiesArray[idNode]=="Observations"){
-					document.getElementById("filterRowsByTimeSelectProperty").innerHTML='<option value="phenomenonTime">phenomenonTime</option><option value="resultTime">resultTime</option>'
-					
-					
-				}
-				else if (STAEntitiesArray[idNode]=="Campaigns"){
-					document.getElementById("filterRowsByTimeSelectProperty").innerHTML='<option value="startTime">startTime</option><option value="endTime">endTime</option>'
-				}
-				else if (STAEntitiesArray[idNode]=="ObservationGroups"){
-					document.getElementById("filterRowsByTimeSelectProperty").innerHTML='<option value="creationTime">creationTime</option><option value="endTime">endTime</option>'
-				} else{
-					alert("It is necessary to link one node with a data property");
-					return false;
-				}
 			}
-			return true;			
-	}else {
+			entityName=STAEntitiesArray[idNode];
+		}
+		if (entityName!="Observations"){
+			document.getElementById("aggregateDataYes").disabled=true;
+			document.getElementById("filterRowsByTimeSelectAggregation").disabled=true;
+			document.getElementById("aggregateDataYes_label").style.color="#b6b5b5";
+		}else{
+			document.getElementById("aggregateDataYes").disabled=false;
+			document.getElementById("filterRowsByTimeSelectAggregation").disabled=false;
+			document.getElementById("aggregateDataYes_label").style.color="#000000";
+		}
+		document.getElementById("filterRowsByTimeSelectProperty").innerHTML="";
+		if (entityName=="Datastreams" || entityName=="MultiDatastreams" || entityName=="Observations")
+			document.getElementById("filterRowsByTimeSelectProperty").innerHTML='<option value="phenomenonTime">phenomenonTime</option><option value="resultTime">resultTime</option>'
+		else if (entityName[idNode]=="Campaigns")
+			document.getElementById("filterRowsByTimeSelectProperty").innerHTML='<option value="startTime">startTime</option><option value="endTime">endTime</option>'
+		else if (entityName=="ObservationGroups")
+			document.getElementById("filterRowsByTimeSelectProperty").innerHTML='<option value="creationTime">creationTime</option><option value="endTime">endTime</option>'
+		else {
+			alert("It is necessary to link one node with a data property");
+			return false;
+		}
+		return true;			
+	} else {
 		alert("It is necessary to link only one node with data from STA source");
 		return false;
 	}
-
 }
 
 async function filterRowsByTimeOkButton(){
