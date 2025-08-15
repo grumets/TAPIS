@@ -405,22 +405,22 @@ function JoinTablesData(dataLeft, dataRight, dataLeftAttributesNull, dataRightAt
 	return dataCurrent;
 }
 
-		const AggregationsOptions=[{name: "Mean", desc: "Mean"},
-					 {name: "Mode", desc: "Mode"},
+		const AggregationsOptions=[{name: "Mean", desc: "Mean", definition: "https://statproofbook.github.io/D/mean-samp"},
+					 {name: "Mode", desc: "Mode", definition: "https://statproofbook.github.io/D/mode"},
 					 {name: "FirstValue", desc: "First value"},
-					 {name: "Median", desc: "Median"},
-					 {name: "StandardDeviation", desc: "Standard deviation"},
+					 {name: "Median", desc: "Median", definition: "https://statproofbook.github.io/D/med"},
+					 {name: "StandardDeviation", desc: "Standard deviation", definition: "https://statproofbook.github.io/D/std-samp"},
 					 {name: "LastValue", desc: "Last value"},
 					 {name: "Q1", desc: "Q1"},
-					 {name: "Variance", desc: "Variance"},
+					 {name: "Variance", desc: "Variance", definition: "https://statproofbook.github.io/D/var-samp"},
 					 {name: "RandomValue", desc: "Random value"},
 					 {name: "Q3", desc: "Q3"},
 					 {name: "Sum", desc: "Sum"},
 					 {name: "CountDefined", desc: "Count defined"},
-					 {name: "MinValue", desc: "Min. Value"},
+					 {name: "MinValue", desc: "Min. Value", definition: "https://statproofbook.github.io/D/min"},
 					 {name: "Concatenate", desc: "Concatenate"},
-					 {name: "Count", desc: "Count"},
-					 {name: "MaxValue", desc: "Max. value"},
+					 {name: "Count", desc: "Count", definition: "https://statproofbook.github.io/D/samp-size"},
+					 {name: "MaxValue", desc: "Max. value", definition: "https://statproofbook.github.io/D/max"},
 					 {name: "Range", desc: "Range"},
 					 {name: "ProportionDefined", desc: "Proportion defined"}]; 
 		const GroupByDateTimeOptions=[{name: "Year", desc: "Year"},
@@ -472,18 +472,21 @@ function aggrFuncModes(values) {
 			summaryOfData[values[i]]=1;
 	}
 
-	var numberValueArray=[];  //[value of mode], one or more
-	var max=0;
+	var max=0, numberValueArray=[];  //[value of mode], one or more
 	var objectKeys=Object.keys(summaryOfData); //every key is a different value from values
 	var nObjectKeys=objectKeys.length;
 
-	for (var a=0; a<nObjectKeys; a++){ //Searching for the max number of repetitions
+	for (var a=0; a<nObjectKeys; a++) { //Searching for the max number of repetitions
 		if (summaryOfData[objectKeys[a]]>max)
 			max = summaryOfData[objectKeys[a]]; //update number max
 	}
-	for (a=0; a<nObjectKeys; a++){ //Searching values with max repetitions
-		if (summaryOfData[objectKeys[a]]==max)
-			numberValueArray.push(objectKeys[a]); 
+	for (a=0; a<nObjectKeys; a++) { //Searching values with max repetitions
+		if (summaryOfData[objectKeys[a]]==max) {
+			if (typeof objectKeys[a] === 'string' && !isNaN(objectKeys[a]))
+				numberValueArray.push(parseFloat(objectKeys[a]));
+			else
+				numberValueArray.push(objectKeys[a]);
+		}
 	}
 	return numberValueArray;  //One value or more, always in a array;
 }

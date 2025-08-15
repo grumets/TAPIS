@@ -47,8 +47,10 @@
 
 /*
 Some things that I'm always looking for:
-Function to get the nodeId from a dialog: getNodeDialog(div_id) 
 Function to include the nodeId as a hidden value in a dialog: saveNodeDialog(div_id, node)
+Function to get the nodeId from a dialog: getNodeDialog(div_id) 
+
+Function to send a message to the message box: showInfoMessage(); 
 
 Function to redraw the table view: updateQueryAndTableArea(node);
 Function to show and informative message in the screen: showInfoMessage();
@@ -58,6 +60,8 @@ Function to get the character representing the column type getHTMLCharacterAttri
 Function to open a link in the graph: OpenLink(event)
 Function to decide what is a link in the table view: isAttributeAnyURI(s)
 Function to decide what is a link in the table that is a special link in the graph: isAttributeAnyURINode() (used in isAttributeAnyURINodeId() that is used in ShowLinkDialog(nodeId, columnName, iRecord))
+
+Function to define the dependence compatibility reasonNodeDoesNotFitWithPrevious(nodeTo, nodeFrom);
 */
 
 var config;
@@ -84,12 +88,12 @@ const ServicesAndAPIsType = {singular: "Data input tool", plural: "Data input to
 const STAEntities = {
 	Campaigns: { singular: "Campaign", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}, {name: "Party", required: true}, {name: "License", required: false}, {name:"ObservationGroups", required:"false"}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "classification", dataType: "string", required: false}, {name: "termsOfUse", dataType: "string", required: true}, {name: "privacyPolicy", dataType: "string", required: false}, {name: "creationTime", dataType: "isodatetime", required: true}, {name: "url", dataType: "URI", required: false}, {name: "startTime", dataType: "isodatetime", required: false}, {name: "endTime", dataType: "isodatetime", required: false}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Campaigns of this STAPlus service.", helpEdit: "Create, edit or delete an Campaign in a STAPlus service."},
 	Cells: { singular: "Cell", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}, {name: "Observations", required: false}], properties: [{name: "zoneId", dataType: "string", required: true}, {name: "zoneLevel", dataType: "integer", required: false}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Cells of this STAPlus service.", helpEdit: "Create, edit or delete a Cell in a STAPlus service."},
-	Datastreams: { singular: "Datastream", entities: [{name: "Party", required: false}, {name: "Sensor", required: true}, {name: "ObservedProperty", required: true}, {name: "Campaigns", required: false}, {name: "License", required: false}, {name: "Observations", required: false}, {name: "Thing", required: true}, {name: "Cells", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "observationType", dataType: "string", required: true}, {name: "unitOfMeasurement", dataType: "JSON", required: true}, {name: "observedArea", dataType: "object", required: false}, {name: "phenomenonTime", dataType: "data_isoperiod", required: false}, {name: "resultTime", dataType: "data_isoperiod", required: false}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Datastreams of this STAPlus service.", helpEdit: "Create, edit or delete a Datastream in a STAPlus service."},
+	Datastreams: { singular: "Datastream", entities: [{name: "Party", required: true}, {name: "Sensor", required: true}, {name: "ObservedProperty", required: true}, {name: "Campaigns", required: false}, {name: "License", required: false}, {name: "Observations", required: false}, {name: "Thing", required: true}, {name: "Cells", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "observationType", dataType: "string", required: true}, {name: "unitOfMeasurement", dataType: "JSON", required: true}, {name: "observedArea", dataType: "object", required: false}, {name: "phenomenonTime", dataType: "data_isoperiod", required: false}, {name: "resultTime", dataType: "data_isoperiod", required: false}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Datastreams of this STAPlus service.", helpEdit: "Create, edit or delete a Datastream in a STAPlus service."},
 	FeaturesOfInterest: { singular: "FeatureOfInterest", entities: [{name: "Observations", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "encodingType", dataType: "string", required: true}, {name: "feature", dataType: "", required: true}, {name: "properties", dataType: "JSON", required: false}],help:"Visualize through a table the FeaturesOfInterest of this STAPlus service.", helpEdit: "Create, edit or delete a FeatureOFInterest in a STAPlus service." },
 	HistoricalLocations: { singular: "HistoricalLocation", entities: [{name: "Thing", required: true}, {name: "Locations", required: true}], properties: [{name: "time", dataType: "isodatetime", required: true}], help:"Visualize through a table the HistoricalLocations of this STAPlus service" },
 	Licenses: { singular: "License", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}, {name: "Campaigns", required: false}, {name: "ObservationGroups", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "definition", dataType: "URI", required: true}, {name: "description", dataType: "string", required: true}, {name: "logo", dataType: "string", required: false}, {name: "attributionText", dataType: "JSON", required: false}],help: "Visualize through a table the Licenses of this STAPlus service.", helpEdit: "Create, edit or delete a License in a STAPlus service."},
 	Locations: { singular: "Location", entities: [{name: "Things", required: false}, {name: "HistoricalLocations", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "encodingType", dataType: "string", required: true}, {name: "location", dataType: "", required: true}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the Locations of this STAPlus service.", helpEdit: "Create, edit or delete a Location in a STAPlus service."},
-	MultiDatastreams: { singular: "MultiDatastream", entities: [{name: "Party", required: false}, {name: "Sensor", required: true}, {name: "ObservedProperty", required: true}, {name: "Campaigns", required: false}, {name: "License", required: false}, {name: "Observations", required: false}, {name: "Thing", required: true}, {name: "Cells", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "observationType", dataType: "string", required: true}, {name: "unitOfMeasurement", dataType: "JSON", required: true}, {name: " observedArea", dataType: "object", required: false}, {name: "phenomenonTime", dataType: "data_isoperiod", required: false}, {name: "resultTime", dataType: "data_isoperiod", required: false}, {name: "multiObservationDataType", dataType: "JSON", required: true}, {name: "properties", dataType: "JSON", required: false}],help:"Visualize through a table the MultiDatastreams of this STAPlus service.", helpEdit: "Create, edit or delete a MultiDatastream in a STAPlus service."},
+	MultiDatastreams: { singular: "MultiDatastream", entities: [{name: "Party", required: true}, {name: "Sensor", required: true}, {name: "ObservedProperty", required: true}, {name: "Campaigns", required: false}, {name: "License", required: false}, {name: "Observations", required: false}, {name: "Thing", required: true}, {name: "Cells", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "observationType", dataType: "string", required: true}, {name: "unitOfMeasurement", dataType: "JSON", required: true}, {name: " observedArea", dataType: "object", required: false}, {name: "phenomenonTime", dataType: "data_isoperiod", required: false}, {name: "resultTime", dataType: "data_isoperiod", required: false}, {name: "multiObservationDataType", dataType: "JSON", required: true}, {name: "properties", dataType: "JSON", required: false}],help:"Visualize through a table the MultiDatastreams of this STAPlus service.", helpEdit: "Create, edit or delete a MultiDatastream in a STAPlus service."},
 	ObservationGroups: { singular: "ObservationGroup", entities: [{name: "Party", required: true}, {name: "Campaigns", required: false}, {name: "License", required: false}, {name: "Observations", required: false}, {name: "Relations", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "description", dataType: "string", required: true}, {name: "purpose", dataType: "string", required: false}, {name: "creationTime", dataType: "isodatetime", required: false}, {name: "endTime", dataType: "isodatetime", required: false}, {name: "termsOfUsed", dataType: "string", required: false}, {name: "privacyPolicy", dataType: "string", required: false}, {name: "dataQuality", dataType: "JSON", required: false}, {name: "properties", dataType: "JSON", required: false}],help: "Visualize through a table the ObservationGroups of this STAPlus service.", helpEdit: "Create, edit or delete an ObservationGroup in a STAPlus service."},
 	Observations: { singular: "Observation", entities: [{name: "Datastream", required: true}, {name: "MultiDatastream", required: true}, {name: "FeatureOfInterest", required: false}, {name: "ObservationGroups", required: false}, {name: "Cells", required: false}, {name: "Subjects", required: false}, {name: "Objects", required: false}], properties: [{name: "phenomenonTime", dataType: "object", required: true}, {name: "resultTime", dataType: "isodatetime", required: true}, {name: "result", dataType: "", required: true}, {name: "resultQuality", dataType: "object", required: false}, {name: "validTime", dataType: "data_isoperiod", required: false}, {name: "parameters", dataType: "JSON", required: false}], entityRelations: ["Object", "Subject"], help:"Visualize through a table the Observations of this STAPlus service.", helpEdit: "Create, edit or delete an Observation in a STAPlus service."},
 	ObservedProperties: { singular: "ObservedProperty", entities: [{name: "Datastreams", required: false}, {name: "MultiDatastreams", required: false}], properties: [{name: "name", dataType: "string", required: true}, {name: "definition", dataType: "URI", required: true}, {name: "description", dataType: "string", required: true}, {name: "properties", dataType: "JSON", required: false}], help: "Visualize through a table the ObservedProperties of this STAPlus service.", helpEdit: "Create, edit or delete an ObservedProperty in a STAPlus service."},
@@ -119,6 +123,7 @@ const STAOperations = {RecursiveExpandSTA: {description: "Recursive Expand", cal
 			SortBySTA: {description: "Sort by", callSTALoad: true, addSTAQuery: true, help: "Gets a table with data sorted by a given criteria. Requeres to be connected to a SensorThings API or a STAplus node."},
 			RangeSTA: {description: "Record range", callSTALoad: true, addSTAQuery: true, help: "Gets a table with a subset of the records limiting the number of records and skiping some initial records. <hr><small>Implements $top and $skip. Requeres to be connected to a SensorThings API or a STAplus node</small>."},
 			UploadObservations: {description: "Upload in STA", leafNode: true, help: "Saves some observations to a SensorThings API or a STAplus server."},
+			CalculateStatisticsSTA: {description: "Upload statistics in STA", leafNode: true, help: "Saves statistics of Observations in SensorThings API or a STAplus server."},
 			//UploadTimeAverages: {description: "Upload time averages", leafNode: true},
 			OneValueSTA: {description: "One Value", leafNode: true, help: "Shows the last posted value. This value is updated according to the time period you set. Requeres to be connected to another SensorThings API or a STAplus entity. Do not requre to connect to previous sort by time. This node can not be connected to other dependend nodes."},
 			CountResultsSTA: { description: "Count results", leafNode: true, help: "Returns the total number of records returned by the API query without loading them in a table. Only with STA data. Requeres to be connected to another SensorThings API or a STAplus entity. This node can not be connected to other dependend nodes."}};
@@ -292,17 +297,19 @@ function getConnectionSTAEntity(parentNode, node) {
 
 //Return null if there is no reason (and there is a "fit").
 function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
-	if (parentNode.image == "sta.png" && (node.image == "FilterRowsSTA.png" || node.image == "SelectRowSTA.png" || node.image == "SelectResourceSTA.png" || node.image == "GeoFilterPolSTA.png" || node.image == "SelectColumnsSTA.png" || node.image == "ExpandColumnSTA.png"  || node.image == "MergeExpandsSTA.png" || node.image == "RecursiveExpandSTA.png" || node.image == "SortBySTA.png" || node.image == "RangeSTA.png" || node.image == "OneValueSTA.png" || node.image == "SubscribeSTA.png" || node.image == "CountResultsSTA.png" ) )
+	if (parentNode.image == "sta.png" && (node.image == "FilterRowsSTA.png" || node.image == "SelectRowSTA.png" || node.image == "SelectResourceSTA.png" || node.image == "GeoFilterPolSTA.png" || node.image == "SelectColumnsSTA.png" || node.image == "ExpandColumnSTA.png"  || node.image == "MergeExpandsSTA.png" || node.image == "RecursiveExpandSTA.png" || node.image == "SortBySTA.png" || node.image == "RangeSTA.png" || node.image == "OneValueSTA.png" || node.image == "SubscribeSTA.png" || node.image == "CountResultsSTA.png" || node.image == "CalculateStatisticsSTA.png") )
 		return "The operation cannot be applied to the root of an STA. (Suggestion: connect a STA Entity first)";
-	if (parentNode.image=="sta.png" || parentNode.image=="staRoot.png" || parentNode.image=="edcAsset.png" || parentNode.image=="ogcAPICols.png" || parentNode.image=="csw.png")
+	if (parentNode.image == "sta.png" || parentNode.image=="staRoot.png" || parentNode.image=="edcAsset.png" || parentNode.image=="ogcAPICols.png" || parentNode.image=="csw.png")
 		return null;
 	if ((STAOperations[removeFileExtension(parentNode.image)] && STAOperations[removeFileExtension(parentNode.image)].leafNode==true) ||
 		(TableOperations[removeFileExtension(parentNode.image)] && TableOperations[removeFileExtension(parentNode.image)].leafNode==true))
 		return "Parent node is a leaf node and cannot be connected with any other node";
 	if ((node.image == "SelectRowSTA.png" || node.image == "SelectResourceSTA.png") && parentNode.STASelectedExpands && parentNode.STASelectedExpands.expanded && Object.keys(parentNode.STASelectedExpands.expanded).length)
 		return "'Select Row' or 'Select Resource' for STA node cannot be connected to an expanded branch. Use 'Filter row' for STA instead or select a row before expanding";
-	if (node.image == "OneValueSTA.png" && parentNode.STAEntityName!="Observations" && parentNode.image!="Observations.png")
-		return "'One value' node is designed be connected to an 'Observations' node only.";
+	if (node.image == "OneValueSTA.png" && parentNode.STAEntityName!="Observations" && "Observations"!=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL)))
+		return "'One value' node is designed be connected to an 'Observations' node only (or a selection/filter of it).";
+	if (node.image == "CalculateStatisticsSTA.png" && !parentNode.STAURL && "ObservedProperties"!=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL)))
+		return "'Calculate Statistics STA' node is designed be connected to an 'ObservedProperties' node only (or a selection/filter of it).";
 	var idNode=IdOfSTAEntity(node);
 	if (idNode<0)
 		return null;
@@ -2230,6 +2237,282 @@ function ShowUploadObservationsDialog(node) {
 	}
 }
 
+function ShowCalculateStatisticsSTADialog(node) {
+	//Determine if the parent is an ObservedProperty or a Datastream (the second one will not be implemented yet
+	//Determine if there are MultiDataStreams with a property pointing to this ObservedProperty.
+	//Form the MultiDataStreams, take the ones that is related to a sensors that do statistics and extract the ObservedProperties retalated to them and the periods.
+	//With that, we are ready to start.
+	saveNodeDialog("DialogCalculateStatisticsSTA", node)
+	return;
+}
+
+function UploadCalculateStatisticsSTAEvent(event, create) {
+	event.preventDefault(); // We don't want to submit this form
+	document.getElementById("DialogCalculateStatisticsSTA").close();
+	var node=getNodeDialog("DialogCalculateStatisticsSTA");
+
+	var parentNode=GetFirstParentNode(node);
+	if (!parentNode) 
+		return;
+	//Determine if the parent is an ObservedProperty or a Datastream (the second one will not be implemented yet)
+	if (!parentNode.STAURL)
+		return;
+
+	UploadCalculateStatisticsSTA(parentNode.STAURL, parentNode.STAdata[0].definition, create, showInfoMessage);
+}
+
+async function RetrieveValuesTForStatisticsPeriodSTA(obsPropDefinition, cellUrl, d, f, f_message) {
+	var valuesT=[], res;
+	var url=cellUrl+"/Observations?$top=10000&$orderby=phenomenonTime asc&$select=result,phenomenonTime&$filter=Datastream/ObservedProperty/definition eq '"+obsPropDefinition+"'";
+	if (f)
+		url+=" and phenomenonTime lt " + f.toISOString();
+	if (d)
+		url+=" and phenomenonTime gt " + d.toISOString();
+	//e.g.: https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/Cells('ezp')/Observations?$top=10000&$orderby=phenomenonTime%20asc&$filter=Datastream/ObservedProperty/definition%20eq%20%27http://fake-vocab.measurement/Air%20Temperature%27%20and%20phenomenonTime%20lt%202024-01-31T23:59:59Z%20and%20phenomenonTime%20gt%202024-01-01T00:00:00Z&$select=result
+
+	do {
+		res=await HTTPJSONData(url);
+		valuesT.push(...res.obj.value);
+		url=res["@iot.nextLink"];
+	} while(url);
+	for (var c=0; c<valuesT.length; c++) {
+		if (typeof valuesT[c] === "undefined" || valuesT[c]==null || typeof valuesT[c].result === "undefined" || valuesT[c].result==null || typeof valuesT[c].phenomenonTime === "undefined" || valuesT[c].phenomenonTime==null) {
+			valuesT.splice(c, 1);
+			c--;
+		}
+	}
+	return valuesT;
+}
+
+function ExtractValuesForStatisticsPeriodSTA(valuesT, d, f) {
+	var values=[], t, t_ms;
+	if (d && f) {
+		return valuesT.reduce(function (acc, obj) {
+			t=new Date(obj.phenomenonTime);
+			t_ms=t.getTime();
+			if (d<=t_ms && f>=t_ms)
+				acc.push(obj.result);
+			return acc;
+		}, values);
+	}
+	if (d) {
+		return valuesT.reduce(function (acc, obj) {
+			t=new Date(obj.phenomenonTime);
+			if (d<=t.getTime())
+				acc.push(obj.result);
+			return acc;
+		}, values);
+	}
+	if (f) {
+		return valuesT.reduce(function (acc, obj) {
+			t=new Date(obj.phenomenonTime);
+			if (f>=t.getTime())
+				acc.push(obj.result);
+			return acc;
+		}, values);
+	}
+	return valuesT.reduce(function (acc, obj) {
+		acc.push(obj.result);
+		return acc;
+	}, values);
+}
+
+async function UploadCalculateStatisticsPeriodSTA(STAURLRoot, multiDatastream, foi, cell, d, f, cStatFunc, values, f_message) {
+	var statResult=[], t;
+	for (var c=0; c<cStatFunc.length; c++)
+		statResult[c]=cStatFunc[c](values);
+
+	t=new Date();
+	//Write the statistic in the right MultiDatastream/Observations
+	var obj={
+		"phenomenonTime": d.toISOString() + "/" + f.toISOString(),
+		"resultTime": t.toISOString(),
+		"result": statResult,
+		"MultiDatastream": { "@iot.id": multiDatastream }, 
+		"FeatureOfInterest": { "@iot.id": foi },
+		"Cells": [{ "@iot.id": cell }]
+	};
+	var observationsUrl=STAURLRoot+"/Observations"
+	var url=observationsUrl + "?$select=id&$filter=phenomenonTime eq " + obj.phenomenonTime + " and MultiDatastream/id eq " + obj.MultiDatastream["@iot.id"] +  " and FeatureOfInterest/id eq " + obj.FeatureOfInterest["@iot.id"] + " and Cells/id eq " + obj.Cells[0]["@iot.id"];
+	var res=await HTTPJSONData(url);
+	if (!res.ok) {
+		if (f_message)
+			f_message("Fail to request if the statistical observation is present");
+		return null;
+	}
+
+	if (!res.obj || !res.obj.value || !res.obj.value.length) {
+		res=await HTTPJSONData(observationsUrl, ['Location'], "POST", obj);
+		if (!res.ok) {
+			if (f_message)
+				f_message("Fail to create an observation");
+			return null;
+		}
+		return ExtractIdFromURL(res.responseHeaders['Location']);
+	}
+	var obsId=res.obj.value[0]["@iot.id"]
+	res=await HTTPJSONData(observationsUrl+getParentesisODataFromId(obsId), null, "PUT", obj);
+	if (!res.ok) {
+		if (f_message)
+			f_message("Fail to create an observation");
+		return null;
+	}
+	return obsId;
+}
+
+async function UploadCalculateStatisticsSTA(obsPropUrl, obsPropDefinition, create, f_message) {
+var url, res, cellsReturn, cells, periods=[], observedProperties=[], STAURLRoot=getSTAURLRoot(obsPropUrl);
+
+	if ("ObservedProperties"!=getSTAEntityPlural(getSTAURLLastEntity(obsPropUrl))) {
+		if (f_message)
+			f_message("The url is not pointing to an 'ObservedProperty'.");
+		return;
+	}
+
+	//Determine if there are MultiDatastreams with a property pointing to this ObservedProperty.
+	//e.g.kkkkk: https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/MultiDatastreams?$select=properties/aggregatePeriod&$filter=properties/aggregateSource.ObservedProperty@iot.navigationLink%20eq%20%27https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/ObservedProperties(868)%27&$expand=ObservedProperties($select=id,name),Sensor
+	//e.g.: https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/MultiDatastreams?$filter=properties/aggregateSource.ObservedProperty@iot.navigationLink eq 'https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/ObservedProperties(868)'&$select=distinct:properties/aggregatePeriod
+	url=STAURLRoot+"/MultiDatastreams?$filter=properties/aggregateSource.ObservedProperty@iot.navigationLink eq '" + obsPropUrl + "'&$select=distinct:properties/aggregatePeriod"
+	res=await HTTPJSONData(url);
+	periods=res.obj.value.reduce(function (acc, obj) {
+			acc.push(obj.properties.aggregatePeriod);
+			return acc;
+		}, []);
+	if (!periods.length){
+		if (f_message)
+			f_message("No periods associated the MultiDatastream was found");
+		return;
+	}
+
+	//Remove the periods that I do not understand
+	const cperiods=["PT1M", "PT1H", "P1D"];   //suported periods.
+	const cdeltas=[60000, 3600000, 86400000];  //number of miniseconds in the cperiods
+	for (var p=0; p<periods.length; p++) {
+		c=cperiods.indexOf(periods[p]);
+		if (c>-1)
+			continue;
+		periods.splice(p, 1);
+		p--;
+	}
+	
+	//Form the MultiDatastreams, take the ones that is related to a sensors that do statistics and extract the ObservedProperties related to them as well as the periods.
+
+	//Find the last time of the existing observation of this observedProperty.
+	//e.g.: https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1//Observations?$top=1&$orderby=phenomenonTime desc&$select=phenomenonTime&$filter=Datastream/ObservedProperty/definition eq 'http://fake-vocab.measurement/Air%20Temperature'
+	url=STAURLRoot+"/Observations?$top=1&$orderby=phenomenonTime desc&$select=phenomenonTime&$filter=Datastream/ObservedProperty/definition eq '"+obsPropDefinition+"'"
+	res=await HTTPJSONData(url);
+	var lastISOTime=res.obj.value[0].phenomenonTime;
+	if (!lastISOTime){
+		if (f_message)
+			f_message("No able to determine the time of the last observation associated to the 'ObservedProperty' defined by: "+ obsPropDefinition);
+		return;
+	}
+
+	var firstISOTime;
+
+	if (!create) {  //If create==false request the last observation in the statistical MultiDatastream and the last Observations and the ObservedProperty
+		url=STAURLRoot+"/Observations?$top=1&$orderby=phenomenonTime desc&$select=phenomenonTime&$filter=MultiDatastream/properties/aggregateSource.ObservedProperty@iot.navigationLink eq '" + obsPropUrl + "' and MultiDatastream/Sensor/properties/aggregateType eq 'https://citiobs.eu/sta/sensor/statistics'";
+		//e.g.: "https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/Observations?$top=1&$orderby=phenomenonTime desc&$select=phenomenonTime&$filter=MultiDatastream/properties/aggregateSource.ObservedProperty@iot.navigationLink eq 'https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/ObservedProperties(868)' and MultiDatastream/Sensor/properties/aggregateType eq 'https://citiobs.eu/sta/sensor/statistics'
+		res=await HTTPJSONData(url);
+		firstISOTime=res.obj.value[0].phenomenonTime;	
+	}
+	if (!firstISOTime)
+	{
+		//If create==true or no previous calculations, request the first and the last observation of the ObservedProperty (sorted by time)
+		url=STAURLRoot+"/Observations?$top=1&$orderby=phenomenonTime asc&$select=phenomenonTime&$filter=Datastream/ObservedProperty/definition eq '"+obsPropDefinition+"'"
+		res=await HTTPJSONData(url);
+		firstISOTime=res.obj.value[0].phenomenonTime;	
+	}
+	if (!firstISOTime){
+		if (f_message)
+			f_message("No able to determine the time of the first observation associated to the 'ObservedProperty' defined by: "+ obsPropDefinition);
+		return;
+	}
+	
+	var firstISOTimes=[];
+	var lastISOTimes=[];
+	var d, f, d_ms, now, nowRound;
+	var delta=cdeltas[0];
+
+	now=new Date();
+	for (var p=0; p<periods.length; p++) {
+		delta=cdeltas[cperiods.indexOf(periods[p])]
+		d=new Date(firstISOTime);
+		firstISOTimes[p]=new Date(Math.round(d.getTime() / delta) * delta);
+		nowRound=new Date(Math.round(now.getTime() / delta) * delta-1);
+		d=new Date(lastISOTime);
+		if (d.getTime()>nowRound.getTime())
+			lastISOTimes[p]=nowRound;
+		else
+			lastISOTimes[p]=new Date(Math.round(d.getTime() / delta) * delta + delta -1);
+	}
+
+	const cStatDef=['https://statproofbook.github.io/D/mean-samp',
+			'https://statproofbook.github.io/D/min',
+			'https://statproofbook.github.io/D/max',
+			'https://statproofbook.github.io/D/std-samp',
+			'https://statproofbook.github.io/D/med',
+			'https://statproofbook.github.io/D/mode',
+			'https://statproofbook.github.io/D/samp-size'];
+	var cStatFunc=[]
+	for (c=0; c<cStatDef.length; c++)
+		cStatFunc[c]=window["aggrFunc"+AggregationsOptions[AggregationsOptions.map(e => e.definition).indexOf(cStatDef[c])].name];
+		
+	//const cStatFunc=[aggrFuncMean, aggrFuncMinValue, aggrFuncMaxValue, aggrFuncStandardDeviation, aggrFuncMedian, aggrFuncMode, aggrFuncCount];
+
+	var cells, cell, foi, valuesT, values;
+	
+	//Enumerate the cells (e.g.: https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/Cells?$select=id):
+	url=STAURLRoot+"/Cells?$select=id&$top=10000";
+	do {
+		cellsReturn=await HTTPJSONData(url);
+		if (!res.ok) {
+			if (f_message)
+				f_message("I cannot recorver the Cells of this STA");
+			return;
+		}
+		cells=cellsReturn.obj.value.reduce(function (acc, obj) {
+			acc.push(obj['@iot.id']);
+			return acc;
+		}, []);
+
+		//For each cell
+		for (var c=0; c<cells.length; c++) {
+			cell=cells[c];
+			url=STAURLRoot+"/FeaturesOfInterest?$select=@iot.id&$filter=properties/aggregateZone.Cell@iot.id eq " + getQueryIdODataFromId(cell);
+			//e.g.: https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/"/FeaturesOfInterest?$select=@iot.id&$filter=properties/aggregateZone.Cell@iot.id eq 'eqz';
+			res=await HTTPJSONData(url);
+			if (!res.ok || !res.obj || !res.obj.value || !res.obj.value.length || !res.obj.value[0]["@iot.id"]){
+				if (f_message)
+					f_message("No FeatureOfInterest associated to a Cell: " + cell);
+				continue;
+			}
+			foi=res.obj.value[0]["@iot.id"];
+			valuesT=await RetrieveValuesTForStatisticsPeriodSTA(obsPropDefinition, getUrlToId(STAURLRoot, "Cells", cell), null, null, f_message);
+			if (valuesT.length) {
+				for (var p=0; p<periods.length; p++) {
+					delta=cdeltas[cperiods.indexOf(periods[p])]
+					url=STAURLRoot+"/Cells"+getParentesisODataFromId(cell)+"/MultiDatastreams?$select=@iot.id&$filter=properties/aggregateSource.ObservedProperty@iot.navigationLink eq '" + obsPropUrl + "' and properties/aggregatePeriod eq '" + periods[p] + "'";
+					//e.g.: https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/Cells('ezp')/MultiDatastreams?$select=@iot.selfLink&$filter=properties/aggregateSource.ObservedProperty@iot.navigationLink eq 'https://citiobs.demo.secure-dimensions.de/stapluscell/v1.1/ObservedProperties(868)' and properties/aggregatePeriod eq 'PT1H';
+					res=await HTTPJSONData(url);
+					if (!res.ok || !res.obj || !res.obj.value || !res.obj.value.length || !res.obj.value[0]["@iot.id"]){
+						if (f_message)
+							f_message("No MultiDataStream associated to relevant ObservedProperty, Period or Cell ("+ obsPropDefinition +", " + periods[p] + ", " + cell + ")");
+						return;
+					}
+					for (d_ms=firstISOTimes[p].getTime(); d_ms<lastISOTimes[p].getTime(); d_ms+=delta) { 
+						values=ExtractValuesForStatisticsPeriodSTA(valuesT, new Date(d_ms), new Date(d_ms+delta-1));
+						if (values.length) {
+							if (null==await UploadCalculateStatisticsPeriodSTA(STAURLRoot, res.obj.value[0]["@iot.id"], foi, cell, new Date(d_ms), new Date(d_ms+delta-1), cStatFunc, values, f_message))
+								break;
+						}
+					}
+				}
+			}
+		}
+		url=cellsReturn["@iot.nextLink"];
+	} while(url);
+}
 
 //These two functions assume that there is a hidden input in the dialog like this:
 /*
@@ -2627,34 +2910,6 @@ function CloseDialogOneValue(event) {
 	event.preventDefault(); // We don't want to submit this form
 	document.getElementById("DialogOneValue").close();
 }
-
-
-//From iNat2STA
-function ExtractIdFromURL(url)
-{
-	var id;
-	if (!url && url!==0)
-		return;
-	if (-1!=url.indexOf("('") && -1!=url.indexOf("')", url.indexOf("('")+2))
-	{
-		id=url.substring(url.indexOf("('")+2,url.indexOf("')",url.indexOf("('")+2));
-		if (id==+id)  //Is it a numerical id?  /inspired in https://stackoverflow.com/questions/20169217/how-to-write-isnumber-in-javascript
-			return +id;  //returns a number
-		return id;  //returns a string
-	}
-	if (-1!=url.indexOf("(") && -1!=url.indexOf(")", url.indexOf("(")+1))
-	{
-		id=url.substring(url.indexOf("(")+1,url.indexOf(")",url.indexOf("(")+1));
-		return +id;  //returns a number
-	}
-	else
-		return url;
-}
-
-function getUrlToId(url, objsName, id) {
-	return url + "/" + objsName + "(" + (typeof id==="number" ? "" :"'") + id + (typeof id==="number" ? "" :"'") + ")";
-}
-
 
 function AddKeysToFilter(url, obj, prefix) {
 	var objArray=Object.keys(obj);
@@ -4336,8 +4591,9 @@ function GetSelectRow(event, iToSelect) {
 				//node.STAURL = RemoveQueryParamFromURL(parentNode.STAdata[s].link, "f");
 				node.STAURL = parentNode.STAURL + "/" + parentNode.STAdata[s].id;
 			} else {
-				const n = Number(s);
-				node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + (Number.isInteger(n) ? "(" + n + ")" : "('" + s + "')"), getURLQueryParams(node.STAURL));
+				//const n = Number(s);
+				//node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + (Number.isInteger(n) ? "(" + n + ")" : "('" + s + "')"), getURLQueryParams(node.STAURL));
+				node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + getParentesisODataFromId(s), getURLQueryParams(node.STAURL));
 			}
 		}
 		else  //This should be a table operation: I'll do it myself here
@@ -4397,8 +4653,9 @@ function GetSelectResource(event, resourceId) {
 	if (parentNode?.OGCType=="OGCAPIcollections" || parentNode?.OGCType=="OGCAPIitems"){
 		node.STAURL = parentNode.STAURL + "/" + node.STAResourceId;
 	} else {
-		const n = Number(node.STAResourceId);
-		node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + (Number.isInteger(n) ? "(" + n + ")" : "('" + node.STAResourceId + "')"), getURLQueryParams(node.STAURL));
+		//const n = Number(node.STAResourceId);
+		//node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + (Number.isInteger(n) ? "(" + n + ")" : "('" + node.STAResourceId + "')"), getURLQueryParams(node.STAURL));
+		node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + getParentesisODataFromId(node.STAResourceId), getURLQueryParams(node.STAURL));
 	}
 		
 	showInfoMessage("Selecting OGC resource...");
@@ -7144,6 +7401,10 @@ function networkDoubleClick(params) {
 			ShowUploadObservationsDialog(currentNode);
 			document.getElementById("DialogUploadObservations").showModal();
 		}
+		else if (currentNode.image == "CalculateStatisticsSTA.png") {
+			ShowCalculateStatisticsSTADialog(currentNode);
+			document.getElementById("DialogCalculateStatisticsSTA").showModal();
+		}
 		/*else if (currentNode.image == "UploadTimeAverages.png") {
 			ShowUploadTimeAveragesDialog(currentNode.id);
 			document.getElementById("UploadTimeAverages").showModal();
@@ -8754,7 +9015,8 @@ async function filterRowsByTimeOkButton(){
 	var selectedValue= selectProperty.options[selectProperty.selectedIndex].value;
 	var dateFromValue= document.getElementById("filterRowsByTimeCalendarFrom").value;
 	var dateToValue= document.getElementById("filterRowsByTimeCalendarTo").value;
-	if (dateFromValue==""|| dateToValue =="")alert("It is necessary to select a Data");
+	if (dateFromValue==""|| dateToValue =="")
+		alert("It is necessary to select a Data");
 	else{
 		document.getElementById("DialogFilterRowsByTime").close();
 		var url= prepareUrlToApplyFilter();
@@ -8779,11 +9041,7 @@ async function filterRowsByTimeOkButton(){
 			networkNodes.update(currentNode);
 			showInfoMessage("Filter applied");
 		} 
-		
-		
-	
 	}
-	
 }
 
 function prepareUrlToApplyFilter(){

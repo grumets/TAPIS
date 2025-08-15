@@ -1626,6 +1626,19 @@
 		</form>
 	</dialog>
 
+	<dialog id="DialogCalculateStatisticsSTA">
+		<form>
+			Upload statistical values to STA
+			<div class="center">
+				<button value="default" id="dlgDialogCalculateStatisticsSTACreate" onClick="UploadCalculateStatisticsSTAEvent(event, true)">Create</button>
+				<button value="default" id="dlgDialogCalculateStatisticsSTAContinue" onClick="UploadCalculateStatisticsSTAEvent(event, false)">Continue</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+			<input type="hidden" id="DialogCalculateStatisticsSTANodeId"></input>
+		</form>
+	</dialog>
+
+
 	<!--dialog id="UploadTimeAverages">
 		<div id="UploadTimeAveragesLoginFirst" style="display: none;">
 		<form>

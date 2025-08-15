@@ -1770,7 +1770,7 @@ function readInformationRowFilterTable(elem, nexus, parent,node) {  //Table (not
 					var indexOf = parent.elems.indexOf(elem);
 					var typeOfValue = infoFilter[i][5];
 					var apostropheOrSpace;
-					(typeOfValue == "number") ? apostropheOrSpace = "" : apostropheOrSpace = "'";
+					apostropheOrSpace = (typeOfValue == "number") ?  "" : "'";
 					if (indexOf == 0) {
 						data += "(";
 					}
