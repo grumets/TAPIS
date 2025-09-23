@@ -306,9 +306,9 @@ function reasonNodeDoesNotFitWithPrevious(node, parentNode) {
 		return "Parent node is a leaf node and cannot be connected with any other node";
 	if ((node.image == "SelectRowSTA.png" || node.image == "SelectResourceSTA.png") && parentNode.STASelectedExpands && parentNode.STASelectedExpands.expanded && Object.keys(parentNode.STASelectedExpands.expanded).length)
 		return "'Select Row' or 'Select Resource' for STA node cannot be connected to an expanded branch. Use 'Filter row' for STA instead or select a row before expanding";
-	if (node.image == "OneValueSTA.png" && parentNode.STAEntityName!="Observations" && "Observations"!=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL)))
+	if (node.image == "OneValueSTA.png" && parentNode.STAEntityName!="Observations" && parentNode.STAURL && "Observations"!=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL)))
 		return "'One value' node is designed be connected to an 'Observations' node only (or a selection/filter of it).";
-	if (node.image == "CalculateStatisticsSTA.png" && !parentNode.STAURL && "ObservedProperties"!=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL)))
+	if (node.image == "CalculateStatisticsSTA.png" && !parentNode.STAURL && parentNode.STAURL && "ObservedProperties"!=getSTAEntityPlural(getSTAURLLastEntity(parentNode.STAURL)))
 		return "'Calculate Statistics STA' node is designed be connected to an 'ObservedProperties' node only (or a selection/filter of it).";
 	var idNode=IdOfSTAEntity(node);
 	if (idNode<0)
