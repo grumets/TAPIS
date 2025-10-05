@@ -1120,17 +1120,22 @@ function RetrieveMeaningTable(event, type) {
 			//ru_schema: urlSchemaMeaning
 		}, "eng", null, RetrieveMeaningTableCallback, {node: currentNode});
 	}
-	UpdateChildenTable(currentNode);
+	if (document.getElementById("DialogImport"+type+"SourceNew")?.checked) {
+		currentNode.STAdata=[];
+		currentNode.STAdata[0]=createEmptyRecordData(currentNode.STAdataAttributes);
+	}
 	if (!currentNode.STAdata) {
 		if (confirm("No data has been loaded. Do you want to close this window anyway?"))
 			document.getElementById("DialogImport"+type).close();
 	}
 	else{
-		currentNode.STAdataAttributes= getDataAttributes(currentNode.STAdata); //It is necessary when you load new csv, because it remember dataAttributes from old csv
-		networkNodes.update(currentNode)
+		if (document.getElementById("DialogImportMeaning"+type+"SourceNone")?.checked)
+			currentNode.STAdataAttributes= getDataAttributes(currentNode.STAdata);
+		networkNodes.update(currentNode);
+		updateQueryAndTableArea(currentNode);
+		UpdateChildenTable(currentNode);
 		document.getElementById("DialogImport"+type).close();
-	}
-		
+	}		
 }
 
 function TransformTextCSVWToDataAttributes(csvwText, node)
@@ -4584,7 +4589,7 @@ function GetSelectRow(event, iToSelect) {
 	if (i < elems.length) {
 		if (requiresLoadJSON) {
 			const s = elems[i].id.substring("SelectRow_".length);
-			node.STAResourceId=s;
+			node.STAResourceId=(parseInt(s)==s) ? parseInt(s) : s;
 			//if (node?.OGCType=="OGCAPIitems")
 			//	node.STAURL = parentNode.STAdata ? (parentNode.STAdata[i].link ? getURLWithoutQueryParams(parentNode.STAdata[i].link) : node.STAURL+"/"+parentNode.STAdata[i].id) + "/items"  : parentNode.STAURL;
 			if (parentNode?.OGCType=="OGCAPIcollections" || parentNode?.OGCType=="OGCAPIitems") {
@@ -4593,7 +4598,7 @@ function GetSelectRow(event, iToSelect) {
 			} else {
 				//const n = Number(s);
 				//node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + (Number.isInteger(n) ? "(" + n + ")" : "('" + s + "')"), getURLQueryParams(node.STAURL));
-				node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + getParentesisODataFromId(s), getURLQueryParams(node.STAURL));
+				node.STAURL = AddQueryParamsToURL(getURLWithoutQueryParams(node.STAURL) + getParentesisODataFromId(node.STAResourceId), getURLQueryParams(node.STAURL));
 			}
 		}
 		else  //This should be a table operation: I'll do it myself here
@@ -4648,8 +4653,8 @@ function GetSelectResource(event, resourceId) {
 	}
 	else
 		return;
-
-	node.STAResourceId=(typeof resourceId !== "undefined") ? resourceId : document.getElementById("DialogSelectResourceId").value;
+    var s= document.getElementById("DialogSelectResourceId").value;
+	node.STAResourceId=(typeof resourceId !== "undefined") ? resourceId : (parseInt(s)==s) ? parseInt(s) : s;
 	if (parentNode?.OGCType=="OGCAPIcollections" || parentNode?.OGCType=="OGCAPIitems"){
 		node.STAURL = parentNode.STAURL + "/" + node.STAResourceId;
 	} else {
@@ -4838,31 +4843,6 @@ async function UpdateChildenLoadJSONCallback(parentNode) {
 		}
 	}
 }
-
-function getCSVWTypeFromAttributeType(t)
-{
-	if (t=="array" || t=="null" || t=="object" || t=="undefined")
-		return "json";
-	return t;
-}
-
-//Taking this into consideration: https://www.w3.org/TR/tabular-data-primer
-function getAttributeTypeFromCSVWType(t) {
-	if (typeof t==="object" && t.base)
-		t=t.base;
-	if (t=="json")
-		return "object";
-	if (t=="decimal" || t=="long" || t=="int" || t=="short" || t=="byte" || t=="nonNegativeInteger"  || t=="positiveInteger" || t=="unsignedLong" || t=="unsignedInt" || t=="unsignedShort" || t=="unsignedByte" || t=="nonPositiveInteger"  || t=="negativeInteger")
-		return "number";
-	if (t=="double" || t=="float")
-		return "number";
-	if (t=="date" || t=="time")
-		return "isodatetime";
-	if (t=="normalizedString" || t=="token" || t=="Name" || t=="NMTOKEN" || t=="xml" || t=="html")
-		return "string";
-	return t;
-}
-
 
 function getJSONSchemaTypeFromAttributeType(t) {
 	if (t=="anyURI" && t=="isodatetime")
@@ -5786,41 +5766,6 @@ function SaveTable(event) {
 	}
 }
 
-//https://csvw.org/
-//https://w3c.github.io/csvw/metadata/#dialect-descriptions
-function CreateCSVW(data, dataAttributesInput, delimiter) {
-	var dataAttributes = dataAttributesInput ? dataAttributesInput : getDataAttributes(data);
-	var dataAttributesArray = Object.keys(dataAttributes), dataAttribute, c;
-
-	var csvw={ tableSchema: {
-			"columns": []
-		},
-		"dialect": {
-			"header": true,
-			"delimiter": delimiter
-		}
-	};
-	for (var a = 0; a < dataAttributesArray.length; a++) {
-		dataAttribute=dataAttributes[dataAttributesArray[a]];
-		csvw.tableSchema.columns.push({
-			"name": dataAttributesArray[a],
-			"datatype": getCSVWTypeFromAttributeType(dataAttribute.type),
-		});
-		c=csvw.tableSchema.columns[a];
-		if (dataAttribute.description)
-			c.titles=dataAttribute.description;
-		if (dataAttribute.definition)
-			c.propertyUrl=dataAttribute.definition;
-		if (dataAttribute.UoM)
-			c.unitMeasureTitles=dataAttribute.UoM;
-		if (dataAttribute.UoMSymbol)
-			c.unitMeasureSymbol=dataAttribute.UoMSymbol;
-		if (dataAttribute.UoMDefinition)
-			c.unitMeasureUrl=dataAttribute.UoMDefinition;
-	}
-	return csvw;
-}
-
 
 function SaveCSVW(event) {
 	event.preventDefault(); // We don't want to submit this form
@@ -5828,25 +5773,9 @@ function SaveCSVW(event) {
 	document.getElementById("DialogSaveTable").close();
 	var parentNode=GetFirstParentNode(currentNode);
 	if (parentNode) {
-		SaveLocalDataFile(JSON.stringify(CreateCSVW(parentNode.STAdata, parentNode.STAdataAttributes, delimiter ? delimiter : ";"), null, "\t"), 
+		SaveLocalDataFile(JSON.stringify(createCSVW(parentNode.STAdata, parentNode.STAdataAttributes, delimiter ? delimiter : ";"), null, "\t"), 
 				(IdOfSTAEntity(parentNode) == -1 ?  "table" : STAEntitiesArray[IdOfSTAEntity(parentNode)]) + "_csvw", ".json", "application/json");   //https://stackoverflow.com/questions/7076042/what-mime-type-should-i-use-for-csv
 	}
-}
-
-function getDataAttributesCSVW(csvw){
-	var dataAttributes = {}, c;
-	for (var a = 0; a < csvw.tableSchema.columns.length; a++) {
-		c=csvw.tableSchema.columns[a];
-		dataAttributes[c.name]={
-			"type": getAttributeTypeFromCSVWType(c.datatype),
-			"description": (c.titles && Array.isArray(c.titles)) ? c.titles[0] : c.titles,
-			"definition": c.propertyUrl,
-			"UoM": c.unitMeasureTitles && Array.isArray(c.unitMeasureTitles) ? c.unitMeasureTitles[0] : c.unitMeasureTitles,
-			"UoMSymbol": c.unitMeasureSymbol,
-			"UoMDefinition": c.unitMeasureUrl
-		};
-	}
-	return dataAttributes;
 }
 
 function getDataAttributesGeoJSONSchema(jsonschema){
@@ -6051,10 +5980,6 @@ function transformObservedPropertyTimeValueIntoTimeSemanticValues(data, dataAttr
 			resultRecord[a[observedPropertyName]]=a[extractedValueName];
 	}
 	return {data: resultData, dataAttributes: resultDataAttributes};
-}
-
-function getCSVReadParams(csvw){
-	return csvw.dialect;
 }
 
 function GetSelectedOptionsAddColumnGeo(){
