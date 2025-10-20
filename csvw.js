@@ -47,16 +47,22 @@ function createCSVW(data, dataAttributesInput, delimiter) {
 
 function getDataAttributesCSVW(csvw){
 	var dataAttributes = {}, c;
+	if (csvw.tables && csvw.tables.length > 0) { // use only first table for now
+		csvw.tableSchema = csvw.tables[0].tableSchema;
+		csvw.url = csvw.tables[0].url
+	}
 	for (var a = 0; a < csvw.tableSchema.columns.length; a++) {
 		c=csvw.tableSchema.columns[a];
-		dataAttributes[c.name]={
-			"type": getAttributeTypeFromCSVWType(c.datatype),
-			"description": (c.titles && typeof c.titles==="object") ? c.titles[Object.keys(c.titles)[0]] : c.titles,
-			"definition": c.propertyUrl,
-			"UoM": (c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"] && c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["@id"]) ? c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["@id"] : (c.unitMeasureTitles && typeof c.unitMeasureTitles === "object") ? c.unitMeasureTitles[Object.keys(c.unitMeasureTitles)[0]] : c.unitMeasureTitles,
-			"UoMSymbol": (c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"] && c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["http://qudt.org/schema/qudt#symbol"]) ? c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["http://qudt.org/schema/qudt#symbol"] : c.unitMeasureSymbol,
-			"UoMDefinition": (c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"] && c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["rdfs:label"]) ? c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["rdfs:label"] : c.unitMeasureUrl
-		};
+		if (c.name && !c.virtual){ // skip virtual columns for now
+			dataAttributes[c.name]={
+				"type": getAttributeTypeFromCSVWType(c.datatype),
+				"description": (c.titles && typeof c.titles==="object") ? c.titles[Object.keys(c.titles)[0]] : c.titles,
+				"definition": c.propertyUrl,
+				"UoM": (c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"] && c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["@id"]) ? c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["@id"] : (c.unitMeasureTitles && typeof c.unitMeasureTitles === "object") ? c.unitMeasureTitles[Object.keys(c.unitMeasureTitles)[0]] : c.unitMeasureTitles,
+				"UoMSymbol": (c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"] && c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["http://qudt.org/schema/qudt#symbol"]) ? c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["http://qudt.org/schema/qudt#symbol"] : c.unitMeasureSymbol,
+				"UoMDefinition": (c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"] && c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["rdfs:label"]) ? c["http://purl.org/linked-data/sdmx/2009/attribute#unitMeasure"]["rdfs:label"] : c.unitMeasureUrl
+			};
+		}
 	}
 	return dataAttributes;
 }
