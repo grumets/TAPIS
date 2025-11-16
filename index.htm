@@ -27,6 +27,7 @@
 	<script type="text/javascript" src="crypto-js.min.js" async defer></script> 
 	<script type="text/javascript" src="wicket.js" async defer></script>
 	<script type="text/javascript" src="ngeohash.js" async defer></script>
+	<script type="text/javascript" src="h3-js.js" async defer></script><!--https://github.com/uber/h3-js-->
 	<script type="text/javascript" src="hello.all.min.js"></script>
 	<script type="text/javascript" src="authenix.js" async defer></script>
 	<script type="text/javascript" src="mmn_postmessage.js" async defer></script>
@@ -130,7 +131,7 @@
 
 	<div id="HelpToolTip" style="min-height: 1px; overflow: hidden; display:none; position: fixed; background-color: #f6eba3; width:300px; border-style: ridge; padding: 5px; text-align:left">help</div>
 
-	<dialog id="DialogConfiguration">
+	<dialog id="DialogConfiguration" onClose='hideNodeDialog("DialogConfiguration", event)';>
 		<form>
 			<p>
 				<label>Table font size ratio:
@@ -146,14 +147,14 @@
 				<label><input type="checkbox" checked="checked" id="DialogConfigurationOnlyStartNodeButtons"></input>Show start node buttons only</label>
 			</p>
 			<div class="center">
-				<button value="default" onClick="ChangeConfiguration(event)">OK</button>
-				<button value="default" onClick="ApplyConfiguration(event)">Apply</button>
+				<button value="default" onClick="ChangeConfiguration(event)" formmethod="dialog">OK</button>
+				<button value="default" onClick="ApplyConfiguration(event)" formmethod="dialog">Apply</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogLink">
+	<dialog id="DialogLink" onClose='hideNodeDialog("DialogLink", event)'>
 		<form>
 			<p>
 				Link to: <span id="DialogLinkLink"></span><p>
@@ -161,7 +162,7 @@
 				<label><input type="radio" name="DialogLinkHowOpen" id="DialogLinkOpenWindow"></input>Open as JSON in a separate window</label>
 			</p>
 			<div class="center">
-				<button value="default" onClick="OpenLink(event)">OK</button>
+				<button value="default" onClick="OpenLink(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogLinkNodeId"></input>
@@ -171,7 +172,7 @@
 	</dialog>
 
 
-	<dialog id="DialogOpenURLNetwork">
+	<dialog id="DialogOpenURLNetwork" onClose='hideNodeDialog("DialogOpenURLNetwork", event)'>
 		<form>
 			<p>
 				<label>Network URL:
@@ -206,7 +207,7 @@
 		</form>
 	</dialog>
 
-	<dialog id="DialogSTAURL">
+	<dialog id="DialogSTAURL" onClose='hideNodeDialog("DialogSTAURL", event)' >
 		<div id="divTitleDialogSTAURL" class="center" style="font-size: large;"></div>
 		<form>
 			<p>
@@ -226,7 +227,7 @@
 		</form>
 	</dialog>
 
-	<dialog id="DialogS3Bucket">
+	<dialog id="DialogS3Bucket" onClose='hideNodeDialog("DialogS3Bucket", event)'>
 		<div id="divTitleDialogS3Bucket" class="center" style="font-size: large;"></div>
 		<form>
 			<p>
@@ -256,7 +257,7 @@
 		</form>
 	</dialog>
 
-	<dialog id="DialogEDC">
+	<dialog id="DialogEDC" onClose='hideNodeDialog("DialogEDC", event)'>
 		<div id="divTitleDialogEDC" class="center" style="font-size: large;"></div>
 		<form>
 			<p>
@@ -283,7 +284,7 @@
 		</form>
 	</dialog>
 
-	<dialog id="DialogSTAViewQuery">
+	<dialog id="DialogSTAViewQuery" onClose='hideNodeDialog("DialogSTAViewQuery", event)'>
 		<form>
 			<p>
 				STA query URL:
@@ -295,33 +296,33 @@
 		</form>
 	</dialog>
 
-	<dialog id="DialogCreateUpdateDeleteEntity">
+	<dialog id="DialogCreateUpdateDeleteEntity" onClose='hideNodeDialog("DialogCreateUpdateDeleteEntity", event)'>
 		<form>
 			<span id="dlgCreateUpdateDeleteEntityAttributes">
 			</span>
 			<div class="center">
-				<button value="default" id="dlgCreateUpdateDeleteEntityCreate" onClick="GetCreateEntity(event)">Create</button>
-				<button value="default" id="dlgCreateUpdateDeleteEntityUpdate" onClick="GetUpdateEntity(event)">Update</button>
-				<button value="default" id="dlgCreateUpdateDeleteEntityDelete" onClick="AskForDeleteEntity(event)">Delete</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityCreate" onClick="GetCreateEntity(event)" formmethod="dialog">Create</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityUpdate" onClick="GetUpdateEntity(event)" formmethod="dialog">Update</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityDelete" onClick="AskForDeleteEntity(event)" formmethod="dialog">Delete</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogCreateUpdateDeleteEntity_MultiDatastreams">
+	<dialog id="DialogCreateUpdateDeleteEntity_MultiDatastreams" onClose='hideNodeDialog("DialogCreateUpdateDeleteEntity_MultiDatastreams", event)'>
 		<form>
 			<span id="dlgCreateUpdateDeleteEntityAttributes_MultiDatastreams">
 			</span>
 			<div class="center">
-				<button value="default" id="dlgCreateUpdateDeleteEntityCreate_MultiDatastreams" onClick="GetCreateEntityMultiDatastream(event)">Create</button>
-				<button value="default" id="dlgCreateUpdateDeleteEntityUpdate_MultiDatastreams" onClick="GetUpdateEntityMultiDatastream(event)">Update</button>
-				<button value="default" id="dlgCreateUpdateDeleteEntityDelete_MultiDatastreams" onClick="AskForDeleteEntity(event)">Delete</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityCreate_MultiDatastreams" onClick="GetCreateEntityMultiDatastream(event)" formmethod="dialog">Create</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityUpdate_MultiDatastreams" onClick="GetUpdateEntityMultiDatastream(event)" formmethod="dialog">Update</button>
+				<button value="default" id="dlgCreateUpdateDeleteEntityDelete_MultiDatastreams" onClick="AskForDeleteEntity(event)" formmethod="dialog">Delete</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogReplaceTextInTable">
+	<dialog id="DialogReplaceTextInTable" onClose='hideNodeDialog("DialogReplaceTextInTable", event)'>
 		<form>
 			<span id="dlgDialogReplaceTextInTable">
 				<fieldset>
@@ -340,14 +341,14 @@
 
 			</span>
 			<div class="center">
-				<button value="default" id="dlgReplaceOkButton" onClick="ReplaceTextInTableApplyButton(event)">Apply</button>
+				<button value="default" id="dlgReplaceOkButton" onClick="ReplaceTextInTableApplyButton(event)" formmethod="dialog">Apply</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogReplaceTextInTableNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogCreateUpdateDeleteEntity_numberOfMultiDatastream" >
+	<dialog id="DialogCreateUpdateDeleteEntity_numberOfMultiDatastream" onClose='hideNodeDialog("DialogCreateUpdateDeleteEntity_numberOfMultiDatastreamn", event)'>
 		<form>
 			<label for ="DialogOpenMultiDatastream_input">How many <b>fields</b> do you want to introduce in the multidatastream?</label>
 			<input type="number" id ="DialogOpenMultiDatastream_input" min="2" name="DialogOpenMultiDatastream_input" value=2> </input>
@@ -356,7 +357,7 @@
 		</form>
 	</dialog>
 
-	<dialog id="DialogCreateUpdateDeleteRecord">
+	<dialog id="DialogCreateUpdateDeleteRecord" onClose='hideNodeDialog("DialogCreateUpdateDeleteRecord", event)'>
 		<form>
 			<span id="dlgCreateUpdateDeleteRecordProperties">
 			</span>
@@ -367,15 +368,15 @@
 				<button value="next" id="dlgCreateUpdateDeleteRecordNext" onClick="GetNextRecord(event)">&nbsp;&gt;&nbsp;</button>
 				<button value="next" id="dlgCreateUpdateDeleteRecordLast" onClick="GetLastRecord(event)">&gt;&gt;</button>
 				<br>
-				<button value="default" id="dlgCreateUpdateDeleteRecordCreate" onClick="GetCreateRecord(event)">Insert</button>
-				<button value="default" id="dlgCreateUpdateDeleteRecordUpdate" onClick="GetUpdateRecord(event)">Update</button>
-				<button value="default" id="dlgCreateUpdateDeleteRecordDelete" onClick="AskForDeleteRecord(event)">Delete</button>
+				<button value="default" id="dlgCreateUpdateDeleteRecordCreate" onClick="GetCreateRecord(event)" formmethod="dialog">Insert</button>
+				<button value="default" id="dlgCreateUpdateDeleteRecordUpdate" onClick="GetUpdateRecord(event)" formmethod="dialog">Update</button>
+				<button value="default" id="dlgCreateUpdateDeleteRecordDelete" onClick="AskForDeleteRecord(event)" formmethod="dialog">Delete</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogSeparateColumns">
+	<dialog id="DialogSeparateColumns" onClose='hideNodeDialog("DialogSeparateColumns", event)'>
 		<form>
 			Separate columns:
 			<br><br>
@@ -400,13 +401,13 @@
 			<label for="DialogSeparateColumns_RemovePresent">Remove already present elements</label>
 
 			<div class="center">
-				<button value="default" onClick="SeparateColumns(event)">OK</button>
+				<button value="default" onClick="SeparateColumns(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogGroupBy">
+	<dialog id="DialogGroupBy" onClose='hideNodeDialog("DialogGroupBy", event)'>
 		<form>
 			<table border="0">
 			<tr>
@@ -443,7 +444,7 @@
 			</tr>
 			</table>
 			<div class="center">
-				<button value="default" onClick="GetGroupBy(event)">OK</button>
+				<button value="default" onClick="GetGroupBy(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogGroupByNodeId"></input>
@@ -690,7 +691,7 @@
 		</form>
 	</dialog>
 	
-	<dialog id="DialogColumnStatistics">
+	<dialog id="DialogColumnStatistics" onClose='hideNodeDialog("DialogColumnStatistics", event)'>
 		<form>
  				<span>For each column, rows with the follow statistics will be created:</span><br>
 				<div style="display: inline-block;">
@@ -711,14 +712,14 @@
 
 			<br>
 			<div  style="text-align: center">
-				<button value="default" onClick="createColumnStatistics(event)">Ok</button>
+				<button value="default" onClick="createColumnStatistics(event)" formmethod="dialog">Ok</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogColumnStatisticsNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogPivotTable">
+	<dialog id="DialogPivotTable" onClose='hideNodeDialog("DialogPivotTable", event)' >
 		<form>
  			<div> 
 				<fieldset>
@@ -767,13 +768,13 @@
 				</fieldset>
 			</div>
 			<div  style="text-align: center">
-				<button value="default" onClick="okButtonInPivotTable(event)">Ok</button>
-				<button value="cancel" formmethod="dialog">Cancel</button>
+				<button value="default" onClick="okButtonInPivotTable(event)" formmethod="dialog">Ok</button>
+				<button value="cancel"formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogPivotTableNodeId"></input>
 		</form>
 	</dialog>
-	<dialog id="DialogConcatenateTables">
+	<dialog id="DialogConcatenateTables" onClose='hideNodeDialog("DialogConcatenateTables", event)'>
 		<form >
 			<fieldset> 
 				<legend> Choose one option</legend>
@@ -785,26 +786,26 @@
 
 			<br>
 			<div  style="text-align: center">
-				<button value="default" onClick="concatenateTables()">Ok</button>
+				<button value="default" onClick="concatenateTables()" formmethod="dialog">Ok</button>
 				<button value="cancel" formmethod="dialog" >Cancel</button>
 			</div>			
 		</form>		
 	</dialog>
 	
-	<dialog id="DialogSelectColumns">
+	<dialog id="DialogSelectColumns" onClose='hideNodeDialog("DialogSelectColumns", event)'>
 		<form>
 			Select columns:
 			<span id="DialogSelectColumnsHTML">
 			</span>
 			<div class="center">
-				<button value="default" onClick="GetSelectColumns(event)">OK</button>
+				<button value="default" onClick="GetSelectColumns(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogSelectColumnsNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogExpandColumn">
+	<dialog id="DialogExpandColumn" onClose='hideNodeDialog("DialogExpandColumn", event)'>
 		<form>
 			Select column with the entity to see more details (expand):
 			<span id="DialogExpandColumnHTML">
@@ -814,14 +815,14 @@
 				<input type="text" id="ExpandColumnNumberOfRecords" size="6" maxlength="6" value="100"></input>
 			</label-->
 			<div class="center">
-				<button value="default" onClick="GetExpandColumn(event)">OK</button>
+				<button value="default" onClick="GetExpandColumn(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogExpandColumnNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogSelectExpands">
+	<dialog id="DialogSelectExpands" onClose='hideNodeDialog("DialogSelectExpands", event)'>
 		<form>
 			<fieldset id="DialogSelectExpandsHTML">
 				<legend>Choose entities you want details (expand) and attributes to select</legend>
@@ -829,14 +830,14 @@
 				</span>
 			</fieldset>
 			<div class="center">
-				<button value="default" onClick="GetSelectExpands(event)">OK</button>
+				<button value="default" onClick="GetSelectExpands(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogSelectExpandsNodeId"></input>
 		</form>
 	</dialog>
 	
-	<dialog id="DialogFilterRowEntities">
+	<dialog id="DialogFilterRowEntities" onClose='hideNodeDialog("DialogFilterRowEntities", event)'>
 		<form>
 			<fieldset id="DialogFilterRowEntitiesHTML">
 				<legend>Choose the way to get to the Entity you want to filter</legend>
@@ -845,25 +846,25 @@
 			</fieldset>
 			
 			<div class="center">
-				<button value="default" onClick="OkButtonInRowFilterEntities(event)">OK</button>
+				<button value="default" onClick="OkButtonInRowFilterEntities(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogSelectNRecords">
+	<dialog id="DialogSelectNRecords" onClose='hideNodeDialog("DialogSelectNRecords", event)'>
 		<form>
 			<label>Number records to request:
 				<input type="text" id="SelectNumberOfRecords" size="6" maxlength="6" value="100"></input>
 			</label>
 			<div class="center">
-				<button value="default" onClick="GetSelectNRecords(event)">OK</button>
+				<button value="default" onClick="GetSelectNRecords(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogSelectSortBy">
+	<dialog id="DialogSelectSortBy" onClose='hideNodeDialog("DialogSelectSortBy", event)'>
 		<form>
 			<fieldset id="DialogSelectSortByHTML">
 				<legend>Select the criteria for sorting:</legend>
@@ -874,14 +875,14 @@
 			<label><input type="radio" id="SelectSortByAsc" name="SelectSortByArcDesc" checked />ascending</label>
 			<label><input type="radio" id="SelectSortByDesc" name="SelectSortByArcDesc" />descending</label>
 			<div class="center">
-				<button value="default" onClick="GetSelectSortBy(event)">OK</button>
+				<button value="default" onClick="GetSelectSortBy(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogSelectSortByNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogSelectRangeSTA">
+	<dialog id="DialogSelectRangeSTA" onClose='hideNodeDialog("DialogSelectRangeSTA", event)'>
 		<form>
 			<label>Number records to skip from the start:
 				<input type="text" id="SelectRangeSkipSTA" size="6" maxlength="10" value="0"></input>
@@ -891,55 +892,55 @@
 				<input type="text" id="SelectRangeTopSTA" size="6" maxlength="10" value="100"></input>
 			</label>
 			<div class="center">
-				<button value="default" onClick="GetSelectRangeSTA(event)">OK</button>
+				<button value="default" onClick="GetSelectRangeSTA(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogSelectRangeSTANodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogSelectRow">
+	<dialog id="DialogSelectRow" onClose='hideNodeDialog("DialogSelectRow", event)'>
 		<div id="divTitleSelectRow" class="center" style="font-size: large;"></div>
 		<form>
 			Select an element:
 			<span id="DialogSelectRowTable">
 			</span>
 			<div class="center">
-				<button value="default" onClick="GetSelectRow(event)">OK</button>
+				<button value="default" onClick="GetSelectRow(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogSelectRowNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogSelectResource">
+	<dialog id="DialogSelectResource" onClose='hideNodeDialog("DialogSelectResource", event)'>
 		<div id="divTitleSelectResource" class="center" style="font-size: large;"></div>
 		<form>
 			<label>Identifier of resource to select: 
 				<input type="text" id="DialogSelectResourceId"></label>
 			</span>
 			<div class="center">
-				<button value="default" onClick="GetSelectResource(event)">OK</button>
+				<button value="default" onClick="GetSelectResource(event)" formmethod="dialog" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogSelectResourceNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogFilterRows">
+	<dialog id="DialogFilterRows" onClose='hideNodeDialog("DialogFilterRows", event)'>
 		<div id="divTitleSelectRows" class="center" style="font-size: large;"></div>
 		<form>
 			Filter:
 			<div id="DialogSelectRowsFilter">
 			</div>
 			<div class="center">
-				<button value="default" onClick="GetFilterRows(event)">OK</button>
+				<button value="default" onClick="GetFilterRows(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogFilterRowsNodeId"></input>
 		</form>
 	</dialog>
-	<dialog id="DialogFilterRowsByTime"> 
+	<dialog id="DialogFilterRowsByTime" onClose='hideNodeDialog("DialogFilterRowsByTime", event)'> 
 		
 		<form>
 
@@ -964,13 +965,13 @@
 			</select>
 			</fieldset>
 				<div class="center">
-					<button value="default" onClick="filterRowsByTimeOkButton()">OK</button>
+					<button value="default" onClick="filterRowsByTimeOkButton()" formmethod="dialog">OK</button>
 					<button value="cancel" formmethod="dialog">Cancel</button>
 				</div>
 		</form>
 
 	</dialog>
-	<dialog id="DialogGeospatialFilterRowsByDistance">
+	<dialog id="DialogGeospatialFilterRowsByDistance" onClose='hideNodeDialog("DialogGeospatialFilterRowsByDistance", event)'>
 		
 		<form>
 			<fieldset>
@@ -1004,13 +1005,13 @@
 			<label for="geoDistance_value">Distance</label><input type="number" id ="geoDistance_input_value" style="width:50px" min="0" value="0">
 
 			<div class="center">
-				<button value="default" onClick="GetGeoDistanceFilter(event)">OK</button>
+				<button value="default" onClick="GetGeoDistanceFilter(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogJoinTables">
+	<dialog id="DialogJoinTables" onClose='hideNodeDialog("DialogJoinTables", event)'>
 		<form>
 			<fieldset>
 				<legend>Row matching fields</legend>
@@ -1024,14 +1025,14 @@
 				<label><input type="radio" id="DialogJoinTablesNotMatchBothTables" name="JoinTablesNotMatch" />Add records from both tables</label>
 			</fieldset>
 			<div class="center">
-				<button value="default" onClick="GetJoinTables(event)">OK</button>
+				<button value="default" onClick="GetJoinTables(event)" formmethod="dialog">OK</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
 
-	<dialog id="DialogContextMenu">
+	<dialog id="DialogContextMenu" onClick='startingNodeContextId=null;hideNodeDialog("DialogContextMenu", event)'>
 		<form>
 			<p>
 				<span id="ButtonsContextMenuObjects"></span><br>
@@ -1045,24 +1046,24 @@
 
 			</p>
 			<div class="center">
-				<button value="cancel" onClick="startingNodeContextId=null;" formmethod="dialog">Cancel</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 		<div id="ContextMenuHelpToolTip" style="min-height: 1px; overflow: hidden; display:none; position: fixed; background-color: yellow; width:300px; border-style: groove; padding: 5px;">help</div>
 	</dialog>
 
-	<dialog id="DialogEdgeContextMenu">
+	<dialog id="DialogEdgeContextMenu" onClick='startingEdgeContextId=null;hideNodeDialog("DialogEdgeContextMenu", event)'>
 		<form>
 			<p>
 				<button onclick='removeEdge(event, "DialogEdgeContextMenu")'onmouseover='showHelpToolTip(event, "", "Remove a connection between two nodes")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="remove.png" height="20" valign="middle">Remove</button>
 			</p>
 			<div class="center">
-				<button value="cancel" onClick="startingEdgeContextId=null;" formmethod="dialog">Cancel</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogOK">
+	<dialog id="DialogOK" onClose='hideNodeDialog("DialogOK", event)'>
 		<form>
 			<span id="DialogOKOptions"></span><br>
 			<span id="DialogOKHTML">
@@ -1073,7 +1074,7 @@
 		</form>
 	</dialog>
 
-	<dialog id="DialogImportCSV">
+	<dialog id="DialogImportCSV" onClose='hideNodeDialog("DialogImportCSV", event)'>
 		<form>
 			Import CSV file table
 			<br>
@@ -1145,14 +1146,14 @@
 
 			</fieldset>
 			<div class="center">
-				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "CSV")'>Done</button>
+				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "CSV")' formmethod="dialog">Done</button>
 				<button value="cancel" formmethod="dialog">Close</button>
 			</div>
 			<input type="hidden" id="DialogImportCSVNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogSaveTable">
+	<dialog id="DialogSaveTable" onClose='hideNodeDialog("DialogSaveTable", event)'>
 		<form>
 			Save the table as CSV
 			<br>
@@ -1161,27 +1162,27 @@
 			</label>
 			<!--span id="DialogSaveTableOptions"></span--><br>
 			<div class="center">
-				<button value="default" onClick="SaveTable(event)">Save CSV</button>
-				<button value="csvw" onClick="SaveCSVW(event)">Save CSVW</button>
+				<button value="default" onClick="SaveTable(event)" formmethod="dialog">Save CSV</button>
+				<button value="csvw" onClick="SaveCSVW(event)" formmethod="dialog">Save CSVW</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogMeaningTable">
+	<dialog id="DialogMeaningTable" onClose='hideNodeDialog("DialogMeaningTable", event)'>
 		<form>
 			<span id="DialogMeaningTableTitle"></span>
 			<br>
 			<span id="DialogMeaningFields"></span>
 			<div class="center">
-				<button value="default" onClick="SaveMeaningTable(event)">Ok</button>
-				<button value="share" onClick="ShareMeaningTable(event)">Share</button>
+				<button value="default" onClick="SaveMeaningTable(event)" formmethod="dialog">Ok</button>
+				<button value="share" onClick="ShareMeaningTable(event)" formmethod="dialog">Share</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
 	</dialog>
 
-	<dialog id="DialogImportGeoJSON">
+	<dialog id="DialogImportGeoJSON" onClose='hideNodeDialog("DialogImportGeoJSON", event)'>
 		<form>
 			Import GeoJSON
 			<br>
@@ -1217,14 +1218,14 @@
 
 			</fieldset>
 			<div class="center">
-				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "GeoJSON")'>Done</button>
+				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "GeoJSON")' formmethod="dialog">Done</button>
 				<button value="cancel" formmethod="dialog">Close</button>
 			</div>			
 			<input type="hidden" id="DialogImportGeoJSONNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogImportDBF">
+	<dialog id="DialogImportDBF" onClose='hideNodeDialog("DialogImportDBF", event)'>
 		<form>
 			Import dBASE III+, IV and MiraMon DBF Extended
 			<br>
@@ -1237,14 +1238,14 @@
 				URL: <input type="text" size="70" id="DialogImportDBFSourceURLInput" onChange="ReadURLImportDBF(event)" disabled="disabled"></input> <button type="button" id="DialogImportDBFSourceURLButton" onClick="ReadURLImportDBF(event)" disabled="disabled">Load</button></label><br>
 			</fieldset>
 			<div class="center">
-				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "DBF")'>Done</button>
+				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "DBF")' formmethod="dialog">Done</button>
 				<button value="cancel" formmethod="dialog">Close</button>
 			</div>
 			<input type="hidden" id="DialogImportDBFNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogImportGPKG">
+	<dialog id="DialogImportGPKG" onClose='hideNodeDialog("DialogImportGPKG", event)'>
 		<form>
 			Import Geopackage
 			<br>
@@ -1257,14 +1258,14 @@
 				URL: <input type="text" size="70" id="DialogImportGPKGSourceURLInput" onChange="ReadURLImportGPKG(event)" disabled="disabled"></input> <button type="button" id="DialogImportGPKGSourceURLButton" onClick="ReadURLImportGPKG(event)" disabled="disabled">Load</button></label><br>
 			</fieldset>
 			<div class="center">
-				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "GPKG")'>Done</button>
+				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "GPKG")' formmethod="dialog">Done</button>
 				<button value="cancel" formmethod="dialog">Close</button>
 			</div>
 			<input type="hidden" id="DialogImportGPKGNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogImportJSONLD">
+	<dialog id="DialogImportJSONLD" onClose='hideNodeDialog("DialogImportJSONLD", event)'>
 		<form>
 			Import JSON-LD
 			<br>
@@ -1282,14 +1283,14 @@
 				URL: <input type="text" size="70" id="DialogImportJSONLDSourceURLInput" onChange="ReadURLImportJSONLD(event)" disabled="disabled"></input> <button type="button" id="DialogImportJSONLDSourceURLButton" onClick="ReadURLImportJSONLD(event)" disabled="disabled">Load</button></label><br>
 			</fieldset>
 			<div class="center">
-				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "JSONLD")'>Done</button>
+				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "JSONLD")' formmethod="dialog">Done</button>
 				<button value="cancel" formmethod="dialog">Close</button>
 			</div>
 			<input type="hidden" id="DialogImportJSONLDNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogImportJSON">
+	<dialog id="DialogImportJSON" onClose='hideNodeDialog("DialogImportJSON", event)'>
 		<form>
 			Import JSON
 			<fieldset>
@@ -1307,14 +1308,14 @@
 				<button type="button" id="DialogImportJSONSourceURLButtonMulti" onClick="ReadURLImportJSONMultiple(event)" disabled="disabled" >Load</button></label><br> 
 			</fieldset>
 			<div class="center">
-				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "JSON")'>Done</button>
+				<button value="ok" formmethod="dialog" onClick='RetrieveMeaningTable(event, "JSON")' formmethod="dialog">Done</button>
 				<button value="cancel" formmethod="dialog">Close</button>
 			</div>
 			<input type="hidden" id="DialogImportJSONNodeId"></input>
 		</form>
 	</dialog>
 	
-	<dialog id="DialogSaveLayer">
+	<dialog id="DialogSaveLayer" onClose='hideNodeDialog("DialogSaveLayer", event)'>
 		<form>
 			<span id="DialogSaveLayerTitle"></span>
 			<fieldset>
@@ -1323,11 +1324,21 @@
 					<span id="DialogSaveLayerPlace"></span>
 				</label>
 				<br>
-				<label><input type="radio" name="DialogSaveLayerGeoLL" id="DialogSaveLayerGeo">Geometry*:
-					<span id="DialogSaveLayerGeometry"></span>
+				<fieldset>
+				<legend>Geometry*:</legend>
+				<label><input type="radio" name="DialogSaveLayerGeoLL" id="DialogSaveLayerGeo">Geometry:
+					<span id="DialogSaveLayerSelectGeometry"></span>
 				</label>
 				<br>
-				<label><input type="radio" name="DialogSaveLayerGeoLL" id="DialogSaveLayerLL" checked="checked">Point coordinates*:</label>
+				<label><input type="radio" name="DialogSaveLayerGeoLL" id="DialogSaveLayerGeoHash">Geohash:
+					<span id="DialogSaveLayerSelectGeohash"></span>
+				</label>
+				<br>
+				<label><input type="radio" name="DialogSaveLayerGeoLL" id="DialogSaveLayerUberH3">Uber H3:
+					<span id="DialogSaveLayerSelectUberH3"></span>
+				</label>
+				<br>
+				<label><input type="radio" name="DialogSaveLayerGeoLL" id="DialogSaveLayerLL" checked="checked">Point coordinates:</label>
 				<fieldset>
 				<label>Longitude:
 					<span id="DialogSaveLayerLongitude"></span>
@@ -1336,6 +1347,7 @@
 				<label>Latitude:
 					<span id="DialogSaveLayerLatitude"></span>
 				</label>
+				</fieldset>
 				</fieldset>
 			</fieldset>
 			<br>
@@ -1351,7 +1363,7 @@
 		</form>
 	</dialog>
 
-	<dialog id="DialogAddColumnGeo">
+	<dialog id="DialogAddColumnGeo" onClose='hideNodeDialog("DialogAddColumnGeo", event)'>
 		<form name="DialogAddColumnGeoForm">
 			Add column with tranformed geometry
 			<fieldset>
@@ -1365,7 +1377,11 @@
 				</label>
 				<br>
 				<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LL" value="Geohash" id="DialogAddColumnGeoRadioGeohash">Geohash:
-					<span id="DialogAddColumnGeoGeohash"></span>
+					<span id="DialogAddColumnGeohash"></span>
+				</label>
+				<br>
+				<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LL" value="UberH3" id="DialogAddColumnGeoRadioUberH3">Uber H3:
+					<span id="DialogAddColumnUberH3"></span>
 				</label>
 				<br>
 				<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LL" value="LL" id="DialogAddColumnGeoRadioLL" checked="checked">Point coordinates:</label>
@@ -1386,6 +1402,7 @@
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="JSON" id="DialogAddColumnGeoRadioJSONOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioJSONOut");' checked="checked">GeoJSON Geometry</label><br>
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="WKT" id="DialogAddColumnGeoRadioWKTOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioWKTOut");' >Well Known Text</label><br>
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="Geohash" id="DialogAddColumnGeoRadioGeohashOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioGeohashOut");' >Geohash</label><br>
+					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="UberH3" id="DialogAddColumnGeoRadioUberH3Out" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioUberH3Out");' >Uber U3</label><br>
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="LL" id="DialogAddColumnGeoRadioLLOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioLLOut");' >Point coordinates</label>
 				</fieldset>
 				<legend>New columns</legend>
@@ -1393,14 +1410,14 @@
 				<label><span id="DialogAddColumnGeoLatitudeNameOut" style="display:none;">Latitude:</span><input type="text" size="30" id="DialogAddColumnGeoLatitudeNameText" value="Latitude" style="display:none;"></input> 
 			</fieldset>
 			<div class="center">
-				<button value="ok" formmethod="dialog" onClick="GetAddColumnGeo(event)">Add</button>
+				<button value="ok" formmethod="dialog" onClick="GetAddColumnGeo(event)" formmethod="dialog">Add</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogAddColumnGeoNodeId"></input>
 		</form>
 	</dialog>
 
-	<dialog id="DialogGUF">
+	<dialog id="DialogGUF" onClose='hideNodeDialog("DialogGUF", event)'>
 		<form>
 			Geospatial user feedback
 			<fieldset>
@@ -1411,9 +1428,9 @@
 			</fieldset>
 			<br>
 			<div class="center">
-				<button value="add" onClick="AddGUF(event)">Add feedback</button>
-				<button value="edit" onClick='EditGUF(event)'>Edit previous feedback</button>
-				<button value="ok" formmethod="dialog" onClick="ShowGUF(event)">Get feedback</button>
+				<button value="add" onClick="AddGUF(event)" formmethod="dialog">Add feedback</button>
+				<button value="edit" onClick='EditGUF(event)' formmethod="dialog">Edit previous feedback</button>
+				<button value="ok" formmethod="dialog" onClick="ShowGUF(event)" formmethod="dialog">Get feedback</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>
@@ -1564,6 +1581,19 @@
 		</form>
 	</dialog>
 
+	<!--dialog id="DialogSubscribe">
+		<span id="DialogSubscribeTitle"></span>
+		<form>
+		<br>
+		<div class="center">
+			<button value="ok" onClick="PrepareRefreshSubscribe(event)">Ok</button>
+			<button value="stop" onClick="StopRefreshSubscribe(event)">Stop refresh</button>
+			<button value="cancel" onClick="CloseDialogSubscribe(event)" formmethod="dialog">Close</button>
+		</div>
+		<input type="hidden" id="DialogSubscribeNodeId"></input>
+		</form>
+	</dialog-->
+
 	<dialog id="DialogCountResults">
 		<span id="DialogCountResultsTitle"></span>
 		<form>
@@ -1582,7 +1612,7 @@
 		</form>
 	</dialog>
 
-	<dialog id="DialogUploadObservations">
+	<dialog id="DialogUploadObservations" onClose='hideNodeDialog("DialogUploadObservations", event)'>
 		<div id="DialogUploadObservationsLoginFirst" style="display: none;">
 			<form>
 				To upload data in a STA server, you should Login first.<br>
@@ -1632,12 +1662,12 @@
 		</form>
 	</dialog>
 
-	<dialog id="DialogCalculateStatisticsSTA">
+	<dialog id="DialogCalculateStatisticsSTA" onClose='hideNodeDialog("DialogCalculateStatisticsSTA", event)'>
 		<form>
 			Upload statistical values to STA
 			<div class="center">
-				<button value="default" id="dlgDialogCalculateStatisticsSTACreate" onClick="UploadCalculateStatisticsSTAEvent(event, true)">Create</button>
-				<button value="default" id="dlgDialogCalculateStatisticsSTAContinue" onClick="UploadCalculateStatisticsSTAEvent(event, false)">Continue</button>
+				<button value="default" id="dlgDialogCalculateStatisticsSTACreate" onClick="UploadCalculateStatisticsSTAEvent(event, true)" formmethod="dialog">Create</button>
+				<button value="default" id="dlgDialogCalculateStatisticsSTAContinue" onClick="UploadCalculateStatisticsSTAEvent(event, false)" formmethod="dialog">Continue</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogCalculateStatisticsSTANodeId"></input>
@@ -1645,7 +1675,7 @@
 	</dialog>
 
 
-	<!--dialog id="UploadTimeAverages">
+	<!--dialog id="UploadTimeAverages" onClose='hideNodeDialog("UploadTimeAverages", event)'>
 		<div id="UploadTimeAveragesLoginFirst" style="display: none;">
 		<form>
 			To upload data in a STA server, you should Login first.<br>
