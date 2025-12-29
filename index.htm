@@ -1318,9 +1318,10 @@
 	<dialog id="DialogSaveLayer" onClose='hideNodeDialog("DialogSaveLayer", event)'>
 		<form>
 			<span id="DialogSaveLayerTitle"></span>
+			Title: <input id="DialogSaveLayerDescription" value="Layer from TAPIS" />
 			<fieldset>
 				<legend>Position:</legend>
-				<label>Place description*:
+				<label>Symbolizer (text or color)*:
 					<span id="DialogSaveLayerPlace"></span>
 				</label>
 				<br>
@@ -1351,10 +1352,13 @@
 				</fieldset>
 			</fieldset>
 			<br>
-			<label>Date and time:
-				<span id="DialogSaveLayerTime"></span>
-			</label>
-			<span id="DialogSaveLayerVariableDefUoM"></span>
+			<fieldset>
+				<legend>Time Series (optional)</legend>
+				<label>Date and time:
+					<span id="DialogSaveLayerTime"></span>
+				</label>
+				<span id="DialogSaveLayerVariableDefUoM"></span>
+			</fieldset>
 			<br>
 			<div class="center">
 				<span id="DialogSaveLayerSave"></span>
@@ -1405,9 +1409,10 @@
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="UberH3" id="DialogAddColumnGeoRadioUberH3Out" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioUberH3Out");' >Uber U3</label><br>
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="LL" id="DialogAddColumnGeoRadioLLOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioLLOut");' >Point coordinates</label>
 				</fieldset>
-				<legend>New columns</legend>
+				<legend>New column</legend>
 				<label><span id="DialogAddColumnGeoNameOut">Column name:</span><input type="text" size="30" id="DialogAddColumnGeoNameText" value="Geometry"></input><br>
-				<label><span id="DialogAddColumnGeoLatitudeNameOut" style="display:none;">Latitude:</span><input type="text" size="30" id="DialogAddColumnGeoLatitudeNameText" value="Latitude" style="display:none;"></input> 
+				<label><span id="DialogAddColumnGeoLatitudeNameOut" style="display:none;">Latitude:</span><input type="text" size="30" id="DialogAddColumnGeoLatitudeNameText" value="Latitude" style="display:none;"></input>
+				<label><span id="DialogAddColumnGeoLevel" style="display:none;">Level:</span><input type="text" size="3" id="DialogAddColumnGeoLevelText" value="10" style="display:none;"></input>
 			</fieldset>
 			<div class="center">
 				<button value="ok" formmethod="dialog" onClick="GetAddColumnGeo(event)" formmethod="dialog">Add</button>

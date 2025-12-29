@@ -1406,13 +1406,13 @@ var columnCreated=false, record, json, point;
 			else if (selectedOptions.radioOut=="Geohash") {
 				//JSON-->Geohash
 				point=getFirstCoordinateGeoJSONGeometry(json);
-				record[selectedOptions.nameOut]=ngeohash_encode(point[1], point[0]);
+				record[selectedOptions.nameOut]=ngeohash_encode(point[1], point[0], selectedOptions.level);
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="UberH3") {
 				//JSON-->Uber H3
 				point=getFirstCoordinateGeoJSONGeometry(json);
-				record[selectedOptions.nameOut]=h3.latLngToCell(point[1], point[0], 10);
+				record[selectedOptions.nameOut]=h3.latLngToCell(point[1], point[0], selectedOptions.level);
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="LL") {
@@ -1443,13 +1443,13 @@ var columnCreated=false, record, json, point;
 			else if (selectedOptions.radioOut=="Geohash") {
 				//JSON-->Geohash
 				point=getFirstCoordinateGeoJSONGeometry(json);
-				record[selectedOptions.nameOut]=ngeohash_encode(point[1], point[0]);
+				record[selectedOptions.nameOut]=ngeohash_encode(point[1], point[0], selectedOptions.level);
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="UberH3") {
 				//JSON-->Uber H3
 				point=getFirstCoordinateGeoJSONGeometry(json);
-				record[selectedOptions.nameOut]=h3.latLngToCell(point[1], point[0], 10);
+				record[selectedOptions.nameOut]=h3.latLngToCell(point[1], point[0], selectedOptions.level);
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="LL") {
@@ -1483,7 +1483,7 @@ var columnCreated=false, record, json, point;
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="UberH3") {
-				record[selectedOptions.nameOut]=h3.latLngToCell(point.latitude, point.longitude, 10);
+				record[selectedOptions.nameOut]=h3.latLngToCell(point.latitude, point.longitude, selectedOptions.level);
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="LL") {
@@ -1512,7 +1512,7 @@ var columnCreated=false, record, json, point;
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="Geohash") {
-				record[selectedOptions.nameOut]=ngeohash_encode(point[0], point[1]);
+				record[selectedOptions.nameOut]=ngeohash_encode(point[0], point[1], selectedOptions.level);
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="UberH3") {
@@ -1545,11 +1545,11 @@ var columnCreated=false, record, json, point;
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="Geohash") {
-				record[selectedOptions.nameOut]=ngeohash_encode(record[selectedOptions.latitudeIn], record[selectedOptions.longitudeIn]);
+				record[selectedOptions.nameOut]=ngeohash_encode(record[selectedOptions.latitudeIn], record[selectedOptions.longitudeIn], selectedOptions.level);
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="UberH3") {
-				record[selectedOptions.nameOut]=h3.latLngToCell(record[selectedOptions.latitudeIn], record[selectedOptions.longitudeIn], 10);
+				record[selectedOptions.nameOut]=h3.latLngToCell(record[selectedOptions.latitudeIn], record[selectedOptions.longitudeIn], selectedOptions.level);
 				columnCreated=true;
 			}
 			else if (selectedOptions.radioOut=="LL") {

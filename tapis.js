@@ -5553,7 +5553,8 @@ function GetGeoJSONStyles(data, selectedOptions) {
 			"desc": null,
 			"DescItems": null,
 			"TipusObj": "P",
-			"ItemLleg": [
+			"nItemLlegAuto": (selectedOptions.geohash || selectedOptions.uberH3) && selectedOptions.place ? 9 : null,
+			"ItemLleg": (selectedOptions.geohash || selectedOptions.uberH3) && selectedOptions.place ? null : [
 				{
 					"color": "#ff0000",
 					"DescColor": ""
@@ -5580,14 +5581,25 @@ function GetGeoJSONStyles(data, selectedOptions) {
 						]
 					}
 				},
-				"interior": {
+				"interior": (selectedOptions.geohash || selectedOptions.uberH3) && selectedOptions.place ? {
+					"NomCamp": "Place",
+					"paleta": {
+						"ramp": [{"i_color": 0, "color" : "rgba(255,0,0,0.4)"},
+							{"i_color": 64, "color" : "rgba(255,255,0,0.4)"}]
+					},
+					"estiramentPaleta": {
+						"auto": true
+					},
+					"NDecimals": 3
+				} : {
 					"paleta": {
 						"colors": [
 							"rgba(255,0,0,0.4)"
 						]
 					}
-				}}],
-			"fonts": {
+				}
+			}],
+			"fonts": selectedOptions.geohash || selectedOptions.uberH3 ? null : {
 				"NomCampText": selectedOptions.place ? "Place" : null,
 				"aspecte": [
 					{
@@ -5752,6 +5764,7 @@ function ShowSaveLayerDialogSelects(node, descripUoM) {
 
 function GetSelectedOptionsSaveLayer(descripUoM){
 	var selectedOptions={};
+	selectedOptions.title=document.getElementById("DialogSaveLayerDescription").value;
 	selectedOptions.place=document.getElementById("DialogSaveLayerPlaceSelect").value;
 	if (document.getElementById("DialogSaveLayerGeo").checked)
 		selectedOptions.geometry=document.getElementById("DialogSaveLayerSelectGeometrySelect").value;
@@ -6135,6 +6148,13 @@ function GetSelectedOptionsAddColumnGeo(){
 	selectedOptions.radioOut=document.DialogAddColumnGeoForm.DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut.value;
 	selectedOptions.nameOut=document.getElementById("DialogAddColumnGeoNameText").value;
 	selectedOptions.latitudeOut=document.getElementById("DialogAddColumnGeoLatitudeNameText").value;
+	if (selectedOptions.radioOut=="Geohash" || selectedOptions.radioOut=="UberH3") {
+		selectedOptions.level=parseInt(document.getElementById("DialogAddColumnGeoLevelText").value);
+		if (isNaN(selectedOptions.level) || selectedOptions.level<=0 || selectedOptions.level>(selectedOptions.radioOut=="UberH3" ? 15 : 30)) {
+			alert("Level is not a positive number or it is too high. '10' will be used this time");
+			selectedOptions.level=10;
+		}
+	}	
 
 	return selectedOptions;
 }
@@ -6168,17 +6188,22 @@ function ChangeAddColumnGeoRadioOut(event) {
 	    document.getElementById("DialogAddColumnGeoRadioGeohashOut").checked ||
 	    document.getElementById("DialogAddColumnGeoRadioUberH3Out").checked) {
 		document.getElementById("DialogAddColumnGeoNameOut").innerHTML="Column name:";
-		//document.getElementById("DialogAddColumnGeoLatitudeNameOut").innetHTML=""; 
 		document.getElementById("DialogAddColumnGeoLatitudeNameOut").style.display="none";
 		document.getElementById("DialogAddColumnGeoLatitudeNameText").style.display="none";
-	}
-	else
-	{
+	} else {
 		document.getElementById("DialogAddColumnGeoNameOut").innerHTML="Longitude:";
 		document.getElementById("DialogAddColumnGeoNameText").value="Longitude";
 		document.getElementById("DialogAddColumnGeoLatitudeNameOut").innetHTML="Latitude";
 		document.getElementById("DialogAddColumnGeoLatitudeNameOut").style.display="inline-block";
 		document.getElementById("DialogAddColumnGeoLatitudeNameText").style.display="inline-block";
+	}
+	if (document.getElementById("DialogAddColumnGeoRadioGeohashOut").checked ||
+	    document.getElementById("DialogAddColumnGeoRadioUberH3Out").checked) {
+		document.getElementById("DialogAddColumnGeoLevel").style.display="inline-block";
+		document.getElementById("DialogAddColumnGeoLevelText").style.display="inline-block";
+	} else {
+		document.getElementById("DialogAddColumnGeoLevel").style.display="none";
+		document.getElementById("DialogAddColumnGeoLevelText").style.display="none";
 	}
 }
 
@@ -6209,7 +6234,7 @@ function OpenMap(event) {
 	var parentNode=GetFirstParentNode(currentNode);
 	if (parentNode) {
 		var selectedOptionsSaveLayer=GetSelectedOptionsSaveLayer(true);
-		OpenMapMMN(getAbsoluteURL(config.MMNpath) + (config.MMNpath.indexOf('?')>0 ? "&" : "?") + "reset=1", GetGeoJSON(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONPropertiesSchema(parentNode.STAdata, parentNode.STAdataAttributes, selectedOptionsSaveLayer), GetGeoJSONStyles(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONDates(parentNode.STAdata, selectedOptionsSaveLayer));
+		OpenMapMMN(getAbsoluteURL(config.MMNpath) + (config.MMNpath.indexOf('?')>0 ? "&" : "?") + "reset=1", selectedOptionsSaveLayer.title, GetGeoJSON(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONPropertiesSchema(parentNode.STAdata, parentNode.STAdataAttributes, selectedOptionsSaveLayer), GetGeoJSONStyles(parentNode.STAdata, selectedOptionsSaveLayer), GetGeoJSONDates(parentNode.STAdata, selectedOptionsSaveLayer));
 	}
 }
 
@@ -6249,10 +6274,11 @@ function ShowGUF(event) {
 var MiraMonMapBrowserVars={};
 
 function DisplayMapMMN(){
-	MiraMonMapBrowserVars.mmn.postMessage("CommandMMNAddGeoJSONLayer('SensorThings API data', "+ JSON.stringify(MiraMonMapBrowserVars.geojson) + ", " + JSON.stringify(MiraMonMapBrowserVars.geojsonSchema) + ", " + JSON.stringify(MiraMonMapBrowserVars.geojsonStyle) + ", " + JSON.stringify(MiraMonMapBrowserVars.geojsonDates) + ")", GetCleanURLMiraMonMapBrowser(MiraMonMapBrowserVars.mmnURL));
+	MiraMonMapBrowserVars.mmn.postMessage("CommandMMNAddGeoJSONLayer(\"" + MiraMonMapBrowserVars.title + "\", "+ JSON.stringify(MiraMonMapBrowserVars.geojson) + ", " + JSON.stringify(MiraMonMapBrowserVars.geojsonSchema) + ", " + JSON.stringify(MiraMonMapBrowserVars.geojsonStyle) + ", " + JSON.stringify(MiraMonMapBrowserVars.geojsonDates) + ")", GetCleanURLMiraMonMapBrowser(MiraMonMapBrowserVars.mmnURL));
 }
 
-function OpenMapMMN(url, geojson, geojsonSchema, geojsonStyle, geojsonDates){
+function OpenMapMMN(url, title, geojson, geojsonSchema, geojsonStyle, geojsonDates){
+	MiraMonMapBrowserVars.title=title;
 	MiraMonMapBrowserVars.geojson=geojson;
 	MiraMonMapBrowserVars.geojsonSchema=geojsonSchema;
 	MiraMonMapBrowserVars.geojsonStyle=geojsonStyle;
