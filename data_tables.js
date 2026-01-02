@@ -1580,3 +1580,41 @@ var columnCreated=false, record, json, point;
 	return 1;
 }
 
+function CreateTableDGGSCodes(selectedOptions) {
+var data=[], dataAttributes={}, cells, g;
+
+	for (var l=selectedOptions.level; l>=(selectedOptions.parents ? (selectedOptions.codeType=="Geohash" ? 1 : 0) : selectedOptions.level); l--) {
+		if (selectedOptions.codeType=="Geohash")
+			cells=ngeohash_bboxes(selectedOptions.minLat, selectedOptions.minLong, selectedOptions.maxLat, selectedOptions.maxLong, selectedOptions.level);		
+		else if (selectedOptions.codeType=="UberH3")
+			cells=h3.polygonToCellsExperimental([[selectedOptions.minLat, selectedOptions.minLong],
+						[selectedOptions.minLat, selectedOptions.maxLong], 
+						[selectedOptions.maxLat, selectedOptions.maxLong],
+						[selectedOptions.maxLat, selectedOptions.minLong],
+						[selectedOptions.minLat, selectedOptions.minLong]], l, h3.POLYGON_TO_CELLS_FLAGS.containmentOverlapping)
+		else
+			return;
+		if (selectedOptions.centroid) {
+			if (selectedOptions.codeType=="Geohash") {
+				for (var i=0; i<cells.length; i++) {
+					g=ngeohash_decode(cells[i]);
+					data.push({cell: cells[i], longitude: g.longitude, latitude: g.latitude});
+				}
+			} else {
+				for (var i=0; i<cells.length; i++) {
+					g=h3.cellToLatLng(cells[i]);
+					data.push({cell: cells[i], longitude: g[1], latitude: g[0]});
+				}
+			}
+		} else {
+			for (var i=0; i<cells.length; i++)
+				data.push({cell: cells[i]});
+		}
+	}
+	dataAttributes={cell: {type: "string", description: selectedOptions.codeType + " cell"}};
+	if (selectedOptions.centroid) {
+		dataAttributes.longitude={type: "number", description: "Longitude"};
+		dataAttributes.latitude={type: "number", description: "Latitude"};
+	}
+	return {data: data, dataAttributes: dataAttributes}
+}

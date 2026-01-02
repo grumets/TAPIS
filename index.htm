@@ -1369,7 +1369,7 @@
 
 	<dialog id="DialogAddColumnGeo" onClose='hideNodeDialog("DialogAddColumnGeo", event)'>
 		<form name="DialogAddColumnGeoForm">
-			Add column with tranformed geometry
+			Add column with transformed geometry
 			<fieldset>
 				<legend>Input</legend>
 				<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LL" value="JSON" id="DialogAddColumnGeoRadioJSON">GeoJSON Geometry:
@@ -1406,7 +1406,7 @@
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="JSON" id="DialogAddColumnGeoRadioJSONOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioJSONOut");' checked="checked">GeoJSON Geometry</label><br>
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="WKT" id="DialogAddColumnGeoRadioWKTOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioWKTOut");' >Well Known Text</label><br>
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="Geohash" id="DialogAddColumnGeoRadioGeohashOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioGeohashOut");' >Geohash</label><br>
-					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="UberH3" id="DialogAddColumnGeoRadioUberH3Out" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioUberH3Out");' >Uber U3</label><br>
+					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="UberH3" id="DialogAddColumnGeoRadioUberH3Out" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioUberH3Out");' >Uber H3</label><br>
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="LL" id="DialogAddColumnGeoRadioLLOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioLLOut");' >Point coordinates</label>
 				</fieldset>
 				<legend>New column</legend>
@@ -1419,6 +1419,38 @@
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogAddColumnGeoNodeId"></input>
+		</form>
+	</dialog>
+
+	<dialog id="DialogDGGSCodesBbox" onClose='hideNodeDialog("DialogDGGSCodesBbox", event)'>
+		<form name="DialogDGGSCodesBboxForm">
+			DGGS codes table from geospatial extent
+			<fieldset>
+				<legend>Geospatial extent</legend>
+				<label>Minimum longitude: <input type="text" id="DialogDGGSCodesBboxMinLong" size="16" value="-180"></input></label>
+				<br>
+				<label>Minimum latitude: <input type="text" id="DialogDGGSCodesBboxMinLat" size="16" value="-90"></input></label>
+				<br>
+				<label>Maximum longitude: <input type="text" id="DialogDGGSCodesBboxMaxLong" size="16" value="180"></input></label>
+				<br>
+				<label>Maximum latitude: <input type="text" id="DialogDGGSCodesBboxMaxLat" size="16" value="90"></input></label>
+				<br>
+			</fieldset>
+			<br>
+			<fieldset>
+				<legend>DGGS code type:</legend>
+				<label><input type="radio" name="DialogDGGSCodesBboxCode" value="Geohash" id="DialogDGGSCodesBboxCodeGeohash">Geohash</label><br>
+				<label><input type="radio" name="DialogDGGSCodesBboxCode" value="UberH3" id="DialogDGGSCodesBboxCodeUberH3" checked="checked">Uber H3</label><br>
+			</fieldset>
+			<br>
+			<label>Level: <input type="text" size="2" id="DialogDGGSCodesBboxLevel" value="9"></input><label>
+			<label><input type="checkbox" id="DialogDGGSCodesBboxParents" checked="checked">Parent levels</label><br>
+			<label><input type="checkbox" id="DialogDGGSCodesBboxCentroid" checked="checked">Add centroid coordinates</label><br>
+			<div class="center">
+				<button value="ok" formmethod="dialog" onClick="GetCreateTableDGGSCodes(event)" formmethod="dialog">Create</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+			<input type="hidden" id="DialogDGGSCodesBboxNodeId"></input>
 		</form>
 	</dialog>
 

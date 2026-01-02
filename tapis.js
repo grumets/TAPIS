@@ -86,6 +86,7 @@ const ServicesAndAPIs = {sta: {name: "STA plus", description: "STA service", sta
 			ImportJSONLD: {name: "JSON-LD", description: "JSON-LD", startNode: true, help: "Imports data from a JSON-LD file and returns a table."},
 			ImportJSON: {name: "JSON", description: "JSON", startNode: true, help: "Imports data from a JSON file and returns a table."},
 			ImportGeoJSON: {name: "GeoJSON", description: "GeoJSON", startNode: true, help: "Imports the features of a GeoJSON and returns a table where each feature is a record. One of the columns contains the geometry JSON object."},
+			CreateDGGS: {name: "Extent", description: "DGGS extent", startNode: true, help: "Create a table of all DGGS codes that are inside a geospatial extent. It can also add the position or the center of the cell."},
 			staRoot: {name: "STA root", description: "STA root", help:"Returns to the root of the SensorThings API or STSTAplus service in use. In other words, removes the path and query parameters of the previous node."}};
 const ServicesAndAPIsArray = Object.keys(ServicesAndAPIs);
 const ServicesAndAPIsType = {singular: "Data input tool", plural: "Data input tools"};
@@ -6169,6 +6170,39 @@ function GetAddColumnGeo(event) {
 	UpdateChildenTable(node);
 }
 
+function GetOptionsDGGSCodesBbox(){
+	var result={
+		minLong: parseFloat(document.getElementById("DialogDGGSCodesBboxMinLong").value),
+		minLat: parseFloat(document.getElementById("DialogDGGSCodesBboxMinLat").value),
+		maxLong: parseFloat(document.getElementById("DialogDGGSCodesBboxMaxLong").value),
+		maxLat: parseFloat(document.getElementById("DialogDGGSCodesBboxMaxLat").value),
+		level: parseInt(document.getElementById("DialogDGGSCodesBboxLevel").value)};
+
+	if (document.getElementById("DialogDGGSCodesBboxCodeGeohash").checked)
+		result.codeType="Geohash";
+	else //if (document.getElementById("DialogDGGSCodesBboxCodeUberH3").checked)
+		result.codeType="UberH3";
+
+	if (document.getElementById("DialogDGGSCodesBboxParents").checked)
+		result.parents=true;
+	if (document.getElementById("DialogDGGSCodesBboxCentroid").checked)
+		result.centroid=true;
+	
+	return result;
+}
+
+function GetCreateTableDGGSCodes(event) {
+	hideNodeDialog("DialogDGGSCodesBbox", event);
+	var node=getNodeDialog("DialogDGGSCodesBbox");
+	var selectedOptions=GetOptionsDGGSCodesBbox();
+	var result=CreateTableDGGSCodes(selectedOptions);
+	node.STAdata=result.data;
+	node.STAdataAttributes=result.dataAttributes;
+	networkNodes.update(node);
+	updateQueryAndTableArea(node);
+	UpdateChildenTable(node);
+}
+
 function ShowAddColumnGeoDialog(node) {
 	var dataAttributes=currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(node.STAdata);
 	PopulateSelectSaveLayerDialog("DialogAddColumnGeoJSON", dataAttributes, "geometry");
@@ -7493,6 +7527,10 @@ function networkDoubleClick(params) {
 			document.getElementById("DialogImportGeoJSONSourceURLSelect").innerHTML = GetOptionsSelectDialog(config.suggestedGeoJSONurls);
 			saveNodeDialog("DialogImportGeoJSON", currentNode);
 			showNodeDialog("DialogImportGeoJSON");
+		}
+		else if (currentNode.image == "CreateDGGS.png") {
+			saveNodeDialog("DialogDGGSCodesBbox", currentNode);
+			showNodeDialog("DialogDGGSCodesBbox");
 		}
 		else if (currentNode.image == "Table.png") {
 			var parentNode=GetFirstParentNode(currentNode);
