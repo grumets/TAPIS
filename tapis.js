@@ -174,6 +174,17 @@ const tableStatisticsVisualize ={
 const tableStatisticsVisualizeArray = Object.keys(tableStatisticsVisualize);
 const tableStatisticsVisualizeType = {singular: " Table tool for statistics and visualization", plural: "Table tools for statistics and visualization"};
 
+const dataQuality={
+	completenessomission:{description: "Completness omission", help:"The degree to which all required data is present and recorded without missing or incomplete values" },
+	logicalConsistency:{description: "Logical consistency", help:"Performs a logical consistency check to identify contradictions and ensure coherent data relationships." },
+	temporalQuality:{description: "Temporal quality", help:"Allows calculating temporal consistency, temporal validity and temporal resolution." },
+	positionalQuality:{description: "Positional quality", help:"Allows calculating positional accuracy and positional validity"  },
+	thematicQuality:{description: "Thematic quality", help:"Allows calculating thematic accuracy and thematic validity"  }
+
+}
+const dataQualityArray = Object.keys(dataQuality);
+const dataQualityType = {singular: " Table tool for data quality", plural: "Table tools for data quality"};
+
 function IdOfSTAEntity(node) {
 	for (var i = 0; i < STAEntitiesArray.length; i++) {
 		if (node.image == STAEntitiesArray[i] + ".png")
@@ -515,6 +526,11 @@ function PlaceButtonsSTAEntities() {
 		if (!startButtonsOnly || TableOperations[TableOperationsArray[i]].startNode)
 			cdns.push(textOperationButton(null, "", TableOperationsArray[i], TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].description, TableOperations[TableOperationsArray[i]].help, TableOperations[TableOperationsArray[i]], TableOperationsType.singular));
 	}
+	cdns.push("<br>");
+	for (var i = 0; i < dataQualityArray.length; i++) {
+		if (!startButtonsOnly || dataQuality[dataQualityArray[i]].startNode)
+			cdns.push(textOperationButton(null, "", dataQualityArray[i], dataQuality[dataQualityArray[i]].description, dataQuality[dataQualityArray[i]].description, dataQuality[dataQualityArray[i]].help, dataQuality[dataQualityArray[i]], dataQualityType.singular));
+	}
 	if (!startButtonsOnly)
 		cdns.push("<br>");
 
@@ -594,7 +610,7 @@ function PopulateContextMenu(nodeId){ //Chage to show only linkable nodes
 	cdns.push(generalBox.replace("TITLE", ServicesAndAPIsType.plural).replace("COLOR", "rgb(127,217,255)").replace("CONTENT", provisional.join("")));
 	
 	provisional=[];
-	for (var i = 0; i < STAEntitiesArray.length; i++) {
+	for (var i = 0; i < STAEntitiesArray.length; i++) { //Plural
 		node.image= STAEntitiesArray[i]+".png";
 		if (!nodeId ||reasonNodeDoesNotFitWithPrevious(node, parentNode)==null)
 			provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", STAEntitiesArray[i], STAEntitiesArray[i], STAEntitiesArray[i], STAEntities[STAEntitiesArray[i]].help, null, STAEntitiesType.singular), 
@@ -604,9 +620,13 @@ function PopulateContextMenu(nodeId){ //Chage to show only linkable nodes
 		cdns.push(generalBox.replace("TITLE", STAEntitiesType.plural).replace("COLOR", "rgb(127,217,255)").replace("CONTENT", provisional.join("")));
 
 	provisional=[];
-	for (var i = 0; i < STAEntitiesArray.length; i++) {
+
+	for (var i = 0; i < STAEntitiesArray.length; i++) { //Singular (create, update, delete)
 		node.image= STAEntitiesArray[i]+".png";
-		if ( !nodeId ||reasonNodeDoesNotFitWithPrevious(node, parentNode)==null)
+		if(parentNode.STAEntityName== STAEntitiesArray[i]){
+			provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].helpEdit, null, STAEntitiesType.singularEdit),
+				(i+1)%nCol==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ");
+		}else if ( !nodeId ||reasonNodeDoesNotFitWithPrevious(node, parentNode)==null)
 			provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].singular, STAEntities[STAEntitiesArray[i]].helpEdit, null, STAEntitiesType.singularEdit),
 				(i+1)%nCol==0 || i == STAEntitiesArray.length-1 ? "<br>" : " ");
 	}
@@ -652,7 +672,17 @@ function PopulateContextMenu(nodeId){ //Chage to show only linkable nodes
 	}
 	if (provisional.length>1)
 		cdns.push(generalBox.replace("TITLE",tableStatisticsVisualizeType.plural).replace("COLOR","rgb(183,183,183)").replace("CONTENT", provisional.join("")));
+	provisional=[];
+	for (var i = 0; i < dataQualityArray.length; i++) {
+		node.image= dataQualityArray[i]+".png";
+		if (!nodeId || reasonNodeDoesNotFitWithPrevious(node, parentNode)==null)
+			provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", dataQualityArray[i], dataQuality[dataQualityArray[i]].description, dataQuality[dataQualityArray[i]].description, dataQuality[dataQualityArray[i]].help, dataQuality[dataQualityArray[i]], dataQualityType.singular),
+				(i+1)%nCol==0 || i == dataQualityArray.length-1 ? "<br>" : " ");
+	}
+	if (provisional.length>1)
+		cdns.push(generalBox.replace("TITLE",dataQualityType.plural).replace("COLOR","rgb(183,183,183)").replace("CONTENT", provisional.join("")));
 
+	
 	//cdns.push("</div>");
 	document.getElementById("ButtonsContextMenuObjects").innerHTML = cdns.join("");
 }
@@ -3886,6 +3916,9 @@ function addTimeToOtherInputCreateEntities (itemWritten, itemToWrite,number,orig
 		document.getElementById(itemToWrite).value=document.getElementById(itemWritten).value+"Z" ;
 	}
 }
+function addTimeToTemporalQualityCalendar(itemWritten, itemToWrite){
+	document.getElementById(itemToWrite).value=document.getElementById(itemWritten).value;
+}
 
 function obtainDataInEntitiesCreationAndUpdate(operation,entityName){
 
@@ -5025,10 +5058,12 @@ function addSemanticsSTADataAttributes(dataAttributes, url) {
 
 function ShowTableOptionsDiv(node, optionsDiv, fn_showTable) {
 	if (node.STAdata && node.STAdata.length)
-		document.getElementById(optionsDiv).innerHTML = "<label><input type='checkbox' "+ ((!document.getElementById(optionsDiv + "RowNumber") || document.getElementById(optionsDiv + "RowNumber").checked) ? "checked='checked' " : "") +"id='" + optionsDiv + "RowNumber' onChange='"+fn_showTable+"(networkNodes.get(\"" + node.id + "\"));'/> Show row numbers</label> &ensp;" +
+		document.getElementById(optionsDiv).innerHTML="<label><input type='checkbox' "+ ((!document.getElementById(optionsDiv + "RowNumber") || document.getElementById(optionsDiv + "RowNumber").checked) ? "checked='checked' " : "") +"id='" + optionsDiv + "RowNumber' onChange='"+fn_showTable+"(networkNodes.get(\"" + node.id + "\"));'/> Show row numbers</label> &ensp;" +
 								"<label><input type='checkbox' "+ ((!document.getElementById(optionsDiv + "SelfNavLink") || document.getElementById(optionsDiv + "SelfNavLink").checked) ? "checked='checked' " : "") +"id='" + optionsDiv + "SelfNavLink' onChange='"+fn_showTable+"(networkNodes.get(\"" + node.id + "\"));'/> Show self and navigation links</label>";
 	else
-		document.getElementById(optionsDiv).innerHTML = "";
+		document.getElementById(optionsDiv).innerHTML="";
+	if (node.STAmetadata)
+		document.getElementById(optionsDiv).innerHTML+=" <a href='javascript:void(0)' style="text-decoration: none;" onClick='ShowMetadataDialog(\""+node.id+"\")'><img src='metadata.png' alt='metadata' title='metadata'> Metadata </a>";
 }
 
 function ShowTableDialog(node) {
@@ -6923,6 +6958,15 @@ function ShowTableNode(node) {
 	}
 }
 
+function ShowMetadataDialog(nodeId) {
+	var node=networkNodes.get(nodeId);
+	if (node && node.STAmetadata) {
+		document.getElementById("dataQualityResult_info").innerHTML= metadataAsHTML(node.STAmetadata);
+		showNodeDialog("dataQualityResult");		
+	}
+}
+
+
 /*return 
 	null means connection should not be done.
 	true means all done
@@ -7023,6 +7067,7 @@ function StartCircularImage(nodeTo, nodeFrom, addEdge, staNodes, tableNodes)
 	}
 	if (staNodes && nodeFrom.STAURL && nodeTo.image == "MergeExpandsSTA.png") {
 		nodeTo.STAURL = nodeFrom.STAURL;
+		nodeTo.STAEntityName= nodeFrom.STAEntityName;
 		if (nodeFrom.STAsecurity)
 			nodeTo.STAsecurity=deapCopy(nodeFrom.STAsecurity);
 		networkNodes.update(nodeTo);
@@ -7677,6 +7722,8 @@ function networkDoubleClick(params) {
 		}
 		else if (currentNode.image == "SelectRowSTA.png" || currentNode.image == "SelectRowTable.png") {
 			var parentNode=GetFirstParentNode(currentNode);
+
+			if (currentNode.image == "SelectRowSTA.png")currentNode.STAEntityName= parentNode.STAEntityName;
 			if (parentNode) {
 				if (parentNode.STAOGCAPIconformance){
 					currentNode.STAOGCAPIconformance=parentNode.STAOGCAPIconformance;
@@ -7728,6 +7775,7 @@ function networkDoubleClick(params) {
 			}
 		}
 		else if (currentNode.image == "FilterRowsByTime.png"){							
+			currentNode.STAEntityName= parentNode.STAEntityName;
 			if (PopulateFilterRowsByTimePropertySelect())
 				showNodeDialog("DialogFilterRowsByTime");			
 		}
@@ -7892,6 +7940,62 @@ function networkDoubleClick(params) {
 				alert("Parent node must have data to replace it");
 			}
 		}
+		else if (currentNode.image == "completenessomission.png") {
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode.STAdata) {
+					currentNode.STAdata= deapCopy(parentNode.STAdata);
+					currentNode.STAdataAttributes=parentNode.STAdataAttributes ? deapCopy(parentNode.STAdataAttributes) : getDataAttributes(parentNode.STAdata);
+					populateDialogQualityCompletnessOmission(currentNode);
+					networkNodes.update(currentNode);
+					showNodeDialog("DialogQualityCompletnessOmission");
+			}else{
+				alert("Parent node must have data to analyze");
+			}
+		}
+		else if (currentNode.image == "logicalConsistency.png") {
+			if (populateDialogQualityLogicalConsistency(currentNode)){
+				showNodeDialog("DialogQualityLogicalConsistency");
+			}else{
+				alert ("Both a parent to evaluate and a reference parent are required.")
+			}
+		}
+		else if (currentNode.image == "temporalQuality.png") {
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode.STAdata) {
+					currentNode.STAdata= deapCopy(parentNode.STAdata);
+					currentNode.STAdataAttributes= parentNode.STAdataAttributes ? deapCopy(parentNode.STAdataAttributes) : getDataAttributes(parentNode.STAdata);
+					populateDialogQualityTemporalQuality(currentNode);
+					networkNodes.update(currentNode);
+					showNodeDialog("DialogQualityTemporalQuality");
+			}else{
+				alert("Parent node must have data to analyze");
+			}
+		}
+		else if (currentNode.image == "positionalQuality.png") {
+			var parentNode=GetFirstParentNode(currentNode);
+			if (parentNode.STAdata) {
+					currentNode.STAdata= deapCopy(parentNode.STAdata);
+					currentNode.STAdataAttributes= parentNode.STAdataAttributes ? deapCopy(parentNode.STAdataAttributes) : getDataAttributes(parentNode.STAdata);
+					populateDialogQualityPositionalQuality(currentNode);
+					networkNodes.update(currentNode);
+					showNodeDialog("DialogQualityPositionalQuality");
+			}else{
+				alert("Parent node must have data to analyze");
+			}
+		}
+		else if (currentNode.image == "thematicQuality.png") {
+			var parentNode=GetParentNodes(currentNode);
+			if (parentNode) {
+					//currentNode.STAdata= deapCopy(parentNode.STAdata);
+					//currentNode.STAdataAttributes= parentNode.STAdataAttributes ? deapCopy(parentNode.STAdataAttributes) : getDataAttributes(parentNode.STAdata);
+					populateDialogQualityThematicQuality(currentNode);
+					networkNodes.update(currentNode);
+					showNodeDialog("DialogQualityThematicQuality");
+			}else{
+				alert("Parent node must have data to analyze");
+			}
+		}
+		
 	}
 }
 
@@ -7900,7 +8004,7 @@ function networkContext(params) {
 
 	var nodeId = network.getNodeAt(params.pointer.DOM); //params.nodes is not useful here as params.nodes are the selected ones and not the ones rightclicked.
 	//rewrite DialogContextMenu
-	PopulateContextMenu (nodeId);
+	PopulateContextMenu(nodeId);
 	if (nodeId) {
 		startingNodeContextId = nodeId;
 		showNodeDialog("DialogContextMenu");
@@ -9212,7 +9316,6 @@ function applyTemporalFilter(url, dateFrom, dateTo, property){
 	networkNodes.update(currentNode);
 }
 
-//Cal preguntar a la Marta que és això.
 async function askForAllDataResults(property){
 	var numberOfResults = await loadAPIDataWithReturn(currentNode.STAURL+"&$count=true", "CountResults");
 				
@@ -9227,7 +9330,6 @@ async function askForAllDataResults(property){
 		data.push(...dataToPush);
 		
 		while (stop==false){ 
-
 			if ((skip+20000)<numberOfResults){
 				skip+=10000;
 
@@ -9239,8 +9341,7 @@ async function askForAllDataResults(property){
 
 			newUrl= currentNode.STAURL+ `&$skip=${skip} &$top=${top} &$orderBy=${property}+asc`;
 			dataToPush= await loadAPIDataWithReturn(newUrl,"obtainAllData")
-			data.push(...dataToPush);		
-	
+			data.push(...dataToPush);			
 		} 
 		currentNode.STAdata=data;
 		networkNodes.update(currentNode);			
@@ -9252,10 +9353,8 @@ function prepareSTAdataToAggregateDataByChosenPeriodFunction(data, properties){
 	
 	for (var i=0;i<n;i++){
 		loadArray=[];
-		for (var a=0;a<properties.length;a++){
+		for (var a=0;a<properties.length;a++)
 			loadArray.push(data[i][properties[a]]);	
-			
-		}
 		finalDataArray.push(loadArray)
 	}
 	return finalDataArray;
@@ -9266,86 +9365,78 @@ function AggregateDataByChosenPeriod(necessaryData, period,STA){//year, month, d
 	switch (period){
 		case "year": 
 			x=4;
-		break;
+			break;
 		case "month": 
 			x=7;
-		break;
+			break;
 		case "day": 
 			x=10;
-		break;
+			break;
 		case "hour": 
 			x=13;
-		break;
+			break;
 		case "minute": 
 			x=16;
-		break;
-
+			break;
 	}
 	var firstDataValue, lastDataValue, observationsArray=[];
 	for (var i=0;i<n;i++){
-				if (STA && i==0){
-					firstDataValue=necessaryData[i][0];
-					lastDataValue=necessaryData[i][0];
-				}
-				if (necessaryData[i][0].substr(0,x)==lastDate){
-					samePeriodData.push(necessaryData[i][1]);
-					if (STA)lastDataValue= necessaryData[i][0]; 
-					if (i== n-1){
-						aggregedData.push([lastDate,samePeriodData]);
-						if (STA){
-							observationsArray.push({
-								"phenomenonTime": firstDataValue+"/"+lastDataValue,
-								"resultTime": "",
-								"result": [],
-								"parameters":{
-									"resultCount": samePeriodData.length
-								}
-							})
-						}
-					}
-				}
-				else{ //new date
-					if (i!=0)aggregedData.push([lastDate,samePeriodData]); //load data from period before
-					if (STA &&  i!=0){
-						observationsArray.push({
-							"phenomenonTime": firstDataValue+"/"+lastDataValue,
-							"resultTime": "",
-							"result": [],
-							"parameters":{
-								"resultCount": samePeriodData.length
-							}
-
-						})
-						lastDataValue= necessaryData[i][0]; 
-						firstDataValue= necessaryData[i][0];
-					}
-					lastDate= necessaryData[i][0].substr(0,x); //new date
-					samePeriodData=[]; //restart
-					samePeriodData.push(necessaryData[i][1]);
-					if (i== n-1){
-						aggregedData.push([lastDate,samePeriodData]);
-					}
-				}
+		if (STA && i==0){
+			firstDataValue=necessaryData[i][0];
+			lastDataValue=necessaryData[i][0];
 		}
-		if (STA) return [aggregedData,observationsArray]
-		else return aggregedData;
+		if (necessaryData[i][0].substr(0,x)==lastDate){
+			samePeriodData.push(necessaryData[i][1]);
+			if (STA)
+				lastDataValue= necessaryData[i][0]; 
+			if (i== n-1) {
+				aggregedData.push([lastDate,samePeriodData]);
+				if (STA){
+					observationsArray.push({
+						"phenomenonTime": firstDataValue+"/"+lastDataValue,
+						"resultTime": "",
+						"result": [],
+						"parameters":{
+							"resultCount": samePeriodData.length
+						}
+					});
+				}
+			}
+		} else{ //new date
+			if (i!=0)
+				aggregedData.push([lastDate,samePeriodData]); //load data from period before
+			if (STA &&  i!=0){
+				observationsArray.push({
+					"phenomenonTime": firstDataValue+"/"+lastDataValue,
+					"resultTime": "",
+					"result": [],
+					"parameters":{
+						"resultCount": samePeriodData.length
+					}
+				});
+				lastDataValue= necessaryData[i][0]; 
+				firstDataValue= necessaryData[i][0];
+			}
+			lastDate= necessaryData[i][0].substr(0,x); //new date
+			samePeriodData=[]; //restart
+			samePeriodData.push(necessaryData[i][1]);
+			if (i== n-1) 
+				aggregedData.push([lastDate,samePeriodData]);
+		}
+	}
+	return (STA) ? [aggregedData,observationsArray] : aggregedData;
 }
 
-function calculateMinMaxMeanDesvest(aggregatedData){
+function calculateMinMaxMeanDesvest(aggregatedData) {
+	var n=aggregatedData.length, statisticsArray=[];
 
-	var n= aggregatedData.length, statisticsArray=[];
-
-	for (var i=0; i<n; i++){
+	for (var i=0; i<n; i++)
 		statisticsArray.push({"date":aggregatedData[i][0],"Min. value":aggrFuncMinValue(aggregatedData[i][1]),"Max. value":aggrFuncMaxValue(aggregatedData[i][1]),"Mean":aggrFuncMean(aggregatedData[i][1]),"Standard deviation":aggrFuncStandardDeviation(aggregatedData[i][1])});
-	}
+
 	return statisticsArray
 }
 
-
-
-
-function createAndLoadImportGeoJSONNode(data,url){
-	
+function createAndLoadImportGeoJSONNode(data,url){	
 	addCircularImage(null, null, "GeoJSON", "ImportGeoJSON.png");
 	console.log(data)
 	var node = networkNodes.get(network.getSelectedNodes()[0]);
@@ -9361,8 +9452,6 @@ function createAndLoadImportGeoJSONNode(data,url){
 	node.STAdataAttributes=attributes;
 	updateQueryAndTableArea(node);
 	networkNodes.update(node);
-
-	
 }
 
 function populatePivotTableDialog(node){
@@ -9398,9 +9487,9 @@ function populatePivotTableDialog(node){
 		}else{
 			for (var u=0;u<node.STApivotTable[columnsRowsValues[e]].length;u++){
 				elementsInTable+=`<tr style="border: 1px solid black;"> 
-				<td style="border: 1px solid black;""> ${node.STApivotTable[columnsRowsValues[e]][u]} </td>
-				<td style="border: 1px solid black;"><button onclick="deleteTableRowInPivotTable('${columnsRowsValues[e]}',${u})"><img src="trash.png" alt="Remove" title="Remove" style="width:20px"></button></td>
-			</tr>`;
+					<td style="border: 1px solid black;""> ${node.STApivotTable[columnsRowsValues[e]][u]} </td>
+					<td style="border: 1px solid black;"><button onclick="deleteTableRowInPivotTable('${columnsRowsValues[e]}',${u})"><img src="trash.png" alt="Remove" title="Remove" style="width:20px"></button></td>
+					</tr>`;
 			}
 
 		}
@@ -9422,7 +9511,6 @@ function addTableRowInPivotTable(place){
 		//if (place=="Rows") document.getElementById("pivotTableRows_addButton").disabled=true;
 		populatePivotTableDialog(node);
 	}
-
 }
 
 function deleteTableRowInPivotTable(place,number){
@@ -9435,7 +9523,8 @@ function deleteTableRowInPivotTable(place,number){
 	}
 	node.STApivotTable[place]=elementsFiltered;
 	networkNodes.update(node);
-	if (place=="Rows") document.getElementById("pivotTableRows_addButton").disabled=false;
+	if (place=="Rows") 
+		document.getElementById("pivotTableRows_addButton").disabled=false;
 	populatePivotTableDialog(node);
 }
 function okButtonInPivotTable(event){
@@ -9457,10 +9546,419 @@ function okButtonInPivotTable(event){
 		node.STAdataAttributes=uploadDataAttributesAddingNewColumns(node.STAdataAttributes, newData, "");
 		networkNodes.update(node);
 		hideNodeDialog("DialogPivotTable");
-	}else{
+	}else
 		alert (newData) //Error
+}
+
+function populateDialogQualityCompletnessOmission(node){
+	var attributesCheckboxModule = populateAttributesListSelect(node.STAdataAttributes, "omission", "Column");
+	saveNodeDialog("DialogQualityCompletnessOmission", node);
+	document.getElementById("DialogQualityCompletnessOmission_attributesList").innerHTML=attributesCheckboxModule;
+}
+
+function populateAttributesListSelect(attributes,place, text){
+	var attributesKeys=Object.keys(attributes);
+	var c=`<div><span>${text}:  </span><select name="attributesList_${place}" id ="attributeList_${place}">`;
+	for (var i=0;i<attributesKeys.length;i++){
+			c+= `<option  value="${attributesKeys[i]}">${attributesKeys[i]}</option>`;
+	}
+	
+	c+="</select></div><br>";
+	return c;
+}
+
+function okButtonDataQualityCompletnessOmission(event){
+	var node= getNodeDialog("DialogQualityCompletnessOmission");
+	var data= node.STAdata;
+	var select= document.getElementById("attributeList_omission");
+	var selected= select.options[select.selectedIndex].value;
+	var calculate=(document.getElementById("dataQuality_omission_calculate").checked)?true:false;
+	var flag= (document.getElementById("dataQuality_omission_flag").checked)?true:false;
+	var filter= (document.getElementById("dataQuality_omission_filter").checked)?true:false;
+	var infoDataOmission;
+
+	infoDataOmission= calculateDataQualityCompletnessOmission(data, selected, flag, filter); //Response:data, Total, true, false, %omission, %completness
+
+	node.STAdata=infoDataOmission[0];
+	networkNodes.update(node);
+	hideNodeDialog("DialogQualityCompletnessOmission", event);
+	
+	if(calculate){ 
+		document.getElementById("dataQualityResult_info").innerHTML= `<table class="tablesmall">
+		<thead > 
+		<th >Column</th><th>Total records</th><th>Empty records</th>
+		<th>Omission rate</th><th>Completeness rate</th></tr></thead>
+		<tbody><tr>
+		<td>${selected}</td><td>${infoDataOmission[1]}</td><td>${infoDataOmission[3]}</td>
+		<td>${infoDataOmission[4]}</td><td>${infoDataOmission[5]}</td>
+		</tr></tbody></table>`;
+		showNodeDialog("dataQualityResult");
+	}
+	
+	updateQueryAndTableArea(node);
+}
+function populateDialogQualityLogicalConsistency(node){
+	var parentsNodes= GetParentNodes(node);
+	saveNodeDialog("DialogQualityLogicalConsistency", node);
+	if (parentsNodes.length!=2) return false; //node to evaluate and reference nodes are required
+
+	document.getElementById("DialogQualityLogicalConsistency_table_0").innerHTML=parentsNodes[0].label;
+	document.getElementById("DialogQualityLogicalConsistency_table_1").innerHTML=parentsNodes[1].label;
+	var div= document.getElementById("DialogQualityLogicalConsistency_table_div");
+	var options1="",options2="", objectKeys;
+	//node 1
+	if(!parentsNodes[0].STAdata){
+		alert("Parent nodes do not contain data");
+		return false;
+	}
+	options1+=`<option value="" style="text-align: center;">--- Select column ---</option>`;
+	objectKeys=Object.keys(parentsNodes[0].STAdataAttributes);
+	for (var e=0;e<objectKeys.length;e++){
+		options1+=`<option value="${objectKeys[e]}">${objectKeys[e]}</option>`
+	}
+	div.setAttribute("data-value_0", parentsNodes[0].id);
+	//node 2
+	if(!parentsNodes[1].STAdata){
+		alert("Parent nodes do not contain data");
+		return false;
+	}
+	options2+=`<option value="" style="text-align: center;">--- Select column ---</option>`;
+	objectKeys=Object.keys(parentsNodes[1].STAdataAttributes);
+	for (var e=0;e<objectKeys.length;e++){
+		options2+=`<option value="${objectKeys[e]}">${objectKeys[e]}</option>`
+	}
+	div.setAttribute("data-value_1", parentsNodes[1].id);
+
+	document.getElementById("DialogQualityLogicalConsistency_selectAttribute1_0").innerHTML= options1;
+	document.getElementById("DialogQualityLogicalConsistency_selectAttribute2_0").innerHTML= options1;
+	document.getElementById("DialogQualityLogicalConsistency_selectAttribute3_0").innerHTML= options1;
+	document.getElementById("DialogQualityLogicalConsistency_selectAttribute1_1").innerHTML= options2;
+	document.getElementById("DialogQualityLogicalConsistency_selectAttribute2_1").innerHTML= options2;
+	document.getElementById("DialogQualityLogicalConsistency_selectAttribute3_1").innerHTML= options2;
+
+	return true;
+}
+function okButtonDataQualityDialogQualityLogicalConsistency(event){
+	var node= getNodeDialog("DialogQualityLogicalConsistency");
+	var targets =[];
+	var references=[];
+	var select, selected, selectedTarget, selectedReference;
+	var dataTarget, dataReference, idTarget, idReference;
+	var numTargued, numReference;
+
+	//Wich node is targed and wich reference
+	select= document.getElementById("DialogQualityLogicalConsistency_select_targetOrReference_0");
+	selected= select.options[select.selectedIndex].value;
+	if(selected=="targed"){
+		numTargued=0;
+		numReference=1; 
+	}else{
+		numTargued=1;
+		numReference=0; 	
+	}
+
+	for (var i=1;i<4;i++){
+		select=document.getElementById(`DialogQualityLogicalConsistency_selectAttribute${i}_${numTargued}`);
+		selectedTarget= select.options[select.selectedIndex].value;
+		if(selectedTarget!=""){
+			select=document.getElementById(`DialogQualityLogicalConsistency_selectAttribute${i}_${numReference}`);
+			selectedReference= select.options[select.selectedIndex].value;
+			if(selectedReference!=""){
+				targets.push(selectedTarget);
+				references.push(selectedReference);
+			}
+		}
+	}
+	if (targets.length!=0){
+		var calculate=(document.getElementById("dataQuality_logicalConsistency_calculate").checked)?true:false;
+		var flag= (document.getElementById("dataQuality_logicalConsistency_flag").checked)?true:false;
+		var filter= (document.getElementById("dataQuality_logicalConsistency_filter").checked)?true:false;
+
+	if (numTargued==0){
+		idTarget=document.getElementById("DialogQualityLogicalConsistency_table_div").getAttribute("data-value_0");
+		idReference=document.getElementById("DialogQualityLogicalConsistency_table_div").getAttribute("data-value_1")
+	}else{
+		idTarget=document.getElementById("DialogQualityLogicalConsistency_table_div").getAttribute("data-value_1");
+		idReference=document.getElementById("DialogQualityLogicalConsistency_table_div").getAttribute("data-value_0");
+	}
+
+		if(idTarget!=idReference){
+			var infoDatalogicalConsistency;
+			dataTarget= networkNodes.get(idTarget).STAdata;
+			dataReference= networkNodes.get(idReference).STAdata;
+			infoDatalogicalConsistency= calculateDataQualityLogicalConsistency(dataTarget, dataReference, targets, references, calculate, flag, filter); //Total, true, false, %logicalConsistency, %completesa
+			
+			node.STAdata= infoDatalogicalConsistency[0];
+			node.STAdataAttributes= getDataAttributes(infoDatalogicalConsistency[0]);
+			networkNodes.update(node);
+			hideNodeDialog("DialogQualityLogicalConsistency", event);
+	
+			document.getElementById("dataQualityResult_info").innerHTML=`<table class="tablesmall">
+				<thead > 
+				<th >Target columns</th><th >Reference columns</th><th>Total records</th>
+				<th>True records</th><th>Logical consistancy rate</th></tr></thead>
+				<tbody><tr>
+				<td>${targets}</td><td>${references}</td><td>${dataTarget.length}</td>
+				<td>${infoDatalogicalConsistency[1]}</td><td>${infoDatalogicalConsistency[2]}</td>
+				</tr></tbody></table>`
+			showNodeDialog("dataQualityResult");
+			updateQueryAndTableArea(node);
+
+		}else{
+			alert("target node and reference node are the same are identified as the same")
+		}
 	}
 }
+
+function populateDialogQualityTemporalQuality(node){
+	var attributesCheckboxModule = populateAttributesListSelect(node.STAdataAttributes, "temporalQuality", "Column");
+	document.getElementById("DialogQualityTemporalQuality_attributesList").innerHTML=attributesCheckboxModule;
+	saveNodeDialog("DialogQualityLogicalConsistency", node);
+}
+
+function okButtonDataQualityTemporalQuality(event){
+	var node= getNodeDialog("DialogQualityLogicalConsistency");
+	var data= node.STAdata;
+	var select= document.getElementById("attributeList_temporalQuality");
+	var attributeSelected= select.options[select.selectedIndex].value;
+
+	var validity_calculate=(document.getElementById("TemporalQuality_checkbox_calculate_temporalValidity").checked)?true:false;
+	var from=document.getElementById("DialogQualityTemporalQuality_validity_inputText_from").value;
+	var to= document.getElementById("DialogQualityTemporalQuality_validity_inputText_to").value;
+
+	var resolution_calculate=(document.getElementById("TemporalQuality_checkbox_calculate_temporalResolution").checked)?true:false;
+	var resolutionRadio=document.querySelector('input[name="TemporalQuality_resolution_radio"]:checked')
+	var resolutionRadioValue= resolutionRadio.value;
+
+	var consistencyInput= document.getElementById("TemporalQuality_consistency_toleranceNumber").value;
+	var consistency_calculate=(document.getElementById("TemporalQuality_checkbox_calculate_temporalConsistency").checked)?true:false;
+
+	var consistencyRadio=document.querySelector('input[name="TemporalQuality_consistency_radio"]:checked')
+	var consistencyRadioValue= consistencyRadio.value;
+	var tolerance= document.getElementById("TemporalQuality_consistency_toleranceRange").value;
+	var consistencyRadioMethod=(document.getElementById("TemporalQuality_intervalMethod_radio_local").checked)?"interval":"global";
+
+	var filter= (document.getElementById("dataQuality_temporalQuality_filter").checked)?true:false;
+	var flag=(document.getElementById("TemporalQuality_checkbox_flag").checked)?true:false;
+	var sort= (document.getElementById("TemporalQuality_checkbox_sort").checked)?true:false;
+	var datalength=data.length;
+	
+	var newData={}, conditionsToFilter=[];
+	if (validity_calculate){
+		newData.validity=calculateDataQualityTemporalValidity(data, attributeSelected, from, to, validity_calculate, flag, filter);
+		data= newData.validity[0];
+		conditionsToFilter.push("temporalValidity");
+	} 
+	
+	if (resolution_calculate){
+		newData.resolution= calculateDataQualityTemporalResolution(data, attributeSelected, resolutionRadioValue, resolution_calculate, flag,filter);
+		data= newData.resolution[0];
+		conditionsToFilter.push("temporalResolution");
+	} 
+	if (consistency_calculate){
+		if(sort)sortDates(data, attributeSelected);
+		newData.consistency= calculateDataQualityTemporalConsistency(data, attributeSelected, consistencyInput,consistencyRadioValue, consistencyRadioMethod,tolerance,consistency_calculate, flag, filter);
+		data= newData.consistency[0];
+		conditionsToFilter.push("temporalConsistency");
+	}
+	var finalData;
+	
+	if (filter && conditionsToFilter.length>0)finalData= data.filter(obj=>conditionsToFilter.every(attr=> obj[attr]===true)); 
+	else finalData=data;
+	
+	if (newData.validity==false || newData.resolution==false ||newData.consistency==false)
+		alert("The attribute selected must be a Date");
+	else{
+		node.STAdata= finalData;
+		node.STAdataAttributes= getDataAttributes(finalData);
+		networkNodes.update(node);
+		updateQueryAndTableArea(node);
+		hideNodeDialog("DialogQualityTemporalQuality", event);
+
+		if(validity_calculate||resolution_calculate||consistency_calculate){
+			var html="";
+			html= `<table class="tablesmall">
+						<thead > 
+						<th></th><th>Column</th><th>Total records</th><th>True records</th><th>Rate</th></tr></thead><tbody>`;
+			if(validity_calculate)html+= `<tr><td>Temporal validity</td><td>${attributeSelected}</td><td>${datalength}</td><td>${newData.validity[1]}</td><td>${(newData.validity[1]/datalength)*100}</td></tr>`
+			if(resolution_calculate)html+= `<tr><td>Temporal resolution</td><td>${attributeSelected}</td><td>${datalength}</td><td>${newData.resolution[1]}</td><td>${(newData.resolution[1]/datalength)*100}</td></tr>`
+			if(consistency_calculate)html+= `<tr><td>Temporal consistency</td><td>${attributeSelected}</td><td>${datalength}</td><td>${newData.consistency[1]}</td><td>${(newData.consistency[1]/datalength)*100}</td></tr>`
+			html+=`</tbody></table>`;
+			document.getElementById("dataQualityResult_info").innerHTML= html
+			showNodeDialog("dataQualityResult");
+		}
+	}	
+}
+
+function populateDialogQualityPositionalQuality(node){
+	var attributesCheckboxModule = populateAttributesListSelect(node.STAdataAttributes, "positionalQuality", "Geometry column");
+	document.getElementById("DialogQualityPositionalQuality_attributesList").innerHTML=attributesCheckboxModule;
+	saveNodeDialog("DialogQualityPositionalQuality", node);
+	var c="";
+	var attributesKeys= Object.keys(node.STAdataAttributes);
+	for (var i= 0; i< attributesKeys.length;i++)
+		c+=`<option value="${attributesKeys[i]}">${attributesKeys[i]}</option>`
+
+	document.getElementById("PositionalQuality_select_positionalAccuracy_accuracyColumn").innerHTML=c;
+}
+
+
+function okButtonDataQualityPositionalQuality(event){
+	event.preventDefault();
+	var node= getNodeDialog("DialogQualityPositionalQuality");
+	var positionalAccuracy=(document.getElementById("PositionalQuality_checkbox_positionalAccuracy").checked)?true:false;
+	var positionalValidity=(document.getElementById("PositionalQuality_checkbox_positionalValidity").checked)?true:false;
+	var select=document.getElementById("attributeList_positionalQuality");
+	var attributeSelected=select.options[select.selectedIndex].value;
+	var valid, accuracyValue;
+	var data=node.STAdata;
+	var dataLength=data.length;
+	if (!node.STAmetadata)
+		node.STAmetadata={};
+	var metadata=node.STAmetadata;
+
+	if (positionalAccuracy){
+		var accuracyMethod= (document.getElementById("PositionalQuality_radio_positionalAccuracy_accuracyColumn").checked)?"accuracyColumn": "geometryColumn";
+		
+		if (accuracyMethod=="accuracyColumn"){			
+			var selectAccuracy= document.getElementById("PositionalQuality_select_positionalAccuracy_accuracyColumn");
+			var attributeSelectedAccuracy= selectAccuracy.options[selectAccuracy.selectedIndex].value;
+			if (node.STAdataAttributes[attributeSelectedAccuracy].type == "number" || node.STAdataAttributes[attributeSelectedAccuracy].type== "integer") {
+				accuracyValue=accuracyFromUncertaintyInPositions(data, metadata, attributeSelectedAccuracy);
+				valid=true;
+			} else {
+				valid=false;
+				alert("Selected uncertainly column must be of a 'number' type");
+			}
+		} else {
+			var selectUnit= document.getElementById("PositionalQuality_radio_positionalAccuracy_accuracyColumn_degreeMeters");
+			var selectUnitValue= selectUnit.options[selectUnit.selectedIndex].value;
+			var selectAxis= document.getElementById("PositionalQuality_radio_positionalAccuracy_accuracyColumn_degreeMeters");
+			var selectAxisValue= selectAxis.options[selectAxis.selectedIndex].value;
+			accuracyValue = accuracyValuesInMetersWithPoints(data, attributeSelected, selectUnitValue, selectAxisValue);
+			if (accuracyValue==null){
+				valid=false;
+				alert("Selected collumn must have a geometry type");
+			}
+			else 
+				valid=true;
+		}
+	}
+	if(positionalValidity){
+		var selectValidity= document.getElementById("PositionalQuality_radio_positionalValidity_xy");
+		var attributeSelectedValidity= selectValidity.options[selectValidity.selectedIndex].value;
+		var xmin=document.getElementById("PositionalQuality_input_positionalValidity_xmin").value;
+		var xmax=document.getElementById("PositionalQuality_input_positionalValidity_xmax").value;
+		var ymin=document.getElementById("PositionalQuality_input_positionalValidity_ymin").value;
+		var ymax=document.getElementById("PositionalQuality_input_positionalValidity_ymax").value;
+		var tag= (document.getElementById("dataQuality_temporalValidity_flag").checked)?true:false;
+		var filter= (document.getElementById("dataQuality_temporalValidity_filter").checked)?true:false;
+		var positionalValidityRate= calculateDataQualityPositionalValidity(data, attributeSelected, xmin, xmax, ymin, ymax, attributeSelectedValidity, tag, filter)
+		if (positionalValidityRate==null){
+			valid=false;
+			alert("Selected collumn must have a geometry type");
+		} else {
+			valid=true;
+			node.STAdata= positionalValidityRate[0];
+			node.STAdataAttributes= getDataAttributes(positionalValidityRate[0]);
+		}
+	}
+	if (valid) {
+		networkNodes.update(node);
+		updateQueryAndTableArea(node);
+		hideNodeDialog("DialogQualityPositionalQuality", event);
+		
+		if (positionalAccuracy || positionalValidity ){
+			var html="";
+			if(positionalAccuracy){
+				
+				html+= `<div> Positional accuracy <br>
+					<table class="tablesmall"><thead><th>Column</th><th>Method</th><th>Value</th></tr></thead>
+					<tbody>`
+
+				if(accuracyMethod=="accuracyColumn"){
+					html+=`<tr>
+						<td>${attributeSelectedAccuracy} </td>
+						<td> Mean of the accuracy column values </td>
+						<td> ${accuracyValue}</td>
+						</tr>`
+				}else{
+					html+=`<tr>
+						<td>${attributeSelected} </td>
+						<td> Root Mean Square Error (RMSE) </td>
+						<td> ${accuracyValue} m</td>
+						</tr>`
+				}
+				html+="</tbody></table></div>"
+			}
+			html+="<br>"
+			if (positionalValidity){
+				var positionValidityRateValue;
+				if (!Number.isInteger(positionalValidityRate[2]))
+					positionValidityRateValue= positionalValidityRate[2].toFixed(3);
+				else 
+					positionValidityRateValue = positionalValidityRate[2];
+				html+= `<div> Positional validity <br>
+					<table class="tablesmall"><thead><th>Column</th><th>Total records</th><th>True records </th><th>Rate</th></tr></thead>
+					<tbody><tr>
+						<td>${attributeSelected}</td>
+						<td>${dataLength}</td>
+						<td>${positionalValidityRate[1]}</td>
+						<td>${positionValidityRateValue}</td>
+					</tr>`;
+			}
+			
+			document.getElementById("dataQualityResult_info").innerHTML= html
+			showNodeDialog("dataQualityResult");		
+		} else
+			alert("No option selected. Nothing to do.");
+	}
+}
+
+
+function populateDialogQualityThematicQuality(node){
+	populateAttributesListSelectThematicQuality(node);
+	saveNodeDialog("DialogQualityThematicQuality", node);
+}
+
+function populateDialogQualityThematicQuality(node){
+	var parentNodes=GetParentNodes(currentNode);
+	
+	var select= createSelectForThematicQuality(parentNodes, "columnToEvaluate");
+	//Oplir el select de la grouping group
+
+	document.getElementById("DialogQualityThematicQuality_attributesList").innerHTML=select; //general
+	document.getElementById("thematicQuality_select_thematicAccuracy_group").innerHTML=select; //grouping column
+	document.getElementById("thematicQuality_select_thematicValidity").innerHTML=select; //grouping column
+}
+
+function createSelectForThematicQuality(parentNodes, place){
+	var c="", attributes;
+	c+=`<select id= "thematicQuality_select_${place}">`
+	for (var i=0;i<parentNodes.length;i++){
+		attributes= Object.keys(parentNodes[i].STAdataAttributes ? parentNodes[i].STAdataAttributes : getDataAttributes(parentNodes[i].STAdata));
+		c+=`<optgroup label="${parentNodes[i].label}">`
+		for (var a=0; a< attributes.length; a++){
+			c+=`<option value="${attributes[a]}">${attributes[a]}</option>`
+		}
+		c+="</optgroup>"
+	}
+	c+=`</select>`
+	return c;
+}
+
+function okButtonDataQualityThematicQuality(event){
+	var thematicAccuracy= (document.getElementById("ThematicQuality_checkbox_ThematicAccuracy").checked)?true:false;
+	var thematicValidity= (document.getElementById("ThematicQuality_checkbox_ThematicValidity").checked)?true:false;
+	if(thematicAccuracy){
+		var groupingMode= (document.getElementById("thematicQuality_radio_thematicAccuracy_group").checked)?"grouped": "all";
+		var inputWayGroup = document.querySelector('input[name="thematicQuality_radio_thematicAccuracy_way"]:checked')
+		var inputWayValue= inputWayGroup.value; //accuracyMean, string, number
+	}
+	if(thematicValidity)
+		var thematicValidityWay= (document.getElementById("thematicQuality_radio_thematicValidity_list").checked)? "list": "range";
+}
+
 
 /*function giveMeNetworkInformation(event) {
 			hideNodeDialog("DialogContextMenu", event);

@@ -53,6 +53,7 @@
 	<script type="text/javascript" src="diagrams.js"></script>
 	<script type="text/javascript" src="aws.js"></script>
 	<script type="text/javascript" src="tapis.js"></script>
+	<script type="text/javascript" src="data_quality.js"></script>
 
 	<link rel="stylesheet" href="tapis.css">
 	<link rel="stylesheet" href="vis.network.css">
@@ -1710,6 +1711,427 @@
 			<input type="hidden" id="DialogCalculateStatisticsSTANodeId"></input>
 		</form>
 	</dialog>
+
+	<dialog id="DialogQualityCompletnessOmission" onClose='hideNodeDialog("DialogQualityCompletnessOmission", event)'>
+		<form>
+			<h3> Completness omission </h3>
+			<div id="DialogQualityCompletnessOmission_attributesList"></div>
+			<div>
+				
+				<label><input type="checkbox" value="Omission_calculateRate" id="dataQuality_omission_calculate" name="dataQuality_omission" checked>Calculate the global omission rate (%)</label><br>
+				<label><input type="checkbox" value="Omission_flagBadRecords" id="dataQuality_omission_flag" name="dataQuality_omission">Flag the bad records (true/false)</label><br>
+				<label><input type="checkbox" value="Omission_filterBadRecords" id="dataQuality_omission_filter" name="dataQuality_omission">Filter the table to keep only valid records</label>
+			</div>
+			<div class="center">
+				<button value="ok" onClick="okButtonDataQualityCompletnessOmission(event)" formmethod="dialog">Ok</button>	<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+
+		<input type="hidden" id="DialogQualityCompletnessOmissionNodeId"></input>
+		</form>
+	</dialog>
+	<dialog id="DialogQualityLogicalConsistency" onClose='hideNodeDialog("DialogQualityLogicalConsistency", event)'>
+		<form>
+			<h3> Logical consistency</h3>
+			<div id="DialogQualityLogicalConsistency_table_div">
+				<table style="border:2px solid black; border-collapse:collapse;">
+					<thead>
+						<th id="DialogQualityLogicalConsistency_table_0"
+							style="border:1px solid black; padding:6px; border-right:1px solid black; text-align:center;"></th>
+						<th id="DialogQualityLogicalConsistency_table_1"
+							style="border:1px solid black; padding:6px; text-align:center;"></th>
+					</thead>
+					<tbody>
+						<tr>
+							<td style="border:1px solid black; padding:6px; border-right:1px solid black; text-align:center;">
+								<select id="DialogQualityLogicalConsistency_select_targetOrReference_0">
+									<option value="target">Target</option>
+									<option value="reference">Reference</option>
+								</select>
+							</td>
+							<td style="border:1px solid black; padding:6px; text-align:center;">
+								<select id="DialogQualityLogicalConsistency_select_targetOrReference_1">
+									<option value="target">Target</option>
+									<option value="reference" selected>Reference</option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td style="border-top:1px solid black; border-left:1px solid black; padding:6px;
+									border-right:1px solid black; text-align:center; padding-bottom:0px;">
+								Column 1
+							</td>
+							<td style="border-top:1px solid black; border-right:1px solid black; padding:6px;
+									border-left:1px solid black; text-align:center; padding-bottom:0px;">
+								Column 1
+							</td>
+						</tr>
+						<tr>
+							<td style="border-bottom:1px solid black; border-left:1px solid black; padding:6px;
+									border-right:1px solid black; text-align:center;">
+								<select id="DialogQualityLogicalConsistency_selectAttribute1_0"
+										style="margin:0 5px 0 5px;"></select>
+							</td>
+							<td style="border-bottom:1px solid black; border-right:1px solid black; padding:6px;
+									border-left:1px solid black; text-align:center;">
+								<select id="DialogQualityLogicalConsistency_selectAttribute1_1"
+										style="margin:0 5px 0 5px;"></select>
+							</td>
+						</tr>
+						<tr>
+							<td style="border-top:1px solid black; border-left:1px solid black; padding:6px;
+									border-right:1px solid black; text-align:center; padding-bottom:0px;">
+								Column 2
+							</td>
+							<td style="border-top:1px solid black; border-right:1px solid black; padding:6px;
+									border-left:1px solid black; text-align:center; padding-bottom:0px;">
+								Column 2
+							</td>
+						</tr>
+						<tr>
+							<td style="border-bottom:1px solid black; border-left:1px solid black; padding:6px;
+									border-right:1px solid black; text-align:center;">
+								<select id="DialogQualityLogicalConsistency_selectAttribute2_0"
+										style="margin:0 5px 0 5px;"></select>
+							</td>
+							<td style="border-bottom:1px solid black; border-right:1px solid black; padding:6px;
+									border-left:1px solid black; text-align:center;">
+								<select id="DialogQualityLogicalConsistency_selectAttribute2_1"
+										style="margin:0 5px 0 5px;"></select>
+							</td>
+						</tr>
+						<tr>
+							<td style="border-top:1px solid black; border-left:1px solid black; padding:6px;
+									border-right:1px solid black; text-align:center; padding-bottom:0px;">
+								Column 3
+							</td>
+							<td style="border-top:1px solid black; border-right:1px solid black; padding:6px;
+									border-left:1px solid black; text-align:center; padding-bottom:0px;">
+								Column 3
+							</td>
+						</tr>
+						<tr>
+							<td style="border-bottom:1px solid black; border-left:1px solid black; padding:6px;
+									border-right:1px solid black; text-align:center;">
+								<select id="DialogQualityLogicalConsistency_selectAttribute3_0"
+										style="margin:0 5px 0 5px;"></select>
+							</td>
+							<td style="border-bottom:1px solid black; border-right:1px solid black; padding:6px;
+									border-left:1px solid black; text-align:center;">
+								<select id="DialogQualityLogicalConsistency_selectAttribute3_1"
+										style="margin:0 5px 0 5px;"></select>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				</div>
+			<div style="margin-top: 20px;">
+				
+				<label><input type="checkbox" value="logicalConsistency_calculateRate" id="dataQuality_logicalConsistency_calculate" name="dataQuality_logicalConsistency" checked>Calculate the global LogicalConsistency rate (%)</label><br>
+				<label><input type="checkbox" value="logicalConsistency_flagBadRecords" id="dataQuality_logicalConsistency_flag" name="dataQuality_logicalConsistency">Flag the bad records (true/false)</label><br>
+				<label><input type="checkbox" value="logicalConsistency_filterBadRecords" id="dataQuality_logicalConsistency_filter" name="dataQuality_logicalConsistency">Filter the table to keep only valid records</label>
+			</div>
+			<div class="center">
+				<button value="ok" onClick="okButtonDataQualityDialogQualityLogicalConsistency(event)" formmethod="dialog">Ok</button>	<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+			<input type="hidden" id="DialogQualityLogicalConsistencyNodeId"></input>
+		</form>
+	</dialog>
+	<dialog id="DialogQualityTemporalQuality" onClose='hideNodeDialog("DialogQualityTemporalQuality", event)'>
+		<form>
+			<h3> Temporal quality </h3>
+			<div id="DialogQualityTemporalQuality_attributesList"></div>
+			<fieldset><legend><label><input type="checkbox" value="TemporalQuality_calculate_temporalValidity" id="TemporalQuality_checkbox_calculate_temporalValidity" name="TemporalQuality_checkbox_calculate">Temporal validity</label></legend>
+				<table>
+					<tbody>
+						<tr>
+							<td><label>From:</label></td>
+							<td><input id="DialogQualityTemporalQuality_validity_inputText_from" type="text" placeholder="YYYY-MM-DDTHH:MM:SS" style="width:150px" onchange="addTimeToTemporalQualityCalendar('DialogQualityTemporalQuality_validity_inputText_from','DialogQualityTemporalQuality_validity_calendar_from')" ></td>
+							<td><input type="datetime-local" id="DialogQualityTemporalQuality_validity_calendar_from" onchange="addTimeToTemporalQualityCalendar('DialogQualityTemporalQuality_validity_calendar_from','DialogQualityTemporalQuality_validity_inputText_from')"></td>
+						</tr>
+						<tr>
+							<td><label>To:</label></td>
+							<td><input id="DialogQualityTemporalQuality_validity_inputText_to" type="text" placeholder="YYYY-MM-DDTHH:MM:SS" style="width:150px" onchange="addTimeToTemporalQualityCalendar('DialogQualityTemporalQuality_validity_inputText_to','DialogQualityTemporalQuality_validity_calendar_to')" ></td>
+							<td><input type="datetime-local" id="DialogQualityTemporalQuality_validity_calendar_to" onchange="addTimeToTemporalQualityCalendar('DialogQualityTemporalQuality_validity_calendar_to','DialogQualityTemporalQuality_validity_inputText_to')"></td>
+						</tr>
+					</tbody>
+				</table>
+				
+				<br>
+				
+
+
+			</fieldset>
+			<fieldset><legend><label><input type="checkbox" value="TemporalQuality_calculate_temporalResolution" id="TemporalQuality_checkbox_calculate_temporalResolution" name="TemporalQuality_checkbox_calculate">Temporal resolution</label></legend>
+				<div style="text-align: center; margin-bottom: 15px;">
+					<p>Expected resolution (Values with higher resolutions will be accepted, but those with lower resolutions will not):</p>
+					<table class="tablesmall" style="margin: 0 auto;">
+						<thead>
+						<tr>
+							<th></th>
+							<th>Format</th>
+							<th>Description</th>
+						</tr>
+						</thead>
+						<tbody>
+						<tr>
+							<td><input type= "radio" name="TemporalQuality_resolution_radio" id="TemporalQuality_resolution_radio_year" value="year"></td>
+							<td>YYYY</td>
+							<td>Year</td>
+						</tr>
+						<tr>
+							<td><input type= "radio" name="TemporalQuality_resolution_radio" id="TemporalQuality_resolution_radio_month" value="month"></td>
+							<td>YYYY-MM</td>
+							<td>Month</td>
+						</tr>
+						<tr>
+							<td><input type= "radio" name="TemporalQuality_resolution_radio" id="TemporalQuality_resolution_radio_day" value="day"></td>
+							<td>YYYY-MM-DD</td>
+							<td>Day</td>
+						</tr>
+						<tr>
+							<td><input type= "radio" name="TemporalQuality_resolution_radio" id="TemporalQuality_resolution_radio_hour" value="hour"></td>
+							<td>YYYY-MM-DDTHH</td>
+							<td>Hour</td>
+						</tr>
+						<tr>
+							<td><input type= "radio" name="TemporalQuality_resolution_radio" id="TemporalQuality_resolution_radio_minute" value="minute"></td>
+							<td>YYYY-MM-DDTHH:mm</td>
+							<td>Minute</td>
+						</tr>
+						<tr>
+							<td><input type= "radio" name="TemporalQuality_resolution_radio" id="TemporalQuality_resolution_radio_seconds" value="second" checked></td>
+							<td>YYYY-MM-DDTHH:mm:ss</td>
+							<td>Second</td>
+						</tr>
+						<tr>
+							<td><input type= "radio" name="TemporalQuality_resolution_radio" id="TemporalQuality_resolution_radio_fraction" value="fraction"></td>
+							<td>YYYY-MM-DDTHH:mm:ss.fff</td>
+							<td>Fractions of a second</td>
+						</tr>
+						</tbody>
+					</table>
+				
+				</div>
+			</fieldset>
+			<fieldset >
+				<legend><label><input type="checkbox"value="TemporalQuality_calculate_temporalConsistency" id="TemporalQuality_checkbox_calculate_temporalConsistency"name="TemporalQuality_checkbox_calculate">Temporal consistency</label></legend>
+					<div style="display: flex; flex-direction: row; align-items: flex-start; gap: 20px;">
+					<table>
+						<tr>
+							<td style="text-align: center;"><strong>Number:</strong></td>
+						</tr>
+						<tr>
+							<td>
+								<input type="text" id="TemporalQuality_consistency_toleranceNumber" style="width: 50px">	
+							</td>
+						</tr>
+					</table>
+					<table >
+							<tr>
+								<td colspan="2" style="text-align: center;"><strong>Time unit:</strong></td>
+							</tr>
+							<tr>
+								<td><input type="radio" name="TemporalQuality_consistency_radio" id="TemporalQuality_consistency_radio_years" value= "years"></td>
+								<td><label for="TemporalQuality_consistency_radio_years">Years</label></td>
+							</tr>
+							<tr>
+								<td><input type="radio" name="TemporalQuality_consistency_radio" id="TemporalQuality_consistency_radio_months" value="months"></td>
+								<td><label for="TemporalQuality_consistency_radio_months">Months</label></td>
+							</tr>
+							<tr>
+								<td><input type="radio" name="TemporalQuality_consistency_radio" id="TemporalQuality_consistency_radio_days" value="days"></td>
+								<td><label for="TemporalQuality_consistency_radio_days">Days</label></td>
+							</tr>
+							<tr>
+								<td><input type="radio" name="TemporalQuality_consistency_radio" id="TemporalQuality_consistency_radio_hours" value="hours"></td>
+								<td><label for="TemporalQuality_consistency_radio_hours">Hours</label></td>
+							</tr>
+							<tr>
+								<td><input type="radio" name="TemporalQuality_consistency_radio" id="TemporalQuality_consistency_radio_minutes" value="minutes"></td>
+								<td><label for="TemporalQuality_consistency_radio_minutes">Minutes</label></td>
+							</tr>
+							<tr>
+								<td><input type="radio" name="TemporalQuality_consistency_radio" id="TemporalQuality_consistency_radio_seconds" value="seconds"checked></td>
+								<td><label for="TemporalQuality_consistency_radio_seconds" >Seconds</label></td>
+							</tr>
+						</table>
+						<br>
+						<table>
+							<tr>
+								<td style="text-align: center;"><strong>Tolerance:</strong></td>
+							</tr>
+							<tr>
+								<td>
+									<label><span id="TemporalQuality_consistency_toleranceRange_span">2</span>%</label><br>
+									<input type="range"
+										id="TemporalQuality_consistency_toleranceRange"
+										min="0" max="15" value="2" step="1"
+										oninput="document.getElementById('TemporalQuality_consistency_toleranceRange_span').textContent=this.value">
+								</td>
+							</tr>
+						</table>
+						<table>
+						<tbody>
+							<tr>
+								<td colspan="2" style="text-align: center;"><strong>Interval method:</strong></td>
+							</tr>
+							<tr>
+								<td><input type="radio" name="TemporalQuality_intervalMethod_radio" id="TemporalQuality_intervalMethod_radio_local"  value="local"></td>
+								<td><label for="TemporalQuality_intervalMethod_radio_local" >Distance to the previous data</label></td>
+							</tr>
+							<tr>
+								<td><input type="radio" name="TemporalQuality_intervalMethod_radio" id="TemporalQuality_intervalMethod_radio_global" value="global" checked></td>
+								<td><label for="TemporalQuality_intervalMethod_radio_global">Distance from the global interval baseline</label></td>
+							</tr>
+						</tbody>
+					</table><br>
+
+					</div>
+					<div><span style="color: red; font-weight: bold;">&#x26A0;</span>
+						<span style="font-style: italic;">This test may not be accurate if the data includes the original timezone’s daylight saving time change. The test applies the time change of your own country; <br>if your data comes from a different timezone, take this into account. <br> In this case, it is recommended to split the dataset into segments that do not include the transition</span>
+						<div><br><label><input type="checkbox" id="TemporalQuality_checkbox_sort" checked>Sort records</label><br><br>						
+					</div>
+			</fieldset>
+			<br>
+			<div>
+				<label for="TemporalQuality_checkbox_flag"><input type="checkbox" id="TemporalQuality_checkbox_flag">Flag the bad records (true/false)</label><br>
+				<label><input type="checkbox" value="temporalQuality_filterBadRecords" id="dataQuality_temporalQuality_filter" name="dataQuality_temporalQuality">Filter the table to keep only valid records (from calculated parameters only)</label>
+			</div>
+			<div class="center">
+				<button value="ok" onClick="okButtonDataQualityTemporalQuality(event)" formmethod="dialog">Ok</button>	<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+			<br>
+			<input type="hidden" id="DialogQualityTemporalQualityNodeId"></input>
+		</form>
+	</dialog>
+
+
+
+	<dialog id="DialogQualityPositionalQuality" onClose='hideNodeDialog("DialogQualityPositionalQuality", event)'>
+		<form>
+			<h3> Positional quality</h3>
+			<div id="DialogQualityPositionalQuality_attributesList"></div>
+			<div>
+				<fieldset><legend><label><input type="checkbox" id="PositionalQuality_checkbox_positionalAccuracy" checked="checked">Positional accuracy</label></legend>
+					<table style="text-align: center; border-collapse: collapse;">
+						<tr>
+							<td style="border-right: 2px solid #ccc; padding: 10px;">
+								<label>
+									<input type="radio" name="PositionalQuality_radio_positionalAccuracy"
+										id="PositionalQuality_radio_positionalAccuracy_accuracyColumn" checked>
+									Standard deviation of the uncertainties of each position.
+								</label>
+							</td>
+
+							<td style="padding: 10px;">
+								<label>
+									<input type="radio" name="PositionalQuality_radio_positionalAccuracy"
+										id="PositionalQuality_radio_positionalAccuracy_evaluateColumn">
+									Mean of the values in the geometry column (Root Mean Square Error)
+								</label>
+							</td>
+						</tr>
+
+						<tr>
+							<td style="border-right: 2px solid #ccc;">
+								<label style="margin-right: 10px;">Uncertaintly column:</label>
+								<select id="PositionalQuality_select_positionalAccuracy_accuracyColumn"></select><br>
+							</td>
+
+							<td>
+								<label style="margin-right: 10px; padding-bottom: 0px;">Coordinates units</label>
+								<select id="PositionalQuality_radio_positionalAccuracy_accuracyColumn_degreeMeters">
+									<option value="degrees">Degrees</option>
+									<option value="meters">Meters</option>
+								</select>
+							</td>
+						</tr>
+
+						<tr>
+							<td style="border-right: 2px solid #ccc; padding: 10px;"></td>
+
+							<td style="padding: 10px;">
+								<label>Axis order</label>
+								<select id="PositionalQuality_radio_positionalAccuracy_accuracyColumn_lonLat">
+									<option value="lonLat">[Longitude, Latitude]</option>
+									<option value="latLon">[Latitude, Longitude]</option>
+								</select>
+							</td>
+						</tr>
+					</table>
+				</fieldset>
+				<fieldset><legend><label><input type="checkbox" id="PositionalQuality_checkbox_positionalValidity" checked="checked">Positional validity</label></legend>
+					<label>Axis order</label><select id="PositionalQuality_radio_positionalValidity_xy">
+						<option value="XY">[X, Y]</option>
+						<option value="YX">[Y, X]</option>
+					</select><br><br>
+					<label for ="PositionalQuality_input_positionalValidity_xmin"> X minimum: </label> <input type="text" id="PositionalQuality_input_positionalValidity_xmin" style="margin-bottom: 10px">
+					<label for ="PositionalQuality_input_positionalValidity_xmax" style="margin-left: 15px"> X maximum: </label> <input type="text" id="PositionalQuality_input_positionalValidity_xmax" style="margin-bottom: 10px"><br>
+					<label for ="PositionalQuality_input_positionalValidity_ymin"> Y minimum: </label> <input type="text" id="PositionalQuality_input_positionalValidity_ymin">
+					<label for ="PositionalQuality_input_positionalValidity_ymax" style="margin-left: 15px"> Y maximum: </label> <input type="text" id="PositionalQuality_input_positionalValidity_ymax"> <br><br>
+					<label><input type="checkbox"  id="dataQuality_temporalValidity_flag">Flag the bad records (true/false)</label><br>
+					<label><input type="checkbox"  id="dataQuality_temporalValidity_filter">Filter the table to keep only valid records</label> 
+				</fieldset>
+			</div>
+			<div>
+			
+
+			</div>
+			<div class="center">
+				<button value="ok" onClick="okButtonDataQualityPositionalQuality(event)" >Ok</button>	<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+
+		<input type="hidden" id="DialogQualityPositionalQualityNodeId"></input>
+		</form>
+	</dialog>
+
+
+
+	<dialog id="DialogQualityThematicQuality" onClose='hideNodeDialog("DialogQualityThematicQuality", event)'>
+			<form>
+				<h3> Thematic quality</h3>
+				<div id="DialogQualityThematicQuality_attributesList"></div>
+				<div>
+					<fieldset><legend><label><input type="checkbox" id="ThematicQuality_checkbox_ThematicAccuracy">Thematic accuracy</label></legend>
+						<fieldset > <legend>Grouping mode</legend>
+						<label><input type="radio" id="thematicQuality_radio_thematicAccuracy_group" name="thematicQuality_radio_thematicAccuracy_grouping" checked> Grouped by column</label><label>Grouping column:  </label><select id="thematicQuality_select_thematicAccuracy_group"></select><br>
+						<label><input type="radio" id="thematicQuality_radio_thematicAccuracy_column" name="thematicQuality_radio_thematicAccuracy_grouping"> All registers</label>
+						</fieldset>
+						<fieldset ><legend>Way to evaluate</legend>
+							<label><input type="radio" id="thematicQuality_radio_thematicAccuracy_accuracyMean" name="thematicQuality_radio_thematicAccuracy_way" checked value="accuracyMean"> Mean of the accuracy column</label><br>
+							<label><input type="radio" id="thematicQuality_radio_thematicAccuracy_string" name="thematicQuality_radio_thematicAccuracy_way" value="string"> Mode of non-numeric column (Most frequent value and its frequency)</label><br>
+							<label><input type="radio" id="thematicQuality_radio_thematicAccuracy_number" name="thematicQuality_radio_thematicAccuracy_way" value="number"> Mean distance from center (numeric)</label>
+						</fieldset>
+					</fieldset>
+					<fieldset><legend><label><input type="checkbox" id="ThematicQuality_checkbox_ThematicValidity">Thematic validity</label></legend>
+							<label><input type="radio" id="thematicQuality_radio_thematicValidity_list" name="thematicQuality_radio_thematicValidity" checked> List of values </label><select id="thematicQuality_select_thematicValidity"></select><br>
+							<label><input type="radio" id="thematicQuality_radio_thematicValidity_range" name="thematicQuality_radio_thematicValidity"> Range</label>	
+							<label style ="margin-left: 15px">From:<input type="text" id="thematicQuality_input_thematicValidity_from"> </label>
+							<label>To: <input type="text" id="thematicQuality_input_thematicValidity_to"></label>
+					</fieldset>
+				</div>
+				<div>
+				
+
+				</div>
+				<div class="center">
+					<button value="ok" onClick="okButtonDataQualityThematicQuality(event)" >Ok</button>	<button value="cancel" formmethod="dialog">Cancel</button>
+				</div>
+
+			<input type="hidden" id="DialogQualityThematicQualityNodeId"></input>
+			</form>
+	</dialog>
+
+	<dialog id="dataQualityResult" onClose='hideNodeDialog("DialogQualityTemporalQuality", event)'>
+		<form>
+			<div id="dataQualityResult_info"> </div>
+			<br>
+			<div class="center"> <button value="cancel" formmethod="dialog">Close</button></div>
+		</form>
+	</dialog>
+
+
+
 
 
 	<!--dialog id="UploadTimeAverages" onClose='hideNodeDialog("UploadTimeAverages", event)'>
