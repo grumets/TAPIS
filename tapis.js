@@ -5063,7 +5063,7 @@ function ShowTableOptionsDiv(node, optionsDiv, fn_showTable) {
 	else
 		document.getElementById(optionsDiv).innerHTML="";
 	if (node.STAmetadata)
-		document.getElementById(optionsDiv).innerHTML+=" <a href='javascript:void(0)' style="text-decoration: none;" onClick='ShowMetadataDialog(\""+node.id+"\")'><img src='metadata.png' alt='metadata' title='metadata'> Metadata </a>";
+		document.getElementById(optionsDiv).innerHTML+=" <a href='javascript:void(0)' style='text-decoration: none;' onClick='ShowMetadataDialog(\""+node.id+"\")'><img src='metadata.png' alt='metadata' title='metadata'> Metadata </a>";
 }
 
 function ShowTableDialog(node) {
@@ -7284,7 +7284,7 @@ function KeySTAPage(event) {
 
 	if (aDialogIsOpen)
 		return;
-	if (event.code == "F2" || event.code == "Delete"){
+	if (event.code == "F2" || event.code == "Delete" || event.code == "Insert" || event.code == "Enter"){
 		event.preventDefault();
 		var nodeId = network.getSelectedNodes();
 		if (nodeId && nodeId.length) {
@@ -7294,6 +7294,12 @@ function KeySTAPage(event) {
 					return;
 				case "Delete":
 					removeNode(nodeId[0]);
+					return;
+				case "Insert":
+					openContextNode(nodeId[0]);
+					return;
+				case "Enter":
+					networkDoubleClick({nodes:[nodeId[0]]});
 					return;
 			}
 		}
@@ -7999,15 +8005,18 @@ function networkDoubleClick(params) {
 	}
 }
 
+function openContextNode(nodeId) {
+	PopulateContextMenu(nodeId);  	//rewrite DialogContextMenu
+	startingNodeContextId = nodeId;
+	showNodeDialog("DialogContextMenu");
+}
+
 function networkContext(params) {
 	params.event.preventDefault();  //https://stackoverflow.com/questions/38258940/open-an-extension-popup-html-list-on-right-click-of-node-contextmenu-in-visj
 
 	var nodeId = network.getNodeAt(params.pointer.DOM); //params.nodes is not useful here as params.nodes are the selected ones and not the ones rightclicked.
-	//rewrite DialogContextMenu
-	PopulateContextMenu(nodeId);
 	if (nodeId) {
-		startingNodeContextId = nodeId;
-		showNodeDialog("DialogContextMenu");
+		openContextNode(nodeId);
 		return;
 	}
 	var edgeId = network.getEdgeAt(params.pointer.DOM);
