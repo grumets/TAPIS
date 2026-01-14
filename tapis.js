@@ -1183,7 +1183,7 @@ function TransformTextCSVWToDataAttributes(csvwText, node)
 	node.STAdataAttributes=getDataAttributesCSVW(data_csvw);
 	networkNodes.update(node);
 	UpdateChildenTable(node);
-	var csvReadParams = getCSVReadParams(data_csvw);
+	var csvReadParams = getCSVReadParams(data_csvw) || {};
 	if (csvReadParams.delimiter) {
 		document.getElementById("DialogImportCSVDelimiterAuto").checked=false;
 		if ( csvReadParams.delimiter=='\t') {
