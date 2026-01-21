@@ -49,7 +49,7 @@
 
 //statistics.js is needed (Some functions needed are defined there)
 
-function calculateDataQualityCompletnessOmission(data, attribute, flag, filter) {
+function calculateDataQualityCompletnessOmission(data, attribute, metadata, flag, filter) {
     var rate;
     var count = 0, newData = [];
     for (var i = 0; i < data.length; i++) {
@@ -61,10 +61,60 @@ function calculateDataQualityCompletnessOmission(data, attribute, flag, filter) 
     }
     rate = (data.length - count) / data.length * 100;
     if (!filter) newData = data;
+    if (!metadata.dataQualityInfos)
+		metadata.dataQualityInfos=[];
+	metadata.dataQualityInfos.push(
+		{
+			"reports": [
+				{
+					"type": "DQ_CompletenessOmission",
+					"measureIdentification": {
+						"measure": {
+							"name": "Missing items"
+						},
+						"domains": [
+							{
+								"name": "NonConformance",
+								"params": [
+										{
+										"name": "column",
+										"value": attribute
+											}
+										]
+							}
+						]
+					},
+					"results": [
+						{
+							"type": "DQ_QuantitativeResult",
+							"errorStatistic": {
+								"metric": {
+									"name": "Rate of missing items",
+									"params":[
+                                        {
+                                            "name": "min",
+                                            "value":0
+                                        },
+                                        {
+                                            "name": "max",
+                                            "value":100
+                                        }
+                                    ]
+								}
+							},
+							"valueType": "number",
+							"values": [ rate.toFixed(2) ]
+						}
+					]
+				}
+			]
+		});
+
+
     return [newData, data.length, count, data.length - count, rate.toFixed(2), 100 - rate.toFixed(2)];//data, Total, true, false, %omission, %completesa
 }
 
-function calculateDataQualityLogicalConsistency(dataTarget, dataReference, targets, references, calculate, flag, filter) {
+function calculateDataQualityLogicalConsistency(dataTarget, dataReference, targets, references, flag, filter) {
     var count = 0;
 
     //Create an array with all possibilities (without repetitions)
@@ -89,22 +139,76 @@ function calculateDataQualityLogicalConsistency(dataTarget, dataReference, targe
         if (flag) dataTarget[a]["logicalConsistenci"] = itExist;
         if (filter && itExist) newData.push(dataTarget[a]);
     }
-    if (!calculate) return [newData, count];
-    else {
-        return [newData, count, (count / dataTarget.length) * 100];
-    }
+    if (!metadata.dataQualityInfos)
+		metadata.dataQualityInfos=[];
+	metadata.dataQualityInfos.push(
+		{
+			"reports": [
+				{
+					"type": "DQ_ConceptualConsistency",
+					"measureIdentification": {
+						"measure": {
+							"name": "Value domain"
+						},
+						"domains": [
+							{
+								"name": "Conformance" ,
+                                 "params": [
+										{
+									"name": "target columns",
+									"value": [targets]
+									},
+									{
+									"name": "reference columns",
+									"value": [references]
+									}
+								]
+                            }
+						]
+					},
+					"results": [
+						{
+							"type": "DQ_QuantitativeResult",
+							"errorStatistic": {
+								"metric": {
+									"name": "Rate of consistant items",
+                                    "params":[
+                                        {
+                                            "name": "min",
+                                            "value":0
+                                        },
+                                        {
+                                            "name": "max",
+                                            "value":100
+                                        }
+                                    ]
+								}
+							},
+							"valueType": "number",
+							"values": [(count / dataTarget.length) * 100 ]
+						}
+					]
+				}
+			]
+		});
+    newData=dataTarget;
+    return [newData, count, (count / dataTarget.length) * 100];
 }
 
-function calculateDataQualityTemporalValidity(data, attributeSelected, from, to, calculate, flag, filter) {
+function calculateDataQualityTemporalValidity(data, attributeSelected, from, to, metadata, flag, filter) {
     var attributes = getDataAttributes(data); //Està a tapis.js 
-    if (attributes[attributeSelected].type != "isodatetime") return false;
-    if (!from && !to) return false;
+    if (attributes[attributeSelected].type != "isodatetime") return null;
+    if (!from && !to) return null;
     var count = 0;
     var newData = [];
+    var fromDate=new Date(from);
+    var toDate=new Date(to);
+    var date;
     for (var i = 0; i < data.length; i++) {
         if (from) {
-            if (data[i][attributeSelected] < from) {
-                if (data[i][attributeSelected] > to) {
+            date= data[i][attributeSelected]
+            if (date < fromDate) {
+                if (date > toDate) {
                     count++;
                     if (flag) data[i]["temporalValidity"] = true;
                     if (filter) newData.push(data[i]);
@@ -116,7 +220,7 @@ function calculateDataQualityTemporalValidity(data, attributeSelected, from, to,
                 if (flag) data[i]["temporalValidity"] = false;
             }
         } else { //only to
-            if (data[i][attributeSelected] > to) {
+            if (date > toDate) {
                 count++;
                 if (flag) data[i]["temporalValidity"] = true;
                 if (filter) newData.push(data[i]);
@@ -127,12 +231,59 @@ function calculateDataQualityTemporalValidity(data, attributeSelected, from, to,
         }
     }
     if (!filter) newData = data;
+	var params= [{"name": "temporal column","value": attributeSelected}]
+	if(from) params.push({"name": "date from","value": from});
+	if(to) params.push({"name": "date to","value": to});
+
+        if (!metadata.dataQualityInfos)
+		metadata.dataQualityInfos=[];
+	metadata.dataQualityInfos.push(
+		{
+			"reports": [
+				{
+					"type": "DQ_TemporalValidity",
+					"measureIdentification": {
+						"measure": {
+							"name": "Value domain"
+						},
+						"domains": [
+							{
+								"name": "Conformance",
+								"params":params
+                            }
+						]
+					},
+					"results": [
+						{
+							"type": "DQ_QuantitativeResult",
+							"errorStatistic": {
+								"metric": {
+									"name": "Rate of missing items",
+									"params":[
+                                        {
+                                            "name": "min",
+                                            "value":0
+                                        },
+                                        {
+                                            "name": "max",
+                                            "value":100
+                                        }
+                                    ]
+								}
+							},
+							"valueType": "number",
+							"values": [ (count / dataTarget.length) * 100]
+						}
+					]
+				}
+			]
+		});
     return ([newData, count, (count / data.length) * 100])
 
 }
-function calculateDataQualityTemporalResolution(data, attributeSelected, resolutionRadioValue, calculate, flag, filter) {
+function calculateDataQualityTemporalResolution(data, attributeSelected, resolutionRadioValue, metadata, flag, filter) {
     var attributes = getDataAttributes(data); //Està a tapis.js 
-    if (attributes[attributeSelected].type != "isodatetime") return false;
+    if (attributes[attributeSelected].type != "isodatetime") return null;
     var regex, count = 0, newData = [];
     for (var i = 0; i < data.length; i++) {
         switch (resolutionRadioValue) {
@@ -165,7 +316,7 @@ function calculateDataQualityTemporalResolution(data, attributeSelected, resolut
                 break;
 
             default:
-                return false;
+                return null;
         }
         if (regex.test(data[i][attributeSelected])) {
             count++;
@@ -177,13 +328,103 @@ function calculateDataQualityTemporalResolution(data, attributeSelected, resolut
             if (flag) data[i]["temporalResolution"] = false;
         }
     }
+	var format;
+	switch (resolutionRadioValue){
+		    case "year":
+				format = "YYYY";               
+				break;
+
+            case "month":
+				format = "YYYY-MM";               
+				break;
+
+            case "day":
+				format = "YYYY-MM-DD";               
+				break;
+
+            case "hour":
+				format = "YYYY-MM-DDTHH";               
+				break;
+
+            case "minute":
+				format = "YYYY-MM-DDTHH:mm";               
+				break;
+
+            case "second":
+				format = "	YYYY-MM-DDTHH:mm:ss";               
+				break;
+
+            case "fraction":
+				format = "YYYY-MM-DDTHH:mm:ss.fff";               
+				break;
+
+            default:
+                return null;
+	}
     if (!filter) newData = data;
+    if (!metadata.dataQualityInfos)
+		metadata.dataQualityInfos=[];
+	metadata.dataQualityInfos.push(
+		{
+			"reports": [
+				{
+					"type": "DQ_TemporalResolution",
+					"measureIdentification": {
+						"measure": {
+							"name": "Value domain"
+						},
+						"domains": [
+							{
+								"name": "Conformance",
+								"params": [
+										{
+										"name": "temporal column",
+										"value": attributeSelected
+										},
+																				{
+										"name": "time resolution",
+										"value": resolutionRadioValue
+										},
+										{
+										"name": "format resolution",
+										"value": format
+										}
+
+										] 
+                            }
+						]
+					},
+					"results": [
+						{
+							"type": "DQ_QuantitativeResult",
+							"errorStatistic": {
+								"metric": {
+									"name": "Rate of missing items",
+									"params":[
+                                        {
+                                            "name": "min",
+                                            "value":0
+                                        },
+                                        {
+                                            "name": "max",
+                                            "value":100
+                                        }
+                                    ]
+								}
+							},
+							"valueType": "number",
+							"values": [ (count / data.length) * 100]
+						}
+					]
+				}
+			]
+		});
     return ([newData, count, (count / data.length) * 100])
 }
 
-function calculateDataQualityTemporalConsistency(data, attributeSelected, number, consistencyRadioValue, consistencyRadioMethod, tolerance, calculate, flag, filter) {
+function calculateDataQualityTemporalConsistency(data, attributeSelected, number, consistencyRadioValue, consistencyRadioMethod, tolerance, metadata, flag, filter) {
     var attributes = getDataAttributes(data); //Està a tapis.js 
-    if (attributes[attributeSelected].type != "isodatetime") return false;
+    if (attributes[attributeSelected].type != "isodatetime") return null;
 
     var currentDate, previousDate;
     var dateFrom, validRange;
@@ -231,7 +472,7 @@ function calculateDataQualityTemporalConsistency(data, attributeSelected, number
 
                     break;
                 default:
-                    return false;
+                    return null;
             }
         }
         for (var i = 0; i < data.length; i++) {
@@ -271,6 +512,73 @@ function calculateDataQualityTemporalConsistency(data, attributeSelected, number
         }
     }
     if (!filter) newData = data;
+	var intervalMetohd= (consistencyRadioMethod="local")?"Distance to the previous data":"Distance from the global interval baseline";
+    if (!metadata.dataQualityInfos)
+		metadata.dataQualityInfos=[];
+	metadata.dataQualityInfos.push(
+		{
+			"reports": [
+				{
+					"type": "DQ_TemporalConsistency",
+					"measureIdentification": {
+						"measure": {
+							"name": "Value domain"
+						},
+						"domains": [
+							{
+								"name": "Conformance",
+								"params": [
+										{
+										"name": "temporal column",
+										"value": attributeSelected
+										},
+										{
+										"name": "number",
+										"value": number
+										},
+										{
+										"name": "time unit",
+										"value": consistencyRadioValue
+										},
+										{
+										"name": "tolerance ",
+										"value": tolerance
+										},
+										{
+										"name": "interval method",
+										"value": intervalMetohd
+										},
+
+
+										]
+                            }
+						]
+					},
+					"results": [
+						{
+							"type": "DQ_QuantitativeResult",
+							"errorStatistic": {
+								"metric": {
+									"name": "Rate of missing items",
+									"params":[
+                                        {
+                                            "name": "min",
+                                            "value":0
+                                        },
+                                        {
+                                            "name": "max",
+                                            "value":100
+                                        }
+                                    ]
+								}
+							},
+							"valueType": "number",
+							"values": [ (count / data.length) * 100]
+						}
+					]
+				}
+			]
+		});
     return [newData, count, (count / data.length) * 100]
 }
 
@@ -316,7 +624,7 @@ function returnValidRange(currentData, number, tolerance, consistencyRadioValue)
             end = new Date(currentData.getTime() + (number + number * tolerance / 100) * 1000);
             break;
         default:
-            return false;
+            return null;
     }
 
     return [start, end]
@@ -344,7 +652,13 @@ function accuracyFromUncertaintyInPositions(data, metadata, uncertaintyAttribute
 						},
 						"domains": [
 							{
-								"name": "DifferentialErrors2D"
+								"name": "DifferentialErrors2D",
+								"params": [
+										{
+										"name": "uncertantie column",
+										"value": uncertaintyAttribute
+											}
+										]
 							}
 						]
 					},
@@ -373,79 +687,126 @@ function accuracyFromUncertaintyInPositions(data, metadata, uncertaintyAttribute
 	return accuracyValue;
 }
 
-function accuracyValuesInMetersWithPoints(data, attribute, units, axisOrder) {
-    var attributes = getDataAttributes(data);
-    if (attributes[attribute].type!="geometry") return null;
-    var longitudeValues = []; latitudeValues = [];
-    var lon, lat;
-    if (axisOrder == "lonLat") {
-        lon = 0;
-        lat = 1;
-    } else {
-        lon = 1;
-        lat = 0;
-    }
-    //Mean of Longitudes and latitudes
-    for (var i = 0; i < data.length; i++) {
-        longitudeValues.push(data[i][attribute].coordinates[lon]);
-        latitudeValues.push(data[i][attribute].coordinates[lat]);
+function accuracyValuesInMetersWithPoints(data, metadata,  longAttribute, latAttribute, units, grouped, newColumns) {
+   // var attributes = getDataAttributes(data);
+   // if (attributes[attribute].type!="geometry") return null;
+   //Mirar si son numeros.
+   //Falta posar si la casella està buida
+ 
 
-    }
-    var longitudeMean = aggrFuncMean(longitudeValues);
-    var latitudeMean = aggrFuncMean(latitudeValues);
-    var distances = [], difLong, difLat;
+    if (grouped!=false){
 
-    //Distances 
-    if (units == "degree") {
-        var latRad = latitudeMean * Math.PI / 180
-        var longFactor = 111132 * Math.cos(latRad);
-    }
-    for (var e = 0; e < data.length; e++) {
-        //long
-        difLong = data[e][attribute].coordinates[lon] - longitudeMean;
-        difLat = data[e][attribute].coordinates[lat] - latitudeMean;
-        if (units == "degree") {
-            difLong = difLong * longFactor;
-            difLat = difLat * 111132;
+        var groupingGroupsObject=  createObjectWithDifferentPossibilitiesInColumns(data, grouped);
+        var groupingObjectKeys=Object.keys(groupingGroupsObject);
+
+        for(var i = 0; i<groupingObjectKeys.length;i++)
+		calculateRMSEGroup(data, groupingGroupsObject[groupingObjectKeys[i]], longAttribute, latAttribute, units)
+
+        for (var g=0;g<data.length;g++){
+            data[g]["RMSE"]= groupingGroupsObject[data[g][grouped]]["RMSE"];
+            if (newColumns){
+                data[g]["MeanLong"]= groupingGroupsObject[data[g][grouped]]["MeanLong"];
+                data[g]["MeanLat"]= groupingGroupsObject[data[g][grouped]]["MeanLat"];
+            }
         }
-        distances.push(Math.sqrt(difLong ** 2 + difLat ** 2))
+        var dataToEvaluateGlobalAccuracy=[];
+        for (var p=0;p<groupingObjectKeys.length;p++){
+            dataToEvaluateGlobalAccuracy.push({RMSE: groupingGroupsObject[groupingObjectKeys[p]]["RMSE"]})
+        }
+        var  globalAccuracy = accuracyFromUncertaintyInPositions(dataToEvaluateGlobalAccuracy, metadata, "RMSE")
+        if (!newColumns){ //Erase RMSE column. Needed before to calculate global accuracy
+            for (var d=0;d<data.length;d++){
+                delete data[i]["RMSE"]
+            }
+        }
+    }else{
+        var numbersArray=[]
+        for(var s=0;s<data.length;s++){
+            numbersArray.push(s)
+        }
+        var groupingGroupsObject={column:{"DataPositions":numbersArray}}
+        calculateRMSEGroup(data, groupingGroupsObject["column"],  longAttribute, latAttribute, units);
+        var globalAccuracy = groupingGroupsObject.column["RMSE"];
     }
+	var params= [{
+					"name": "longitude column",
+					"value": longAttribute
+					},
+					{
+					"name": "latitude column",
+					"value":latAttribute
+					}
+					
+				]
+ 	if(grouped)params.push({"name": "groumping mode","value": "grouped"},{"name": "groumping column",	"value": grouped})
+	else params.push({"name": "groumping mode",	"value": "global"});
 
-    //RMSE
-    var sumSquareDistances = distances.reduce((acc, d) => acc + d ** 2, 0);
-    var RMSE = Math.sqrt(sumSquareDistances / data.length);
+   if (!metadata.dataQualityInfos)
+		metadata.dataQualityInfos=[];
+	metadata.dataQualityInfos.push(
+		{
+			"reports": [
+				{
+					"type": "DQ_AbsoluteExternalPositionalAccuracy", 
+					"measureIdentification": {
+						"measure": {
+							"name": "RMSE"
+						},
+						"domains": [
+							{
+								"name": "RootMeanSquareError2D",
+								"params":params
+							}
+						]
+					},
+					"results": [
+						{
+							"type": "DQ_QuantitativeResult",
+							"errorStatistic": {
+								"metric": {
+									"name": "Half-lengthConfidenceInterval",
+									"params": [
+										{
+											"name": "level",
+											"value": "0.683"
+										}
+									]
+								}
+							},
+							"valueType": "number",
+							"values": [ globalAccuracy ]
+						}
+					]
+				}
+			]
+		});
 
-    return RMSE;
+    return globalAccuracy;
+
 }
 
-function calculateDataQualityPositionalValidity(data, attributeSelected, xmin, xmax, ymin, ymax, axisOrder, tag, filter) { //AxisOrder XY or YX
-    var attributes = getDataAttributes(data);
-    if (attributes[attributeSelected].type!="geometry") return null;
+function calculateDataQualityPositionalValidity(data, xmin, xmax, ymin, ymax, longAttribute, latAttribute, metadata, tag, filter) { //AxisOrder XY or YX
+   //x-> long, y-> lat
+    // var attributes = getDataAttributes(data);
+    // if (attributes[attributeSelected].type!="geometry") return null;
+    //MIRAR QUE SIGUIN... NUMEROS?(float)
     var valid;
-    var x, y;
     var count =0;
     var newData=[];
-    if (axisOrder == "XY") {
-        x = 0;
-        y = 1;
-    }
-    else {
-        x = 1;
-        y = 0;
-    }
+    
     for (var i = 0; i < data.length; i++) {
         valid = true;
         if (xmin != "") {
-            if (data[i][attributeSelected].coordinates[x] < parseFloat(xmin)) valid = false;
+            if (data[i][longAttribute] < parseFloat(xmin)) valid = false;
         }
         if (xmax != "") {
-            if (data[i][attributeSelected].coordinates[x] > parseFloat(xmax)) valid = false;
+            if (data[i][longAttribute] > parseFloat(xmax)) valid = false;
         }
         if (ymin != "") {
-            if (data[i][attributeSelected].coordinates[y] < parseFloat(ymin)) valid = false;
+            if (data[i][latAttribute] < parseFloat(ymin)) valid = false;
         }
         if (ymax != "") {
-            if (data[i][attributeSelected].coordinates[y] > parseFloat(ymax)) valid = false;
+            if (data[i][latAttribute] > parseFloat(ymax)) valid = false;
         }
 
         if (valid){
@@ -457,8 +818,89 @@ function calculateDataQualityPositionalValidity(data, attributeSelected, xmin, x
     }
     if (!filter)
 	newData=data;
+	var params= [{"name": "longitude column","value": longAttribute	},{	"name": "latitude column","value":latAttribute}]
+	if (xmin!="")params.push({"name": "xmin","value": xmin});
+	if (ymin!="")params.push({"name": "ymin","value": ymin});
+	if (xmax!="")params.push({"name": "xmax","value": xmax});
+	if (ymax!="")params.push({"name": "ymax","value": ymax})
+    if (!metadata.dataQualityInfos)
+		metadata.dataQualityInfos=[];
+	metadata.dataQualityInfos.push(
+		{
+			"reports": [
+				{
+					"type": "DQ_PositionalValidity",
+					"measureIdentification": {
+						"measure": {
+							"name": "Value domain"
+						},
+						"domains": [
+							{
+								"name": "Conformance",
+								"params": params
+                            }
+						]
+					},
+					"results": [
+						{
+							"type": "DQ_QuantitativeResult",
+							"errorStatistic": {
+								"metric": {
+									"name": "Rate of missing items",
+										"params":[
+                                        {
+                                            "name": "min",
+                                            "value":0
+                                        },
+                                        {
+                                            "name": "max",
+                                            "value":100
+                                        }
+                                    ]
+								}
+							},
+							"valueType": "number",
+							"values": [ (count / data.length) * 100]
+						}
+					]
+				}
+			]
+		});
     return [newData, count, (count / data.length) * 100]
 }
+
+var RootURLQualityML="https://www.qualityml.org/";
+
+function FoldOrUnFoldIFrameInfo(nom)
+{
+	var iFrame = document.getElementById(nom+"_iframe"), image = document.getElementById(nom+"_img");
+	if (iFrame && image !== null && iFrame.tagName == "IFRAME" && image.tagName == "IMG")
+		FoldOrUnFoldIInfo(iFrame, image);
+}
+
+function FoldOrUnFoldIInfo(elem, image)
+{
+	if (image !== null && image.tagName == "IMG" && elem !== null) {
+		if (elem.style.display=="none") {
+			elem.style.display="inline";
+			image.src="fold.png";
+		} else {
+			elem.style.display="none";
+			image.src="unfold.png";
+		}
+	}	
+}
+
+
+// Returns an HTML string for a button to unfold information in an iFrame.
+function UnfoldButtonIFrame(id, url)
+{
+const cdns=[];
+	cdns.push(" <img src=\"unfold.png\" id=\"",id,"_img\" alt=\"More information\" title=\"More information\" onClick='FoldOrUnFoldIFrameInfo(\"",id,"\")'\">");
+	cdns.push("<iframe src=\"", url, "\" id=\"",id,"_iframe\" style=\"display: none\" width=\"99%\" height=\"180\" scrolling=\"auto\"></iframe>");
+	return cdns.join("");
+}
+
 
 function metadataAsHTML(metadata) {
 var cdns=[];
@@ -472,10 +914,10 @@ var cdns=[];
 				cdns.push("<h3>", report.type, "</h3>");
 				if (report.measureIdentification) {
 					if (report.measureIdentification.measure && report.measureIdentification.measure.name) {
-						cdns.push("<b>Measure:</b> ", report.measureIdentification.measure.name, "<br>");
+						cdns.push("<b>Measure:</b>", report.measureIdentification.measure.name, UnfoldButtonIFrame("ShowQualitat_q"+q+"_r"+r, RootURLQualityML+"1.0/measure/"+report.measureIdentification.measure.name), "<br>");
 						for (var d=0; d<report.measureIdentification.domains.length; d++) {
 							var domain=report.measureIdentification.domains[d];
-							cdns.push("<b>Domain:</b> ", domain.name, "<br>");
+							cdns.push("<b>Domain:</b> ", domain.name, UnfoldButtonIFrame("ShowQualitat_q"+q+"_r"+r+"_d"+d, RootURLQualityML+"1.0/domain/"+domain.name), "<br>");
 						}
 					}
 					for (var rr=0; rr<report.results.length; rr++) {
@@ -483,7 +925,7 @@ var cdns=[];
 						cdns.push("<h4>", result.type, "</h4>");
 						if (result.errorStatistic && result.errorStatistic.metric && result.errorStatistic.metric.name) {
 							var metric=result.errorStatistic.metric;
-							cdns.push("<b>Metric:</b> ", metric.name, "<br>");
+							cdns.push("<b>Metric:</b> ", metric.name, UnfoldButtonIFrame("ShowQualitat_q"+q+"_r"+r+"_rr"+rr, RootURLQualityML+"1.0/metrics/"+metric.name), "<br>");
 							for (var p=0; p<metric.params.length; p++)
 								cdns.push("<b>", metric.params[p].name, ":</b> ", metric.params[p].value, "<br>");
 						}
@@ -499,4 +941,60 @@ var cdns=[];
 		}
 	}
 	return cdns.join("");
+}
+
+
+function createObjectWithDifferentPossibilitiesInColumns(data, groupingColumn){
+    var groupingGroupsObject={}, groupingKeys;
+
+    for(var i=0; i<data.length;i++){
+        groupingKeys= Object.keys(groupingGroupsObject);
+        if(groupingKeys.includes(data[i][groupingColumn])){
+                groupingGroupsObject[data[i][groupingColumn]]["DataPositions"].push(i);
+        }
+        else {
+            groupingGroupsObject[data[i][groupingColumn]]={}
+            groupingGroupsObject[data[i][groupingColumn]]["DataPositions"]=[i]
+        }
+    }
+    return groupingGroupsObject;
+}
+
+const factorDegreeToMeters=111319.5;
+
+function calculateRMSEGroup(data, groupingObject, longAttribute, latAttribute, units){
+    var RMSE, longitudeValues=[], latitudeValues=[];
+    //Mean of Longitudes and latitudes
+    
+    for (var i = 0; i < groupingObject.DataPositions.length; i++) {
+        longitudeValues.push(data[groupingObject.DataPositions[i]][longAttribute]);
+        latitudeValues.push(data[groupingObject.DataPositions[i]][latAttribute]);
+    }
+
+    var longitudeMean = aggrFuncMean(longitudeValues);
+    var latitudeMean = aggrFuncMean(latitudeValues);
+    var sumSquareDistances=0, difLong, difLat;
+
+    //Distances 
+    if (units == "deg")
+        var longFactor = factorDegreeToMeters * Math.cos(latitudeMean * Math.PI / 180);
+
+    for (var e = 0; e < groupingObject.DataPositions.length; e++) {
+        //long
+        difLong = data[groupingObject.DataPositions[e]][longAttribute] - longitudeMean;
+        difLat = data[groupingObject.DataPositions[e]][latAttribute] - latitudeMean;
+        if (units == "deg") {
+            difLong *= longFactor;
+            difLat *= factorDegreeToMeters;
+        }
+	sumSquareDistances+=Math.sqrt(difLong ** 2 + difLat ** 2)**2;
+    }
+
+    //var sumSquareDistances = distances.reduce((acc, d) => acc + d ** 2, 0);
+    var RMSE = Math.sqrt(sumSquareDistances / groupingObject.DataPositions.length);
+	//@Marta, please Truncate the RMSE to 3 decimals (mm precision).
+
+    groupingObject.MeanLong=longitudeMean;
+    groupingObject.MeanLat= latitudeMean;
+    groupingObject.RMSE= RMSE;
 }
