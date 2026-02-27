@@ -159,7 +159,9 @@ const TableOperations = {Table: {description: "View Table", leafNode: true, help
 			SeparateColumns: {description: "Separate Columns", help: "Splits a column containing a JSON object into separated new columns and removes the original column."},
 			SaveTable: {description: "Save Table", leafNode: true, help: "Saves the table contained in the node as a CSV (and CSVW if the column definition is semantically enriched; see &#39;meaning&#39;)."},
 			SaveLayer: {description: "Save Layer", leafNode: true, help: "Saves the table as a GeoJSON. It requires two columns with a latitude and longitude values."},
-			guf: {description: "Feedback", help: "Retreives the geospatial user feedback related to the single row present in the table (e.g. a record forma CSW catalogue). It also allows for adding or editing feedback. It uses the NiMMbus repository and interface."}
+			guf: {description: "Feedback", help: "Retreives the geospatial user feedback related to the single row present in the table (e.g. a record forma CSW catalogue). It also allows for adding or editing feedback. It uses the NiMMbus repository and interface."},
+			uploadToIC: {description: "Upload to inmutable catalog", leafNode: true, help: "Upload data and metadata to an inmutable catalog."},
+			uncertainty: {description: "Uncertainty", help: "Group values by time and space and calculate its uncertainties"}
 		};
 	
 const TableOperationsArray = Object.keys(TableOperations);
@@ -984,7 +986,7 @@ async function LoadJSONNodeSTAData(node, callback, url) {
 	}
 	try {
 		if (node.OGCType=="OGCCSW" || node.OGCType=="GUF")
-				jsonData = JSON.parse(xml2json(parseXml(await response.text()), false, null));
+			jsonData = JSON.parse(xml2json(parseXml(await response.text()), false, null));
 		else
 			jsonData = await response.json();
 	} catch (error) {
@@ -1837,6 +1839,10 @@ function TransformTextGeoJSONToTable(jsonText, url, node) {
 		networkNodes.update(node);
 		return;
 	}
+	TransformObjGeoJSONToTable(geojson, url, node);
+}
+
+function TransformObjGeoJSONToTable(geojson, url, node) {
 	node.STAdata=TransformGeoJSONToTable(geojson);
 	if (!node.STAdata)
 	{
@@ -1881,8 +1887,12 @@ function ReadURLImportGeoJSON() {
 	var node=getNodeDialog("DialogImportGeoJSON");
 	HTTPJSONData(document.getElementById("DialogImportGeoJSONSourceURLInput").value).then(
 				function(value) { 
-					showInfoMessage('Download GeoJSON completed.'); 
-					TransformTextGeoJSONToTable(value.text, document.getElementById("DialogImportGeoJSONSourceURLInput").value, node);
+					showInfoMessage('Download GeoJSON completed.');
+					if (value.obj) 
+						TransformObjGeoJSONToTable(value.obj, document.getElementById("DialogImportGeoJSONSourceURLInput").value, node);
+					else
+						TransformTextGeoJSONToTable(value.text, document.getElementById("DialogImportGeoJSONSourceURLInput").value, node);
+
 				},
 				function(error) { 
 					showInfoMessage('Error downloading GeoJSON. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
@@ -2157,7 +2167,15 @@ function GetDialogEDCEvent(event) {
 	var version=document.getElementById("DialogEDCCatalogVersion").value
 	if (version=="v1alpha") {
 		currentNode.STAURL+="/catalog/v1alpha/catalog/query";
-		var obj=null;
+		var obj={
+			"@context": {
+				"@vocab": "https://w3id.org/edc"
+			},
+			"@type" : "QuerySpec",
+			"limit": 1000,
+			"offset": 0,
+			"sortOrder": "DESC"
+		};
 	} else if (version=="v2" || version=="v3") {
 		currentNode.STAURL+="/management/"+version+"/catalog/request";
 		var obj={
@@ -2184,7 +2202,7 @@ function GetDialogEDCEvent(event) {
 	//if childen nodes have also STAURL
 	//UpdateChildenSTAURL(currentNode, currentNode.STAURL, previousSTAURL);
 
-	HTTPJSONData(currentNode.STAURL, null, "POST", obj).then(
+	HTTPJSONData(currentNode.STAURL, null, "POST", obj, {'Accept': '*/*', 'x-api-key': 'edc'}).then(
 				function(value) { 
 					showInfoMessage('EDC catalog request completed.'); 
 					TransformEDCCatalogResponseToDataAttributes(currentNode, value.obj);
@@ -5682,17 +5700,17 @@ function GetGeoJSONDates(data, selectedOptions) {
 	;   //Nothing to do
 }*/
 
-function PopulateSelectSaveLayerDialog(id, dataAttributes, selectedOption)
+function PopulateSelectSaveLayerDialog(id, dataAttributes, selectedOption, onChange)
 {
-	document.getElementById(id).innerHTML=GetSelectSaveLayerDialog(id+"Select", dataAttributes, selectedOption);
+	document.getElementById(id).innerHTML=GetSelectSaveLayerDialog(id+"Select", dataAttributes, selectedOption, onChange);
 }
 
-function GetSelectSaveLayerDialog(id, dataAttributes, selectedOption)
+function GetSelectSaveLayerDialog(id, dataAttributes, selectedOption, onChange)
 {
 	var thereIsSelectionOption=false;
 	var dataAttributesArray = Object.keys(dataAttributes);
 
-	var s="<select id=\""+id+"\">";
+	var s="<select id=\""+id+"\""  + (onChange ? "onChange=\""+onChange+"\"" : "") + ">";
 	for (var a=0; a<dataAttributesArray.length; a++)
 	{
 		if (dataAttributesArray[a]==selectedOption)
@@ -5978,7 +5996,7 @@ function getDataAttributesGeoJSONSchema(jsonschema){
 }
 
 //Has the string s a ISO data in the position i? It does not 
-function fragmentStartsWithISODate(s, i) { //regex equivalent: const pattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z)?(\.000)?(\+00:00)?$/;
+function fragmentStartsWithISODate(s, i) { //regex equivalent: pattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z)?(\.000)?(\+00:00)?$/;
 	if (s.charAt(i+0) >= '0' && s.charAt(i+0) <= '9' &&
 		s.charAt(i+1) >= '0' && s.charAt(i+1) <= '9' &&
 		s.charAt(i+2) >= '0' && s.charAt(i+2) <= '9' &&
@@ -6241,12 +6259,12 @@ function GetCreateTableDGGSCodes(event) {
 
 function ShowAddColumnGeoDialog(node) {
 	var dataAttributes=currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(node.STAdata);
-	PopulateSelectSaveLayerDialog("DialogAddColumnGeoJSON", dataAttributes, "geometry");
-	PopulateSelectSaveLayerDialog("DialogAddColumnGeoWKT", dataAttributes, "wkt");
-	PopulateSelectSaveLayerDialog("DialogAddColumnGeohash", dataAttributes, "geohash");
-	PopulateSelectSaveLayerDialog("DialogAddColumnUberH3", dataAttributes, "H3");
-	PopulateSelectSaveLayerDialog("DialogAddColumnGeoLongitude", dataAttributes, "long");
-	PopulateSelectSaveLayerDialog("DialogAddColumnGeoLatitude", dataAttributes, "lat");
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeoJSON", dataAttributes, "geometry", "document.getElementById('DialogAddColumnGeoRadioJSON').click()"); 
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeoWKT", dataAttributes, "wkt", "document.getElementById('DialogAddColumnGeoRadioWKT').click()");
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeohash", dataAttributes, "geohash", "document.getElementById('DialogAddColumnGeoRadioGeohash').click()");
+	PopulateSelectSaveLayerDialog("DialogAddColumnUberH3", dataAttributes, "H3", "document.getElementById('DialogAddColumnGeoRadioUberH3').click()");
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeoLongitude", dataAttributes, "long", "document.getElementById('DialogAddColumnGeoRadioLL').click()");
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeoLatitude", dataAttributes, "lat", "document.getElementById('DialogAddColumnGeoRadioLL').click()");
 
 	saveNodeDialog("DialogAddColumnGeo", node);
 	ChangeAddColumnGeoRadioOut();
@@ -7285,8 +7303,8 @@ function KeySTAPage(event) {
 
 	if (aDialogIsOpen)
 		return;
-	if (event.code == "F2" || event.code == "Delete" || event.code == "Insert" || event.code == "Enter"){
-		event.preventDefault();
+if (event.code == "F2" || event.code == "Delete" || event.code == "Insert" || event.code == "Enter"){
+			event.preventDefault();
 		var nodeId = network.getSelectedNodes();
 		if (nodeId && nodeId.length) {
 			switch (event.code) {
@@ -7685,6 +7703,64 @@ function networkDoubleClick(params) {
 			}
 			showNodeDialog("DialogGUF");
 		}
+		else if(currentNode.image =="uploadToIC.png"){
+			saveNodeDialog("DialogUploadIC", currentNode);
+			var parentNode=GetFirstParentNode(currentNode);
+			var open=false;
+			if (parentNode){
+				if(parentNode.STAdata) {
+					currentNode.STAdata=parentNode.STAdata;
+					open=true;
+					if(parentNode.STAdataAttributes){
+						currentNode.STAdataAttributes=parentNode.STAdataAttributes;
+						populateuploadToICDialogUploadIC(currentNode);
+						if (parentNode.STAmetadata && open==true) {
+							currentNode.STAmetadata= parentNode.STAmetadata;
+						}else{
+							alert("The data has to contain metadata");
+						}
+					}else{
+						alert("The data has to had attributes");
+					}
+				}else{
+					open=false;
+					alert("The node conected has to have data");
+				}				
+			}
+			if (open)showNodeDialog("DialogUploadIC");
+			
+		}
+		else if(currentNode.image =="uncertainty.png"){
+			saveNodeDialog("DialogUncertainty", currentNode);
+			var parentNode=GetFirstParentNode(currentNode);
+			var open=true; //Canviar a false si cal
+			if (parentNode){
+				 if(parentNode.STAdata) {
+				 	currentNode.STAdata=parentNode.STAdata;
+					currentNode.STAdataAttributes=parentNode.STAdataAttributes;
+					if (parentNode.STAmetadata)currentNode.STAmetadata=parentNode.STAmetadata;
+					populateUncertaintyDialog(currentNode)
+					networkNodes.update(currentNode);
+				// 	open=true;
+				// 	if(parentNode.STAdataAttributes){
+				// 		currentNode.STAdataAttributes=parentNode.STAdataAttributes;
+				// 		populateuploadToICDialogUploadIC(currentNode);
+				// 		if (parentNode.STAmetadata && open==true) {
+				// 			currentNode.STAmetadata= parentNode.STAmetadata;
+				// 		}else{
+				// 			alert("The data has to contain metadata");
+				// 		}
+				// 	}else{
+				// 		alert("The data has to had attributes");
+				// 	}
+				}else{
+				 	open=false;
+				 	alert("The node conected has to have data");
+				 }				
+			}
+			if (open)showNodeDialog("DialogUncertainty");
+			
+		}
 		else if (currentNode.image == "Meaning.png") {
 			ShowMeaningTableDialog(currentNode);
 			showNodeDialog("DialogMeaningTable");
@@ -7966,6 +8042,7 @@ function networkDoubleClick(params) {
 			}
 		}
 		else if (currentNode.image == "logicalConsistency.png") {
+			if(parentNode.STAmetadata)currentNode.STAmetadata=parentNode.STAmetadata;
 			if (populateDialogQualityLogicalConsistency(currentNode)){
 				showNodeDialog("DialogQualityLogicalConsistency");
 			}else{
@@ -8006,9 +8083,13 @@ function networkDoubleClick(params) {
 					//currentNode.STAdata= deapCopy(parentNode.STAdata);
 					//currentNode.STAdataAttributes= parentNode.STAdataAttributes ? deapCopy(parentNode.STAdataAttributes) : getDataAttributes(parentNode.STAdata);
 					//if(parentNode.STAmetadata)currentNode.STAmetadata=parentNode.STAmetadata
-					populateDialogQualityThematicQuality(currentNode);
-					networkNodes.update(currentNode);
-					showNodeDialog("DialogQualityThematicQuality");
+					if (populateDialogQualityThematicQuality(currentNode)){
+						networkNodes.update(currentNode);
+						showNodeDialog("DialogQualityThematicQuality");
+					}else{
+						alert("Only 2 parents are allowed");
+					}
+
 			}else{
 				alert("Parent node must have data to analyze");
 			}
@@ -9594,14 +9675,13 @@ function okButtonDataQualityCompletnessOmission(event){
 	var select= document.getElementById("attributeList_omission");
 	var selected= select.options[select.selectedIndex].value;
 	var flag= (document.getElementById("dataQuality_omission_flag").checked)?true:false;
-	var filter= (document.getElementById("dataQuality_omission_filter").checked)?true:false;
 	var infoDataOmission;
 	var metadata= (node.STAmetadata)?node.STAmetadata:{}
 
-	infoDataOmission= calculateDataQualityCompletnessOmission(data, selected,metadata, flag, filter); //Response:data, Total, true, false, %omission, %completness
+	infoDataOmission= calculateDataQualityCompletnessOmission(data, selected,metadata, flag); //Response:data, Total, true, false, %omission, %completness
 
-	node.STAdata=infoDataOmission[0];
-	node.STAdataAttributes=getDataAttributes(infoDataOmission[0]);
+	node.STAdata=data;
+	node.STAdataAttributes=getDataAttributes(data);
 	networkNodes.update(node);
 	hideNodeDialog("DialogQualityCompletnessOmission", event);
 	
@@ -9610,8 +9690,8 @@ function okButtonDataQualityCompletnessOmission(event){
 	<th >Column</th><th>Total records</th><th>Empty records</th>
 	<th>Omission rate</th><th>Completeness rate</th></tr></thead>
 	<tbody><tr>
-	<td>${selected}</td><td>${infoDataOmission[1]}</td><td>${infoDataOmission[3]}</td>
-	<td>${infoDataOmission[4]}</td><td>${infoDataOmission[5]}</td>
+	<td>${selected}</td><td>${data.length}</td><td>${infoDataOmission[0]}</td>
+	<td>${infoDataOmission[1]}</td><td>${infoDataOmission[2]}</td>
 	</tr></tbody></table>`;
 	showNodeDialog("dataQualityResult");
 	
@@ -9691,7 +9771,6 @@ function okButtonDataQualityDialogQualityLogicalConsistency(event){
 	}
 	if (targets.length!=0){
 		var flag= (document.getElementById("dataQuality_logicalConsistency_flag").checked)?true:false;
-		var filter= (document.getElementById("dataQuality_logicalConsistency_filter").checked)?true:false;
 
 	if (numTargued==0){
 		idTarget=document.getElementById("DialogQualityLogicalConsistency_table_div").getAttribute("data-value_0");
@@ -9700,50 +9779,58 @@ function okButtonDataQualityDialogQualityLogicalConsistency(event){
 		idTarget=document.getElementById("DialogQualityLogicalConsistency_table_div").getAttribute("data-value_1");
 		idReference=document.getElementById("DialogQualityLogicalConsistency_table_div").getAttribute("data-value_0");
 	}
+	var metadata= (node.STAmetadata)?node.STAmetadata:{}
+	if(idTarget!=idReference){
 
-		if(idTarget!=idReference){
-			var infoDatalogicalConsistency;
-			var dataTarget= networkNodes.get(idTarget).STAdata;
-			var dataReference= networkNodes.get(idReference).STAdata;
-			var dataTargetLength=dataTarget.length;
-			infoDatalogicalConsistency= calculateDataQualityLogicalConsistency(dataTarget, dataReference, targets, references, flag, filter); //Total, true, false, %logicalConsistency, %completesa
-			
-			node.STAdata= infoDatalogicalConsistency[0];
-			node.STAdataAttributes= getDataAttributes(infoDatalogicalConsistency[0]);
-			networkNodes.update(node);
-			hideNodeDialog("DialogQualityLogicalConsistency", event);
-	
-			document.getElementById("dataQualityResult_info").innerHTML=`<table class="tablesmall">
-				<thead > 
-				<th >Target columns</th><th >Reference columns</th><th>Total records</th>
-				<th>True records</th><th>Logical consistancy rate</th></tr></thead>
-				<tbody><tr>
-				<td>${targets}</td><td>${references}</td>
-				<td>${dataTargetLength}</td>
-				<td>${infoDatalogicalConsistency[1]}</td><td>${infoDatalogicalConsistency[2]}</td>
-				</tr></tbody></table>`
-			showNodeDialog("dataQualityResult");
-			updateQueryAndTableArea(node);
+		var infoDatalogicalConsistency;
+		var dataTarget= networkNodes.get(idTarget).STAdata;
+		var dataReference= networkNodes.get(idReference).STAdata;
+		var dataTargetLength=dataTarget.length;
+		infoDatalogicalConsistency= calculateDataQualityLogicalConsistency(dataTarget, dataReference, targets, references,metadata, flag); //Total, true, false, %logicalConsistency, %completesa
+		node.STAdata= dataTarget;
+		node.STAdataAttributes= getDataAttributes(dataTarget);
+		node.STAmetadata=metadata;
+		networkNodes.update(node);
+		hideNodeDialog("DialogQualityLogicalConsistency", event);
 
-		}else{
-			alert("target node and reference node are the same are identified as the same")
-		}
+		document.getElementById("dataQualityResult_info").innerHTML=`<table class="tablesmall">
+			<thead > 
+			<th >Target columns</th><th >Reference columns</th><th>Total records</th>
+			<th>True records</th><th>Logical consistancy rate</th></tr></thead>
+			<tbody><tr>
+			<td>${targets}</td><td>${references}</td>
+			<td>${dataTargetLength}</td>
+			<td>${infoDatalogicalConsistency[0]}</td><td>${infoDatalogicalConsistency[1]}</td>
+			</tr></tbody></table>`
+		showNodeDialog("dataQualityResult");
+		updateQueryAndTableArea(node);
+
+	}else{
+		alert("target node and reference node are the same are identified as the same")
+	}
 	}
 }
 
 function populateDialogQualityTemporalQuality(node){
-	var attributesCheckboxModule = populateAttributesListSelect(node.STAdataAttributes, "temporalQuality", "Column");
-	document.getElementById("DialogQualityTemporalQuality_attributesList").innerHTML=attributesCheckboxModule;
+	//var attributesCheckboxModule = populateAttributesListSelect(node.STAdataAttributes, "temporalQuality", "Column");
+	var attributesKeys= Object.keys(node.STAdataAttributes), options;
+	for (var i=0;i<attributesKeys.length;i++){
+		options+= `<option  value="${attributesKeys[i]}">${attributesKeys[i]}</option>`;
+	}
+	document.getElementById("TemporalQuality_select_temporalAccuracy_uncertantyColumn").innerHTML=options;
+	document.getElementById("TemporalQuality_select_temporalColumn").innerHTML=options;
+	document.getElementById("TemporalQuality_radio_temporalAccuracy_evaluateColumn_grouping_select").innerHTML=options;
 	saveNodeDialog("DialogQualityTemporalQuality", node);
 }
 
 function okButtonDataQualityTemporalQuality(event){
 	var node= getNodeDialog("DialogQualityTemporalQuality");
 	var data= node.STAdata;
-	var select= document.getElementById("attributeList_temporalQuality");
+	var select= document.getElementById("TemporalQuality_select_temporalColumn");
 	var attributeSelected= select.options[select.selectedIndex].value;
-
+	var temporalAccuracy=(document.getElementById("TemporalQuality_checkbox_calculate_temporalAccuracy").checked)?true:false;
 	var validity_calculate=(document.getElementById("TemporalQuality_checkbox_calculate_temporalValidity").checked)?true:false;
+
 	var from=document.getElementById("DialogQualityTemporalQuality_validity_inputText_from").value;
 	var to= document.getElementById("DialogQualityTemporalQuality_validity_inputText_to").value;
 
@@ -9759,56 +9846,90 @@ function okButtonDataQualityTemporalQuality(event){
 	var tolerance= document.getElementById("TemporalQuality_consistency_toleranceRange").value;
 	var consistencyRadioMethod=(document.getElementById("TemporalQuality_intervalMethod_radio_local").checked)?"interval":"global";
 
-	var filter= (document.getElementById("dataQuality_temporalQuality_filter").checked)?true:false;
 	var flag=(document.getElementById("TemporalQuality_checkbox_flag").checked)?true:false;
 	var sort= (document.getElementById("TemporalQuality_checkbox_sort").checked)?true:false;
 	var datalength=data.length;
-	
-	var newData={}, conditionsToFilter=[];
+	var metadata= (node.STAmetadata)?node.STAmetadata:{}
+	var newData={};
+
+	if (temporalAccuracy){
+		var accuracyMethod=document.querySelector('input[name="TemporalQuality_radio_temporalAccuracy"]:checked')
+		var accuracyMethodValue= accuracyMethod.value;
+
+		if(accuracyMethodValue=="uncertaintyColumn"){
+			
+			var selectUncertantly= document.getElementById("TemporalQuality_select_temporalAccuracy_uncertantyColumn");
+			var attributeSelectedUncertantly= selectUncertantly.options[selectUncertantly.selectedIndex].value;
+			//if (node.STAdataAttributes[attributeSelectedUncertantly].type == "number" || node.STAdataAttributes[attributeSelectedUncertantly].type== "integer") {
+				newData.accuracy=accuracyFromUncertaintyInTemporal(data, metadata, attributeSelectedUncertantly)
+				//valid=true;
+			//} else {
+				// valid=false;
+				// alert("Selected uncertainly column must be of a 'number' type");
+			//}
+			
+		}else{ //Calculate
+				var accuracyMethodGrouped=document.getElementById("TemporalQuality_radio_positionalAccuracy_evaluateColumn_grouping_group").checked?true:false;
+			if(accuracyMethodGrouped){
+				var temporalUncertaintyGroupColumn= document.getElementById("TemporalQuality_radio_temporalAccuracy_evaluateColumn_grouping_select");
+				var temporalUncertaintyGroupColumnValue= temporalUncertaintyGroupColumn.options[temporalUncertaintyGroupColumn.selectedIndex].value;
+				var newColumn= document.getElementById("TemporalQuality_radio_positionalAccuracy_evaluateColumn_grouping_groupCheckbox").checked?true:false;
+				newData.accuracy=calculateTemporalAccuracyFromTimes(data, attributeSelected,metadata,temporalUncertaintyGroupColumnValue, newColumn)
+			}else{ //all
+				newData.accuracyy=calculateTemporalAccuracyFromTimes(data, attributeSelected,metadata)
+			}
+			
+		}
+	}
+
+
+
 	if (validity_calculate){
-		newData.validity=calculateDataQualityTemporalValidity(data, attributeSelected, from, to, metadata, flag, filter);
-		data= newData.validity[0];
-		conditionsToFilter.push("temporalValidity");
+		newData.validity=calculateDataQualityTemporalValidity(data, attributeSelected, from, to, metadata, flag);
 	} 
 	
 	if (resolution_calculate){
 		newData.resolution= calculateDataQualityTemporalResolution(data, attributeSelected, resolutionRadioValue, metadata,flag,filter);
-		data= newData.resolution[0];
-		conditionsToFilter.push("temporalResolution");
 	} 
 	if (consistency_calculate){
 		if(sort)sortDates(data, attributeSelected);
-		newData.consistency= calculateDataQualityTemporalConsistency(data, attributeSelected, consistencyInput,consistencyRadioValue, consistencyRadioMethod,tolerance, flag, filter);
-		data= newData.consistency[0];
-		conditionsToFilter.push("temporalConsistency");
+		newData.consistency= calculateDataQualityTemporalConsistency(data, attributeSelected, consistencyInput,consistencyRadioValue, consistencyRadioMethod,tolerance,metadata, flag, filter);
 	}
-	var finalData;
+
 	
-	if (filter && conditionsToFilter.length>0)finalData= data.filter(obj=>conditionsToFilter.every(attr=> obj[attr]===true)); 
-	else finalData=data;
-	
-	if (newData.validity==null || newData.resolution==null ||newData.consistency==null)
-		alert("The attribute selected must be a Date");
-	else{
-		node.STAdata= finalData;
-		node.STAdataAttributes= getDataAttributes(finalData);
+	// if (newData.validity==null || newData.resolution==null ||newData.consistency==null)
+	// 	alert("The attribute selected must be a Date");
+	// else{
+		node.STAdata= data;
+		node.STAdataAttributes= getDataAttributes(data);
 		networkNodes.update(node);
 		updateQueryAndTableArea(node);
 		hideNodeDialog("DialogQualityTemporalQuality", event);
 
-		if(validity_calculate||resolution_calculate||consistency_calculate){
+		if(validity_calculate||resolution_calculate||consistency_calculate||temporalAccuracy ){
 			var html="";
+			if(validity_calculate||resolution_calculate||consistency_calculate){
 			html= `<table class="tablesmall">
 						<thead > 
 						<th></th><th>Column</th><th>Total records</th><th>True records</th><th>Rate</th></tr></thead><tbody>`;
-			if(validity_calculate)html+= `<tr><td>Temporal validity</td><td>${attributeSelected}</td><td>${datalength}</td><td>${newData.validity[1]}</td><td>${(newData.validity[1]/datalength)*100}</td></tr>`
-			if(resolution_calculate)html+= `<tr><td>Temporal resolution</td><td>${attributeSelected}</td><td>${datalength}</td><td>${newData.resolution[1]}</td><td>${(newData.resolution[1]/datalength)*100}</td></tr>`
-			if(consistency_calculate)html+= `<tr><td>Temporal consistency</td><td>${attributeSelected}</td><td>${datalength}</td><td>${newData.consistency[1]}</td><td>${(newData.consistency[1]/datalength)*100}</td></tr>`
+			
+			}
+
+			if(validity_calculate)html+= `<tr><td>Temporal validity</td><td>${attributeSelected}</td><td>${datalength}</td><td>${newData.validity[0]}</td><td>${newData.validity[1]}</td></tr>`
+			if(resolution_calculate)html+= `<tr><td>Temporal resolution</td><td>${attributeSelected}</td><td>${datalength}</td><td>${newData.resolution[0]}</td><td>${newData.resolution[1]}</td></tr>`
+			if(consistency_calculate)html+= `<tr><td>Temporal consistency</td><td>${attributeSelected}</td><td>${datalength}</td><td>${newData.consistency[0]}</td><td>${newData.consistency[1]}</td></tr>`
 			html+=`</tbody></table>`;
+			if (temporalAccuracy){
+				html+= `<table class="tablesmall">
+						<thead > 
+						<th></th><th>Column</th><th>Total records</th><th>Accuracy value</th></tr></thead><tbody>
+						<tr><td>Temporal validity</td><td>${attributeSelected}</td><td>${datalength}</td><td>${newData.accuracy}</td></tr>`
+			}
+			
 			document.getElementById("dataQualityResult_info").innerHTML= html
 			showNodeDialog("dataQualityResult");
 		}
-	}	
+	//}	
 }
 
 function populateDialogQualityPositionalQuality(node){
@@ -9844,9 +9965,7 @@ function okButtonDataQualityPositionalQuality(event){
 	var attributeSelectedLat=selectLat.options[selectLat.selectedIndex].value;
 	var valid, accuracyValue;
 	var data=node.STAdata;
-	if (!node.STAmetadata)
-		node.STAmetadata={};
-	var metadata=node.STAmetadata;
+	var metadata= (node.STAmetadata)?node.STAmetadata:{}
 
 	if (positionalAccuracy){
 		var accuracyMethod= (document.getElementById("PositionalQuality_radio_positionalAccuracy_uncertantlyColumn").checked)?"uncertantlyColumn": "geometryColumns";
@@ -9888,15 +10007,14 @@ function okButtonDataQualityPositionalQuality(event){
 		var ymin=document.getElementById("PositionalQuality_input_positionalValidity_ymin").value;
 		var ymax=document.getElementById("PositionalQuality_input_positionalValidity_ymax").value;
 		var tag= (document.getElementById("dataQuality_temporalValidity_flag").checked)?true:false;
-		var filter= (document.getElementById("dataQuality_temporalValidity_filter").checked)?true:false;
-		var positionalValidityRate= calculateDataQualityPositionalValidity(data, xmin, xmax, ymin, ymax, attributeSelectedLong, attributeSelectedLat,metadata, tag, filter)
+		var positionalValidityRate= calculateDataQualityPositionalValidity(data, xmin, xmax, ymin, ymax, attributeSelectedLong, attributeSelectedLat,metadata, tag)
 		if (positionalValidityRate==null){
 			valid=false;
 			alert("Selected collumn must have a geometry type");
 		} else {
 			valid=true;
-			node.STAdata= positionalValidityRate[0];
-			node.STAdataAttributes= getDataAttributes(positionalValidityRate[0]);
+			node.STAdata= data;
+			node.STAdataAttributes= getDataAttributes(data);
 		}
 	}
 	if (valid) {
@@ -9933,16 +10051,16 @@ function okButtonDataQualityPositionalQuality(event){
 			html+="<br>"
 			if (positionalValidity){
 				var positionValidityRateValue;
-				if (!Number.isInteger(positionalValidityRate[2]))
-					positionValidityRateValue= positionalValidityRate[2].toFixed(3);
+				if (!Number.isInteger(positionalValidityRate[1]))
+					positionValidityRateValue= positionalValidityRate[1].toFixed(3);
 				else 
-				 	positionValidityRateValue = positionalValidityRate[2];
+				 	positionValidityRateValue = positionalValidityRate[1];
 				 	html+= `<div> Positional validity <br>
 				 	<table class="tablesmall"><thead><th>Columns</th><th>Total records</th><th>True records </th><th>Rate</th></tr></thead>
 						<tbody><tr>
 					 		<td>${attributeSelectedLong},${attributeSelectedLat}</td>
 					 		<td>${dataLength}</td>
-					 		<td>${positionalValidityRate[1]}</td>
+					 		<td>${positionalValidityRate[0]}</td>
 					 		<td>${positionValidityRateValue}</td>
 					 	</tr>`;
 			}
@@ -9956,19 +10074,28 @@ function okButtonDataQualityPositionalQuality(event){
 
 
 function populateDialogQualityThematicQuality(node){
-	populateAttributesListSelectThematicQuality(node);
-	saveNodeDialog("DialogQualityThematicQuality", node);
-}
-
-function populateDialogQualityThematicQuality(node){
 	var parentNodes=GetParentNodes(node);
-	
+	saveNodeDialog("DialogQualityThematicQuality", node);
 	var select= createSelectForThematicQuality(parentNodes, "columnToEvaluate");
-	//Oplir el select de la grouping group
 
 	document.getElementById("DialogQualityThematicQuality_attributesList").innerHTML=select; //general
 	document.getElementById("thematicQuality_select_thematicAccuracy_group").innerHTML=select; //grouping column
-	document.getElementById("thematicQuality_select_thematicValidity").innerHTML=select; //grouping column
+	document.getElementById("thematicQuality_select_thematicValidity").innerHTML=select; //validity column
+	document.getElementById("DialogQualityThematicQuality_select_uncertantyColumn").innerHTML=select; //uncertannty column
+	unableGroupingModeInThematicQuality(true); //disable grouping mode
+
+	var optionsMetadata="";
+	if (parentNodes.length>2) return false;
+	var nodeIds=""
+	for(var i=0;i<parentNodes.length;i++){
+		optionsMetadata+=`<option value="${parentNodes[i].id}">${parentNodes[i].label}</option>`;
+		if (i==0)nodeIds= parentNodes[i].id+"_"
+		else nodeIds+= parentNodes[i].id
+	}
+	document.getElementById("ThematicQuality_select_metadata").innerHTML=optionsMetadata; 
+	document.getElementById("DialogQualityThematicQuality").setAttribute ("data-nodeIds", nodeIds);
+	
+	return true;
 }
 
 function createSelectForThematicQuality(parentNodes, place){
@@ -9985,17 +10112,140 @@ function createSelectForThematicQuality(parentNodes, place){
 	c+=`</select>`
 	return c;
 }
+function unableGroupingModeInThematicQuality(desvest){
+	
+	document.getElementById("thematicQuality_radio_thematicAccuracy_group").disabled=desvest;
+	document.getElementById("thematicQuality_select_thematicAccuracy_group").disabled=desvest;
+	document.getElementById("thematicQuality_radio_thematicAccuracy_grouping_groupCheckbox").disabled=desvest;
+	document.getElementById("thematicQuality_radio_thematicAccuracy_column").disabled=desvest;
+	
+}
 
-function okButtonDataQualityThematicQuality(event){
-	var thematicAccuracy= (document.getElementById("ThematicQuality_checkbox_ThematicAccuracy").checked)?true:false;
-	var thematicValidity= (document.getElementById("ThematicQuality_checkbox_ThematicValidity").checked)?true:false;
-	if(thematicAccuracy){
-		var groupingMode= (document.getElementById("thematicQuality_radio_thematicAccuracy_group").checked)?"grouped": "all";
-		var inputWayGroup = document.querySelector('input[name="thematicQuality_radio_thematicAccuracy_way"]:checked')
-		var inputWayValue= inputWayGroup.value; //accuracyMean, string, number
+function okButtonDataQualityThematicQuality(event) {
+	var node = getNodeDialog("DialogQualityThematicQuality");
+	var thematicAccuracy = (document.getElementById("ThematicQuality_checkbox_ThematicAccuracy").checked) ? true : false;
+	var thematicValidity = (document.getElementById("ThematicQuality_checkbox_ThematicValidity").checked) ? true : false;
+	var thematicAttribute = document.getElementById("thematicQuality_select_columnToEvaluate");
+	var thematicAttributeSelected = thematicAttribute.options[thematicAttribute.selectedIndex].value;
+	var nodeIdToEvaluate = document.getElementById("ThematicQuality_select_metadata");
+	var nodeIdToEvaluateSelected = nodeIdToEvaluate.options[nodeIdToEvaluate.selectedIndex].value;
+	var metadata = (networkNodes.get(nodeIdToEvaluateSelected).STAmetadata) ? networkNodes.get(nodeIdToEvaluateSelected).STAmetadata : {};
+	var dataToEvaluate = networkNodes.get(nodeIdToEvaluateSelected).STAdata;
+	var nodeIds = document.getElementById("DialogQualityThematicQuality").getAttribute("data-nodeids");
+	nodeIds = nodeIds.includes("_")?nodeIds.split("_"):nodeIds; //only one doesn't have _
+	var referenceNodeId;
+	var valid=true;
+	for (var n = 0; n < nodeIds.length; n++) {
+		if (!nodeIds[n] == nodeIdToEvaluateSelected) referenceNodeId = nodeIds[n];
 	}
-	if(thematicValidity)
-		var thematicValidityWay= (document.getElementById("thematicQuality_radio_thematicValidity_list").checked)? "list": "range";
+
+	if (thematicAccuracy) {
+		var grouped = false, newColumns = false;
+		var inputWayGroup = document.querySelector('input[name="thematicQuality_radio_thematicAccuracy_way"]:checked')
+		var inputWayValue = inputWayGroup.value; //accuracyStaDev, alfaNum, number
+		if (inputWayValue == "alfaNum" || inputWayValue == "number") {
+			var groupingMode = (document.getElementById("thematicQuality_radio_thematicAccuracy_group").checked) ? "grouped" : "all";
+			if (groupingMode == "grouped") {
+				var groupingSelect = document.getElementById("thematicQuality_select_thematicAccuracy_group");
+				grouped = groupingSelect.options[groupingSelect.selectedIndex].value;
+				if (document.getElementById("thematicQuality_radio_thematicAccuracy_grouping_groupCheckbox").checked) newColumns = true;
+			}
+		}
+
+
+		//accuracyStaDev
+		if (inputWayValue == "accuracyStaDev") {
+			var uncertantuColumn = document.getElementById("DialogQualityThematicQuality_select_uncertantyColumn");
+			var uncertantuColumnValue = uncertantuColumn.options[uncertantuColumn.selectedIndex].value;
+			var globalAccuracyValue = accuracyFromUncertaintyThematicQuality(dataToEvaluate, metadata, uncertantuColumnValue);
+		}
+		//alfaNum
+		else if (inputWayValue == "alfaNum") {
+			var newColumns = (document.getElementById("thematicQuality_radio_thematicAccuracy_grouping_groupCheckbox").checked) ? true : false;
+			var globalAccuracyValue = accuracyFromAlfaNumValuesInThematicQuality(dataToEvaluate, metadata, thematicAttributeSelected, grouped, newColumns)
+
+		} else { //num
+			var newColumns = (document.getElementById("thematicQuality_radio_thematicAccuracy_grouping_groupCheckbox").checked) ? true : false;
+			var globalAccuracyValue = accuracyFromNumValuesInThematicQuality(dataToEvaluate, metadata, thematicAttributeSelected, grouped, newColumns)
+
+		}
+	}
+	if (thematicValidity) {
+		var thematicValidityWay = (document.getElementById("thematicQuality_radio_thematicValidity_list").checked) ? "list" : "range";
+		var flag = (document.getElementById("dataQuality_thematicValidity_flag").checked) ? true : false;
+		if (thematicValidityWay == "list") {
+			var refenceAttributeSelect = document.getElementById("thematicQuality_select_thematicValidity");
+			var referenceAttributeValue = refenceAttributeSelect.options[refenceAttributeSelect.selectedIndex].value;
+			var referenceData = networkNodes.get(referenceNodeId).STAdata;
+			var thematicValidity = calculateDataQualityThematicValidityWithAList(dataToEvaluate, referenceData, metadata, thematicAttributeSelected, referenceAttributeValue, flag)
+		} else {
+			var from = document.getElementById("thematicQuality_input_thematicValidity_from")
+			var to = document.getElementById("thematicQuality_input_thematicValidity_to")
+			var thematicValidity = calculateDataQualityThematicValidityWithRange(dataToEvaluate, from, to, metadata, thematicAttributeSelected, flag)
+
+
+		}
+		if (typeof thematicValidity == "string") valid = false;
+
+	}
+	if (valid) {
+		node.STAdata = dataToEvaluate;
+		node.STAdataAttributes = getDataAttributes(dataToEvaluate);
+		networkNodes.update(node);
+		updateQueryAndTableArea(node);
+		hideNodeDialog("DialogQualityPositionalQuality", event);
+
+		if (thematicAccuracy || thematicValidity) {
+			var html = "";
+			if (thematicAccuracy) {
+
+				html += `<div> Thematic accuracy <br>
+				<table class="tablesmall"><thead><th>Column</th><th>Method</th><th>Value</th></tr></thead>
+				<tbody>`
+
+				if (inputWayValue == "accuracyStaDev") {
+					html += `<tr>
+					<td>${uncertantuColumnValue} </td>
+					<td> Standard deviation </td>
+					<td> ${globalAccuracyValue}</td>
+					</tr>`
+				} else if (inputWayValue == "alfaNum") {
+					html += `<tr>
+					<td>${thematicAttributeSelected} </td>`
+					if (grouped) html += `<td> Mean of percentatge of mode value </td>`
+					else html += `<td> Percentatge of mode value </td>`
+					html += `<td> ${globalAccuracyValue} m</td>
+					</tr>`
+				}
+				else {
+					html += `<tr>
+					<td>${thematicAttributeSelected} </td>`
+					if (grouped) html += `<td> Standard deviation of standard deviations across the groups  </td>`
+					else html += `<td> Standard deviation </td>`
+					html += `<td> ${globalAccuracyValue} m</td>
+					</tr>`
+
+				}
+				html += "</tbody></table></div>"
+			}
+			html += "<br>"
+			if (thematicValidity) {
+				html += `<div> Thematic validity <br>
+					<table class="tablesmall"><thead><th>Columns</th><th>Total records</th><th>True records </th><th>Rate</th></tr></thead>
+						<tbody><tr>
+							<td>${thematicAttributeSelected}</td>
+							<td>${dataToEvaluate.length}</td>
+							<td>${thematicValidity[0]}</td>
+							<td>${thematicValidity[1]}</td>
+						</tr>`;
+				html += "</tbody></table></div>"
+			}
+			document.getElementById("dataQualityResult_info").innerHTML = html
+		}
+		else {
+			alert(thematicValidity)
+		}
+	}
 }
 
 function GetCreateNewTable(event){
@@ -10014,6 +10264,584 @@ function GetCreateNewTable(event){
 	}else{
 		alert("Column list is empty. Table will not be created.")
 	}
+}
+function populateuploadToICDialogUploadIC(node){
+	var attributes= Object.keys(node.STAdataAttributes);
+	var c="";
+	for (var i=0; i<attributes.length;i++){
+		c+=`<option value="${attributes[i]}">${attributes[i]}</option>`
+	}
+
+	document.getElementById("DialogUploadIC_columns_longitude").innerHTML=c;
+	document.getElementById("DialogUploadIC_columns_latitude").innerHTML=c;
+	document.getElementById("DialogUploadIC_date").innerHTML=c;
+}
+async function GetUploadIC(event){
+	var node= getNodeDialog("DialogUploadIC");
+	var attributes= node.STAdataAttributes;
+	var data= node.STAdata;
+
+	var informationToUpdate;
+	var title= document.getElementById("DialogUploadIC_title").value;
+	var author= document.getElementById("DialogUploadIC_author").value;
+	var licenceSelect= document.getElementById("DialogUploadIC_license");
+	var licenceValue= licenceSelect.options[licenceSelect.selectedIndex].value;
+	var bbox, geometry;
+
+	//Geoographic information
+	var columsAreNumbers
+	var longMin, longMax,latMin, latMax;
+	if(document.getElementById("DialogUploadIC_radio_geographic_column").checked){
+		var selectLong= document.getElementById("DialogUploadIC_columns_longitude");
+		var selectLat= document.getElementById("DialogUploadIC_columns_latitude");
+		var selectLongValue= selectLong.options[selectLong.selectedIndex].value;
+		var selectLatValue= selectLat.options[selectLat.selectedIndex].value;
+		var columsAreNumbers=((attributes[selectLongValue].type=="integer"||attributes[selectLongValue].type=="number")&&(attributes[selectLatValue].type=="integer"||attributes[selectLatValue].type=="number"))?true:false;
+		if (columsAreNumbers){
+			var longValues=[];
+			var latValues=[];
+			for (var  i=0;i<data.length;i++){
+				longValues.push(data[i][selectLongValue]);
+				latValues.push(data[i][selectLatValue]);
+			}
+			longMin=aggrFuncMinValue(longValues);
+			longMax=aggrFuncMaxValue(longValues);
+			latMin=aggrFuncMinValue(latValues);
+			latMax= aggrFuncMaxValue(latValues);
+		}
+		else{
+			alert("This procedure must contain geographical information. The selected columns do not meet this requirement")
+			return;
+		}
+	}else{ //xmin, xmax, ymin, ymax
+			var pattern= /^-?\d+(\.\d+)?$/;	
+			columsAreNumbers=true;	
+			longMin=document.getElementById("DialogUploadIC_input_xmin").value;
+			if (!pattern.test(longMin))columsAreNumbers=false;
+			longMax=document.getElementById("DialogUploadIC_input_xmax").value;
+			if (!pattern.test(longMax))columsAreNumbers=false;
+			if(parseFloat(longMin)>parseFloat(longMax)){
+				alert("XMin value is higher than XMax value");
+				return;
+			}
+			latMin=document.getElementById("DialogUploadIC_input_ymin").value;
+			if (!pattern.test(latMin))columsAreNumbers=false;
+			latMax= document.getElementById("DialogUploadIC_input_ymax").value;
+			if (!pattern.test(latMax))columsAreNumbers=false;
+			if(parseFloat(latMin)>parseFloat(latMax)){
+				alert("YMin value is higher than YMax value");
+				return;
+			}
+			
+			if (columsAreNumbers==false){
+				alert("This procedure must contain geographical information. Values introduced are not valid")
+				return;
+			}
+	}
+	bbox=[parseFloat(longMin),parseFloat(latMin),parseFloat(longMax),parseFloat(latMax)];
+	geometry={
+		"coordinates": [[[longMin,latMin],[longMin,latMax],[longMax,latMax],[longMax,latMin],[longMin,latMin]]],
+		"type": "Polygon"
+	}
+	
+	var now=new Date().toISOString();
+	var startDate, endDate;
+	//Date
+	if(document.getElementById("DialogUploadIC_radio_date_column").checked){//column
+		var selectDate= document.getElementById("DialogUploadIC_date");
+		var selectDateValue= selectDate.options[selectDate.selectedIndex].value;
+		if(attributes[selectDateValue].type= "isodatetime"){
+			var dataSorted=sortDates(data, selectDateValue);
+			startDate=dataSorted[0][selectDateValue];
+			endDate=dataSorted[dataSorted.length-1][selectDateValue]
+		}else{
+			alert("This procedure must contain date information. The selected column do not meet this requirement")
+			return;
+
+		}	
+	}else{//calendar
+		var itsADate=true;
+		startDate=document.getElementById("DialogUploadIC_inputText_start").value;
+		endDate=document.getElementById("DialogUploadIC_inputText_end").value;
+		var paternDate= /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(Z)?(\.000)?(\+00:00)?$/;
+		if (!paternDate.test(startDate))itsADate=false;
+		if (!paternDate.test(endDate))itsADate=false;
+		var startDateAsDate=new Date(startDate);
+		var endDateAsDate=new Date(endDate);
+		if(startDateAsDate>endDateAsDate){
+			alert("End date can't be before start date");
+			return;
+		}
+		if (itsADate==false){
+			alert("This procedure must contain date information. Introduced dates do not meet this requirement")
+			return
+		}
+	}
+	
+
+	if (title=="")title=`Data from TAPIS on ${now}`
+	if (author=="") author= "Author" 
+	var id= crypto.randomUUID();
+	var href= await uploadDataToIPFS(node.STAdata);
+	var fileChecksum= "12"+getFileName(href).length.toString(16)/2+getFileName(href)
+	
+	
+	informationToUpdate= 
+		{
+		"assets": {
+			"PRODUCT": {
+			"file:checksum": fileChecksum,
+			"file:size": JSON.stringify(data).length,
+			"href": href,
+			"title": title,
+			"type": "application/json"
+			}
+		},
+		
+		"collection": "DQ4STA",
+		"bbox":bbox,
+		"geometry": geometry,
+		"id": id,
+		"links": [
+			{
+			"rel": "root",
+			"type": "application/json",
+			"href": "https://ic.ogc.secd.eu/stac"
+			},
+			{
+			"rel": "self",
+			"type": "application/json",
+			"href": "https://ic.ogc.secd.eu/stac/collections/DQ4STA/items/"+id
+			},
+			{
+			"rel": "collection",
+			"type": "application/json",
+			"href": "https://ic.ogc.secd.eu/stac/collections/DQ4STA"
+			}
+		],
+		"properties": {
+			"author": author,
+			"datetime": now,
+			"end_datetime": endDate,
+			"license": licenceValue,
+			"license_description": `https://creativecommons.org/${licenceValue=="CC0" ? "publicdomain/zero/1.0/": "licenses/"+licenceValue.slice(3)+"/4.0/deed.en"}`,
+			"start_datetime": startDate,
+			"metadata": node.STAmetadata
+
+		},
+		"stac_extensions": [
+			"https://stac-extensions.github.io/file/v2.1.0/schema.json"
+		],
+		"stac_version": "1.0.0",
+		"type": "Feature"
+		}
+		
+		var result=await addAnAssetToInmutableCatalog("https://api.ogc.secd.eu/api/dq4sta/assets/"+id, "e9c79149-5c17-403e-af14-1a3ef13be2a3", informationToUpdate)
+		var checkResult= document.getElementById("DialogUploadIC_checkbox_checkresult").checked?true:false;
+		if (checkResult){
+
+		 	  setTimeout(addJSONNodeToCheckAddingToCalatongResult, 4000,node,"https://ic.ogc.secd.eu/stac/collections/test_dq4sta/items/"+id, );
+		}
+		showInfoMessage("The asset has been added to DQ4STA at URL: "+"https://ic.ogc.secd.eu/stac/collections/test_dq4sta/items/"+id )
+		showInfoMessage("Adding GeoJSON node with data uploaded")
+		console.log(result)
+		hideNodeDialog("DialogUploadIC", event);
+}
+function addJSONNodeToCheckAddingToCalatongResult(node,url){
+	var newId = (Math.random() * 1e7).toString(32);
+	var nodeTo = { id: newId, label: "GeoJSON", image: "ImportGeoJSON.png", shape: "circularImage" };
+
+	networkNodes.add(nodeTo);
+	networkEdges.add([{ from: node.id, to: newId, arrows: "from" }]);
+	;
+	//Executar gejson
+	HTTPJSONData(url).then(
+			function(value) { 
+				showInfoMessage('Download GeoJSON completed.');
+				if (value.obj) 
+					TransformObjGeoJSONToTable(value.obj, url, nodeTo);
+				else
+					TransformTextGeoJSONToTable(value.text, url, nodeTo);
+
+			},
+			function(error) { 
+				showInfoMessage('Error downloading GeoJSON. <br>name: ' + error.name + ' message: ' + error.message + ' at: ' + error.at + ' text: ' + error.text);
+				console.log(error) ;
+			}
+		);
+		
+	networkNodes.update(nodeTo);
+	updateQueryAndTableArea(nodeTo);
+	
+
+}
+
+async function addAnAssetToInmutableCatalog(url , key, obj){
+
+	var response= await HTTPJSONData(url, null, "PUT", obj, {"X-API-Key": key}) 
+	console.log(response);
+} 
+
+async function uploadDataToIPFS(data){
+	try{
+		var url="https://ipfs.ogc.secd.eu/files"
+		var formData= createJSONFromDataToSendToIPFS(data);
+		var response= await HTTPJSONData(url, ['Location'], "POST", formData,null,"multipart/form-data")  
+	}
+	 catch (error) {
+		showInfoMessage('There was an error with ' + url + ": " + error.message);
+	}
+	if ((response)) {
+		return response.responseHeaders.Location;
+	 }
+}
+
+function createJSONFromDataToSendToIPFS(data){
+	var blob = new Blob([JSON.stringify(data, null, 2)],{ type: 'application/json'});
+	var file = new File([blob], 'dades.json', {type: 'application/json'});
+	var formData = new FormData();
+	formData.append('file', file); 
+	return formData;
+}
+
+function populateUncertaintyDialog(node){
+	saveNodeDialog("DialogUncertainty", node);
+	var attributesKeys= Object.keys(node.STAdataAttributes);
+	var c="";
+	for (var i=0;i<attributesKeys.length;i++){
+			c+= `<option  value="${attributesKeys[i]}">${attributesKeys[i]}</option>`;
+	}
+	document.getElementById("DialogUncertainty_select_resultColumn").innerHTML=c;
+	document.getElementById("DialogUncertainty_select_temporalColumn").innerHTML=c;
+	document.getElementById("DialogUncertainty_select_PositionalColumn_x").innerHTML=c;
+	document.getElementById("DialogUncertainty_select_PositionalColumn_y").innerHTML=c;
+
+}
+function GetUncertainty(event){
+	var node= getNodeDialog("DialogUncertainty");
+
+	// var temporalGrouping=document.getElementById("DialogUncertainty_checkbox_temporal").checked?true:false;
+	// var positionalGrouping=document.getElementById("DialogUncertainty_checkbox_positional").checked?true:false;	
+	var data= node.STAdata;
+	var resultColumnSelect= document.getElementById("DialogUncertainty_select_resultColumn");
+	var resultColumnSelectValue= resultColumnSelect.options[resultColumnSelect.selectedIndex].value;
+	//TIME
+	var selectTemporalColumn=document.getElementById("DialogUncertainty_select_temporalColumn");
+	var selectTemporalColumnValue= selectTemporalColumn.options[selectTemporalColumn.selectedIndex].value;
+	var temporalNumber= document.getElementById("DialogUncertainty_input_temporalValue").value;
+	var unitTimeGroup = document.querySelector('input[name="DialogUncertainty_radio"]:checked');
+	var unitTimeValue = unitTimeGroup.value;
+	//POSITION
+	var selectPositionalXColumn=document.getElementById("DialogUncertainty_select_PositionalColumn_x");
+	var selectPositionalXColumnValue= selectPositionalXColumn.options[selectPositionalXColumn.selectedIndex].value;
+	var selectPositionalYColumn=document.getElementById("DialogUncertainty_select_PositionalColumn_y");
+	var selectPositionalYColumnValue= selectPositionalYColumn.options[selectPositionalYColumn.selectedIndex].value;
+	var positionalNumber= document.getElementById("DialogUncertainty_input_number").value;
+
+	var excuteProcess=true;
+
+	if (node.STAdataAttributes[selectTemporalColumnValue].type !="isodatetime"){
+		excuteProcess=false;
+		alert("The column selected to group by time must be a time-type column");
+
+	}
+	if (!node.STAdataAttributes[selectPositionalXColumnValue].type == "number" || !node.STAdataAttributes[selectPositionalXColumnValue].type== "integer"){
+		excuteProcess=false;
+		alert("The column selected to group by position (X) must be a number-type column");
+
+	}
+	if (!node.STAdataAttributes[selectPositionalYColumnValue].type == "number" || !node.STAdataAttributes[selectPositionalYColumnValue].type== "integer"){
+		excuteProcess=false;
+		alert("The column selected to group by position (Y) must be a number-type column");
+
+	}
+
+	if(excuteProcess){
+		//TIME PROCES
+		SortTableByColumns(data, [selectTemporalColumnValue], "asc");
+		var objWithGroupsTime=groupByTimeInCalculateUncertantyNode(data, selectTemporalColumnValue,temporalNumber,unitTimeValue, resultColumnSelectValue);
+		//POSITION
+		var finalData= groupByPositionCalculateUncertantyNode (objWithGroupsTime,selectTemporalColumnValue,selectPositionalXColumnValue,selectPositionalYColumnValue,positionalNumber,resultColumnSelectValue,unitTimeValue)
+		node.STAdata = finalData;
+		node.STAdataAttributes = getDataAttributes(finalData);
+		networkNodes.update(node);
+		updateQueryAndTableArea(node);
+		hideNodeDialog("DialogUncertainty", event);
+	}
+}
+function groupByTimeInCalculateUncertantyNode(data, timeColumn, number, unit){
+	var FirstTime= new Date( data[0][timeColumn]); 
+	var lastTime= new Date (data[data.length-1][timeColumn]);
+	var periods=[FirstTime], currentPeriod= FirstTime, msToAdd;
+
+	switch (unit) { //To ms
+		case "years":
+			msToAdd = number * 60 * 60 * 24 * 30.44 * 12 * 1000;
+			break;
+		case "months":
+			msToAdd = number * 60 * 60 * 24 * 30.44 * 1000;
+			break;
+		case "days":
+			msToAdd = number * 60 * 60 * 24 * 1000;
+			break;
+		case "hours":
+			msToAdd = number * 60 * 60 * 1000;
+			break;
+		case "minutes":
+			msToAdd = number * 60 * 1000;
+			break;
+
+		case "seconds":
+			msToAdd = number * 1000;
+			break;
+		default:
+			return null;
+	}
+
+	while (currentPeriod < lastTime){
+		periods.push(new Date(currentPeriod.getTime() + msToAdd))
+		currentPeriod= new Date(currentPeriod.getTime() + msToAdd);
+	}
+	var periodsLength= periods.length;
+	var dataLength= data.length;
+	var currentDate, objWithGroupsTime={};
+	for (var i=0;i<periodsLength-1;i++){
+		objWithGroupsTime[i]=[]
+		for (var a=0;a<dataLength;a++){
+			currentDate= new Date(data[a][timeColumn]);
+			if(currentDate>=periods[i]&&currentDate<periods[i+1]){//dins el periode
+				objWithGroupsTime[i].push(data[a]);
+			}
+		}
+	}
+	console.log(objWithGroupsTime);
+	return objWithGroupsTime
+}
+function groupByPositionCalculateUncertantyNode(objWithGroupsTime,timeColumn,xColumn,yColumn,meters,resultColumn,timeUnit){ 
+	var objWithGroupsTimeKeys= Object.keys(objWithGroupsTime);
+	var objWithGroupsTimeKeysLength= objWithGroupsTimeKeys.length;
+	var objWithGroups,currentNumberGroup ;
+	var newDataGrouped=[];
+	for (var e=0;e<objWithGroupsTimeKeysLength;e++){
+		if(e==0)currentNumberGroup=0
+		if(objWithGroupsTime[objWithGroupsTimeKeys[e]].length!=0)
+		objWithGroups=makeGroupsByTimeInUncertaintyNode(objWithGroupsTime[objWithGroupsTimeKeys[e]],xColumn,yColumn,meters,currentNumberGroup)
+		currentNumberGroup=objWithGroups.lastIndex;
+		newDataGrouped.push(...objWithGroups.data);
+	}
+	
+	return  calculateMeanAndDesvestInUncertaintyInTimePositionResult(newDataGrouped,timeColumn,xColumn,yColumn,resultColumn, timeUnit)
+}
+
+function makeGroupsByTimeInUncertaintyNode(setOfData,xColumn,yColumn,meters,currentNumberGroup){
+	//x->Long, y->Lat
+	SortTableByColumns(setOfData, [xColumn], "asc");
+	//Lat/Lon to meters (x=long, y=lat)
+	var setOfDataLength= setOfData.length;
+	var setOfDataMeters={}, setOfLat=[];
+	for (var i=0;i<setOfDataLength;i++){ //find latMean
+		setOfLat.push(setOfData[i][yColumn])
+	}
+	var latitudeMean= aggrFuncMean(setOfLat);
+	var lonFactor= factorDegreeToMeters * Math.cos(latitudeMean * Math.PI / 180);
+
+	for (var e=0;e<setOfDataLength;e++){ //Gades to meters --> Property indicates the position in the array ("i")
+		setOfDataMeters[e]={};
+		setOfDataMeters[e].x= setOfData[e][xColumn]*lonFactor
+		setOfDataMeters[e].y=  setOfData[e][yColumn]*factorDegreeToMeters;
+	}
+	var groups={}, distance,xMax, currentGroup, pointToGroup={},groupsToMerge, minGroupNumber,newGroup;
+	var setOfDataMetersKeys=Object.keys(setOfDataMeters);
+	for (var u=0;u<setOfDataMetersKeys.length;u++){
+		//Theorical max x to be valid in distance
+		xMax=setOfDataMeters[u].x +parseInt(meters);
+		currentGroup=[u];
+		if(pointToGroup[u]!==undefined){
+			groupsToMerge=[pointToGroup[u]];
+		}else groupsToMerge=[]
+		newGroup= Object.keys(groups).length;
+		//calculate distance
+		for (var n=u+1;n<setOfDataMetersKeys.length;n++){
+			if (setOfDataMeters[n].x>xMax) break; 
+			distance= Math.sqrt((setOfDataMeters[u].x - setOfDataMeters[n].x) ** 2 + (setOfDataMeters[u].y - setOfDataMeters[n].y) ** 2);
+			if (distance<=meters){
+				currentGroup.push(n);
+				if(pointToGroup[n]!==undefined){ //have a designed group
+					if(!groupsToMerge.includes(pointToGroup[n]))groupsToMerge.push(pointToGroup[n]);
+				} 
+			}
+		}
+		if(groupsToMerge.length==0){
+			groups[u]=currentGroup; //Any number is in another previous group
+			for(var s=0;s<currentGroup.length;s++){
+				pointToGroup[currentGroup[s]] = u;
+			}
+		}else{
+			minGroupNumber=Math.min(...groupsToMerge);
+			groups[minGroupNumber]=[... new Set([...groups[minGroupNumber], ...currentGroup])]; //Add group min number withcurrent group
+			for(var a=0;a<groupsToMerge.length;a++){
+				if (groupsToMerge[a]!=minGroupNumber){
+					groups[minGroupNumber]= [... new Set([...groups[minGroupNumber], ...groups[groupsToMerge[a]]])] //merge grups
+					delete groups[groupsToMerge[a]]; //Erase group
+				}
+			}
+			//update pointToGroup
+			
+			for(var s=0;s<groups[minGroupNumber].length;s++){
+				pointToGroup[groups[minGroupNumber][s]] = minGroupNumber;
+			}
+		}
+	
+	}
+
+	var groupKeys=Object.keys(groups);
+	var arrayToReturn=[];
+
+	
+	var groupInSetOfData,idx;
+	for(var g=0;g<groupKeys.length;g++){
+		currentNumberGroup++;
+		groupInSetOfData=groups[groupKeys[g]];
+		for(var f=0;f<groupInSetOfData.length;f++){
+			idx= groupInSetOfData[f];
+			setOfData[idx].groupIndex = currentNumberGroup;
+			arrayToReturn.push(setOfData[idx]);
+		}
+	}
+
+	return {lastIndex: currentNumberGroup, data: arrayToReturn }
+}
+
+function calculateMeanAndDesvestInUncertaintyInTimePositionResult(data, timeColumn,xColumn,yColumn,resultColumn, timeUnit){
+	var currentGroup, lastGroup, dataToCalculate={}, indexToChange=[], finalArray=[];
+	for (var i=0;i<data.length;i++){
+		currentGroup=data[i].groupIndex;
+		if (i==0){
+			lastGroup=data[i].groupIndex;
+				dataToCalculate={
+					time:[data[i][timeColumn]],
+					x:[data[i][xColumn]],
+					y:[data[i][yColumn]],
+					result:[data[i][resultColumn]]
+				};
+				indexToChange.push(i)
+		}else{
+			if(currentGroup==lastGroup){
+				dataToCalculate.time.push(data[i][timeColumn]);
+				dataToCalculate.x.push(data[i][xColumn]);
+				dataToCalculate.y.push(data[i][yColumn]);
+				dataToCalculate.result.push(data[i][resultColumn]);
+				indexToChange.push(i);
+				if(i==data.length-1){
+				aggregateDataToSingleRecord(data,dataToCalculate,indexToChange,timeUnit, timeColumn,resultColumn,xColumn, yColumn, finalArray)
+				}
+			}else{
+				
+				aggregateDataToSingleRecord(data,dataToCalculate,indexToChange,timeUnit, timeColumn,resultColumn,xColumn, yColumn, finalArray)
+				indexToChange=[i];
+				dataToCalculate={
+					time:[data[i][timeColumn]],
+					x:[data[i][xColumn]],
+					y:[data[i][yColumn]],
+					result:[data[i][resultColumn]]
+				};
+				if (i==data.length-1){
+					indexToChange=[i];
+					dataToCalculate={
+						time:[data[i][timeColumn]],
+						x:[data[i][xColumn]],
+						y:[data[i][yColumn]],
+						result:[data[i][resultColumn]]
+					};
+					aggregateDataToSingleRecord(data,dataToCalculate,indexToChange,timeUnit, timeColumn,resultColumn,xColumn, yColumn, finalArray)
+				}
+			}			
+		}
+		lastGroup=currentGroup;	
+	}
+	
+	return finalArray
+	
+}
+function aggregateDataToSingleRecord(data,dataToCalculate,indexToChange,timeUnit, timeColumn,resultColumn,xColumn, yColumn, finalArray){
+	var obj={}
+	calculaterMeanAndDesvesInGroupInTime(data,dataToCalculate,indexToChange,timeUnit, timeColumn,obj);
+	calculaterMeanAndDesvesInGroupInResult(data,dataToCalculate,indexToChange,resultColumn,obj);
+	calculaterMeanAndDesvesInGroupInPosition(data,dataToCalculate,indexToChange,xColumn, yColumn,obj);
+	finalArray.push(obj);
+}
+function calculaterMeanAndDesvesInGroupInTime(data,dataToCalculate,indexToChange,timeUnit, timeColumn,obj){
+	var msAdatesInMs = dataToCalculate.time.map(s => new Date(s).getTime());
+	var timeMean=indexToChange.length==1? data[indexToChange[0]][timeColumn]: aggrFuncMean(msAdatesInMs);
+	var meanDateInISO= new Date(timeMean);
+	var timeDesvest=indexToChange.length==1? 0: aggrFuncStandardDeviation(msAdatesInMs);
+	var desvest;
+
+	switch (timeUnit) {
+		case 'seconds':
+			desvest= timeDesvest / 1000;
+			break;
+
+		case 'minutes':
+			desvest= timeDesvest / (1000 * 60);
+			break;
+
+		case 'hours':
+			desvest= timeDesvest / (1000 * 60 * 60);
+			break;
+
+		case 'days':
+			desvest= timeDesvest / (1000 * 60 * 60 * 24);
+			break;
+
+		case 'months':
+			desvest= timeDesvest / (1000 * 60 * 60 * 24 * 30.44);
+			break; 
+
+		case 'years':
+			desvest= timeDesvest / (1000 * 60 * 60 * 24 * 365.25); 
+			break;
+
+		default:
+			return ("Invalid unit")
+  }
+	obj[timeColumn+"Mean"]= formatLocalDate(meanDateInISO);
+	obj[timeColumn+"StaDev"]= parseFloat((desvest*0.6745).toFixed(3));
+	obj.StandardDeviationUnit= timeUnit;
+  	obj.groupCount= indexToChange.length;
+}
+
+function calculaterMeanAndDesvesInGroupInResult(data,dataToCalculate,indexToChange,resultColumn,obj){
+	var resultMean= indexToChange.length==1? data[indexToChange[0]][resultColumn]:aggrFuncMean(dataToCalculate.result);
+	var resultDesvest=indexToChange.length==1? 0: aggrFuncStandardDeviation(dataToCalculate.result);
+	
+	obj[resultColumn+"Mean"]= parseFloat(resultMean.toFixed(3));
+	obj[resultColumn+"StaDev"]=parseFloat((resultDesvest*0.6745).toFixed(3));
+  
+}
+function calculaterMeanAndDesvesInGroupInPosition(data,dataToCalculate,indexToChange, xColumn, yColumn,obj){
+	var xMean= indexToChange.length==1? data[indexToChange[0]][xColumn]:aggrFuncMean(dataToCalculate.x);
+	var yMean= indexToChange.length==1? data[indexToChange[0]][xColumn]:aggrFuncMean(dataToCalculate.y);
+	var xDesvest= indexToChange.length==1? 0:aggrFuncStandardDeviation(dataToCalculate.x);
+	var yDesvest= indexToChange.length==1? 0:aggrFuncStandardDeviation(dataToCalculate.y);
+	var desvest= indexToChange.length==1? 0: 0.5*Math.sqrt(xDesvest**2+ yDesvest**2);
+
+
+	obj[xColumn+"Mean"]= xMean;
+	obj[yColumn+"Mean"]= yMean;
+	obj["PositionStaDev"]=desvest * 1.1774*factorDegreeToMeters;
+
+}
+function formatLocalDate(date) {
+  var yyyy = date.getFullYear();
+  var mm = String(date.getMonth() + 1).padStart(2, '0'); 
+  var dd = String(date.getDate()).padStart(2, '0');
+
+  var hh = String(date.getHours()).padStart(2, '0');
+  var min = String(date.getMinutes()).padStart(2, '0');
+  var ss = String(date.getSeconds()).padStart(2, '0');
+
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}Z`;
 }
 /*function giveMeNetworkInformation(event) {
 			hideNodeDialog("DialogContextMenu", event);

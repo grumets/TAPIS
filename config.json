@@ -172,7 +172,12 @@
 			{
 				"desc": "ECODataCube",
 				"url": "https://s3.ecodatacube.eu/arco/stac/catalog.json"
-			}]
+			},
+			{
+				"desc": "DQ4STA immutable catalog",
+				"url": "https://ic.ogc.secd.eu/stac"
+			}
+		]
 		}
 	],
 	"suggestedCatalogues": [

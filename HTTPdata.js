@@ -333,9 +333,9 @@ In fact, the response is an object with the following members: obj (only if the 
 //url is the URL to request. To do GET it can be used with the first parameter only.
 //headersToGet is an array of header names that are extracted to the response and included in the responseHeaders memeber of the function return. Can be null.
 //method is the name of the method in capitals. E.g. "POST". Default is "GET". The special method "GET-HEAD" is used to retrieve the headers without getting the data when HEAD is not allowed by the server.
-//objToSend is a JavaScript object that will be stringify into JSON text and send as the body of the HTTP request (e.g. HTTP POST) or a string that will be send directly.
+//objToSend is a JavaScript object that will be stringify into JSON text and send as the body of the HTTP request (e.g. HTTP POST) or a string that will be send directly. As an exception, it can be a FormData object that will be send as is.
 //headersToSend is an object with the headers to include in the request. It requests JSON content in 'Accept' by default. If you use headersToSend to specify headers then there is no default 'Accept' and you may specify it. headersToSend is an object like this: {'Accept': '*/*', 'Authorization': "XXX"}
-//mediaToSend is the media type declared for the body content (based on objToSend). If undefined, null or blank, "application/json" is assumed
+//mediaToSend is the media type declared for the body content (based on objToSend). If undefined, null or blank, "application/json" is assumed. Use "multipart/form-data" to force sending a FormData object.
 /*
 When all is OK response is an object {obj: , text: , responseHeaders: , ok: };
 */
@@ -349,12 +349,13 @@ async function HTTPJSONData(url, headersToGet, method, objToSend, headersToSend,
 			options.headers=headersToSend;
 		else
 			options.headers={'Accept': 'application/json, */*;q=0.8'};
-
-		AddHeadersIfNeeded(options);
+		if (!headersToSend || !headersToSend["X-API-Key"])  //Temporary. To be improved.
+			AddHeadersIfNeeded(options);
 		if (objToSend)
 		{
-			options.headers['Content-Type']=(mediaToSend) ? (mediaToSend) : "application/json";
-			options.body=(typeof objToSend === "object") ? JSON.stringify(objToSend) : objToSend;
+			if (mediaToSend!="multipart/form-data")
+				options.headers['Content-Type']=(mediaToSend) ? (mediaToSend) : "application/json";
+			options.body=(typeof objToSend === "object" && mediaToSend!="multipart/form-data") ? JSON.stringify(objToSend) : objToSend;
 		}
 		//options.credentials='include';
 		response = await fetch(url, options);
