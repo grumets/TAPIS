@@ -50,7 +50,8 @@ Some things that I'm always looking for:
 Function to hide a dialog box: hideNodeDialog()
 Function to show a dialog box: showNodeDialog()
 Function to include the nodeId as a hidden value in a dialog: saveNodeDialog(div_id, node)
-Function to get the nodeId from a dialog: getNodeDialog(div_id) 
+Function to get the node from a dialog: getNodeDialog(div_id)
+Function to save a node in the networkNodes: networkNodes.update(node);
 
 Function to send a message to the message box: showInfoMessage(); 
 
@@ -240,17 +241,17 @@ function getSTAEntityPlural(entityName, considerEntityRelations) {
 	return entityName;
 }
 
-function getDataAttributeArraySTAEntity(name) {
+function getDataAttributesArraySTAEntity(name) {
 	var entity=STAEntities[getSTAEntityPlural(name, true)];
 	if (!entity)
 		return [];
-	var dataAttributeArray=["@iot.selfLink", "@iot.id"];
+	var dataAttributesArray=["@iot.selfLink", "@iot.id"];
 	for (var e=0; e < entity.properties.length; e++)
-		dataAttributeArray.push(entity.properties[e].name);
+		dataAttributesArray.push(entity.properties[e].name);
 	for (var e=0; e < entity.entities.length; e++)
-		dataAttributeArray.push(entity.entities[e].name+"@iot.navigationLink");
+		dataAttributesArray.push(entity.entities[e].name+"@iot.navigationLink");
 
-	return dataAttributeArray;
+	return dataAttributesArray;
 }
 
 
@@ -5729,6 +5730,7 @@ function GetSelectSaveLayerDialog(id, dataAttributes, selectedOption, onChange)
 // params.nameInLegend
 // params.showValue
 // params.showType
+// params.columnName
 function GetHTMLVariableDefUoM(suffix, params) {
 	var cdns=[];
 	cdns.push('<fieldset>');
@@ -5751,8 +5753,10 @@ function GetHTMLVariableDefUoM(suffix, params) {
 			'	<br>');
 	if (params.showType)
 		cdns.push('	<label>Data type:',
-			'		<span id="DialogMeaningVariableType' + suffix + '"></span>',
-			'		</label>',
+			'		<span id="DialogMeaningVariableType' + suffix + '"></span>');
+		if (params.columnName)
+			cdns.push(' <a href="javascript:void(0)" style="text-decoration: none;" onClick="RecalculateColumnType(\'', params.columnName, '\');">reevaluate</a>');
+		cdns.push('		</label>',
 			'	<br>');
 	cdns.push('	<span id="DialogMeaningVariableDescriptionUoM' + suffix + '">',
 		'		<label>Description:',
@@ -5876,14 +5880,30 @@ function PopulateDialogSaveLayerVarUoM(i, varUoM) {
 	document.getElementById("DialogMeaningVariableUoMDefinitionInput_"+i).value=varUoM.UoMDefinition ? varUoM.UoMDefinition : "";
 }
 
+function RecalculateColumnType(columnName) {
+	var node=getNodeDialog("DialogMeaningTable");
+	if (!node.STAdataAttributes)
+		return;
+	if (!confirm("This will save other previous changes in the dialog. Do you want to continue?"))
+		return;
+	node.STAdataAttributes=GetMeaningTable(node);
+	var type=getDataAttributeType(node.STAdata, columnName);
+	if (type!="null")
+		node.STAdataAttributes[columnName].type=type;
+	networkNodes.update(node);
+	ShowMeaningTableDialog(node);
+}
+
 function ShowMeaningTableDialog(node) {
 	var data = node.STAdata, cdns, vus;
-	var dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data);
+	var dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data)
 	var dataAttributesArray = Object.keys(dataAttributes);
+
+	saveNodeDialog("DialogMeaningTable", node);
 
 	document.getElementById("DialogMeaningFields").innerHTML="";
 	for (var i = 0; i < dataAttributesArray.length; i++) {
-		document.getElementById("DialogMeaningFields").innerHTML+=GetHTMLVariableDefUoM("_" + i, {nameInLegend: true, showValue: false, showType: true, showPredefOptions:true});
+		document.getElementById("DialogMeaningFields").innerHTML+=GetHTMLVariableDefUoM("_" + i, {nameInLegend: true, showValue: false, showType: true, showPredefOptions:true, nodeId: node.id, columnName: dataAttributesArray[i]});
 		document.getElementById("DialogSaveLayerVariable_"+i).innerHTML="Field "+(i+1)+ ": " + dataAttributesArray[i];
 
 		cdns=[];
@@ -5911,9 +5931,9 @@ function ShowMeaningTableDialog(node) {
 		PopulateDialogSaveLayerVarUoM(i, dataAttributes[dataAttributesArray[i]]);
 }
 
-function GetMeaningTable() {
-	var data = currentNode.STAdata;
-	var dataAttributes = currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(data);
+function GetMeaningTable(node) {
+	var data = node.STAdata;
+	var dataAttributes = node.STAdataAttributes ? node.STAdataAttributes : getDataAttributes(data);
 	var dataAttributesArray = Object.keys(dataAttributes);
 	var newName=[];
 	for (var i = 0; i < dataAttributesArray.length; i++) {
@@ -5924,11 +5944,12 @@ function GetMeaningTable() {
 		dataAttributes[dataAttributesArray[i]].UoMSymbol=document.getElementById("DialogMeaningVariableUoMSymbolInput_"+i).value;
 		dataAttributes[dataAttributesArray[i]].UoMDefinition=document.getElementById("DialogMeaningVariableUoMDefinitionInput_"+i).value;
 	}
-	if (newName.length!=0)	changeAttributeNameAndData(data, newName,dataAttributes);
+	if (newName.length!=0)
+		changeAttributeNameAndData(node, data, newName, dataAttributes);
 	return dataAttributes;
 }
 
-function changeAttributeNameAndData(data, newName,dataAttributes){ //newName (old att name, new)
+function changeAttributeNameAndData(node, data, newName, dataAttributes){ //newName (old att name, new)
 	var n=data.length, m=newName.length ;
 	for (var i=0;i<n;i++){ //change data
 		for (var e=0;e<m;e++){
@@ -5940,24 +5961,27 @@ function changeAttributeNameAndData(data, newName,dataAttributes){ //newName (ol
 		dataAttributes [newName[i][1]]=deapCopy(dataAttributes [newName[i][0]]);
 		delete dataAttributes [newName[i][0]];
 	}
-	networkNodes.update(currentNode);
+	networkNodes.update(node);
 }
+
 function SaveMeaningTable(event) {
 	hideNodeDialog("DialogMeaningTable", event);
-	currentNode.STAdataAttributes=GetMeaningTable();
-	networkNodes.update(currentNode);
+	var node=getNodeDialog("DialogMeaningTable");
+	node.STAdataAttributes=GetMeaningTable(node);
+	networkNodes.update(node);
 }
 
 const urlSchemaMeaning="https://github.com/grumets/MiraMonMapBrowser/config_attributes_metaschema.json#/definitions/AttributeDescription";
 
 function ShareMeaningTable(event) {
 	event.preventDefault(); // We don't want to submit this form
-	currentNode.STAdataAttributes=GetMeaningTable();
-	networkNodes.update(currentNode);
-	var fileName=getFileName(currentNode.STAfileUrl);
-	GUFCreateFeedbackWithReproducibleUsage([{title: fileName, code: fileName, codespace: getAddressPath(getAbsoluteURL(currentNode.STAfileUrl))}],
+	var node=getNodeDialog("DialogMeaningTable");
+	node.STAdataAttributes=GetMeaningTable(node);
+	networkNodes.update(node);
+	var fileName=getFileName(node.STAfileUrl);
+	GUFCreateFeedbackWithReproducibleUsage([{title: fileName, code: fileName, codespace: getAddressPath(getAbsoluteURL(node.STAfileUrl))}],
 		{abstract: "Meaning of the fields in the "+fileName, specific_usage: "Share meaning of fields in tabular data",
-		ru_code: JSON.stringify(currentNode.STAdataAttributes), ru_code_media_type: "application/json",
+		ru_code: JSON.stringify(node.STAdataAttributes), ru_code_media_type: "application/json",
 		ru_platform: "https://github.com/joanma747/TAPIS", ru_version: 0.9, ru_schema: urlSchemaMeaning},
 		"eng", "" //access_token_type
 	);

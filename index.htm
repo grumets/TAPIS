@@ -1369,7 +1369,7 @@
 
 	<dialog id="DialogMeaningTable" onClose='hideNodeDialog("DialogMeaningTable", event)'>
 		<form>
-			<span id="DialogMeaningTableTitle"></span>
+			Column name, type, meaning and units
 			<br>
 			<span id="DialogMeaningFields"></span>
 			<div class="center">
@@ -1377,6 +1377,7 @@
 				<button value="share" onClick="ShareMeaningTable(event)" formmethod="dialog">Share</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
+			<input type="hidden" id="DialogMeaningTableNodeId"></input>
 		</form>
 	</dialog>
 
