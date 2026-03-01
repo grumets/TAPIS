@@ -626,14 +626,12 @@ function returnValidRange(currentData, number, tolerance, consistencyRadioValue)
     return [start, end]
 }
 
-function accuracyFromUncertaintyInPositions(data, metadata, uncertaintyAttribute) {
+function accuracyFromUncertaintyQuality(data, metadata, uncertaintyAttribute, className, domainName, domainParamName, metricName) {
 	var uncertainties=[];
 	for (var i=0; i<data.length; i++)
 		uncertainties.push(data[i][uncertaintyAttribute]);
 
-	var accuracyValue=aggrFuncMean(uncertainties);
-	if (!Number.isInteger(accuracyValue)) 
-		accuracyValue= accuracyValue.toFixed(3);
+	var accuracyValue=parseFloat(aggrFuncMean(uncertainties).toPrecision(4));
 
 	if (!metadata.dataQualityInfos)
 		metadata.dataQualityInfos=[];
@@ -641,18 +639,22 @@ function accuracyFromUncertaintyInPositions(data, metadata, uncertaintyAttribute
 		{
 			"reports": [
 				{
-					"type": "DQ_AbsoluteExternalPositionalAccuracy",
+					"type": className,
 					"measureIdentification": {
-						"code": "CircularMapAccuracy",
+						"code": "MeanAbsoluteError",
 						"domains": [
 							{
-								"name": "DifferentialErrors2D",
+								"name": domainName,
 								"params": [
-										{
-										"name": "uncertantie column",
+									{
+										"name": domainParamName,
 										"value": uncertaintyAttribute
-											}
-										]
+									},
+									{
+										"name": "Probability",
+										"value": "0.5"
+									}
+								]
 							}
 						]
 					},
@@ -661,13 +663,7 @@ function accuracyFromUncertaintyInPositions(data, metadata, uncertaintyAttribute
 							"type": "DQ_QuantitativeResult",
 							"errorStatistic": {
 								"metric": {
-									"name": "Half-lengthConfidenceInterval",
-									"params": [
-										{
-											"name": "level",
-											"value": 0.683
-										}
-									]
+									"name": metricName
 								}
 							},
 							"valueType": "number",
@@ -679,6 +675,14 @@ function accuracyFromUncertaintyInPositions(data, metadata, uncertaintyAttribute
 		});
 
 	return accuracyValue;
+}
+
+function accuracyFromUncertaintyInPositions(data, metadata, uncertaintyAttribute) {
+	return accuracyFromUncertaintyQuality(data, metadata, uncertaintyAttribute, "DQ_AbsoluteExternalPositionalAccuracy", "DifferentialErrors2D", "Positional uncertanty column", "MeanAbsolute2D");
+}
+
+function accuracyFromUncertaintyInTemporal(data, metadata, uncertaintyAttribute) {
+	return accuracyFromUncertaintyQuality(data, metadata, uncertaintyAttribute, "DQ_TemporalAccuracy", "DifferentialErrors1D", "Temporal uncertanty column", "MeanAbsolute");
 }
 
 function calculateTemporalAccuracyFromTimes(data,timeColumn,metadata,groupColumn,newColumn){
@@ -696,13 +700,12 @@ function calculateTemporalAccuracyFromTimes(data,timeColumn,metadata,groupColumn
 			if (newColumn)data[e].temporalAccuracy=objTime[data[e][groupColumn]].desvest/1000;
 			globalStandardDeviationArray.push(objTime[data[e][groupColumn]].desvest/1000);
 		}
-		var accuracyValue= aggrFuncStandardDeviation(globalStandardDeviationArray)
-		
+		var accuracyValue=aggrFuncStandardDeviation(globalStandardDeviationArray);
 	}else{
 		var msAdatesInMs = data.map(s => new Date(s[timeColumn]).getTime());
 		var desvest=aggrFuncStandardDeviation(msAdatesInMs); 
 		console.log(desvest)
-		var accuracyValue= desvest /1000
+		var accuracyValue=desvest/1000;
 	}	
 		if (!metadata.dataQualityInfos)	metadata.dataQualityInfos=[];
 		metadata.dataQualityInfos.push(
@@ -711,16 +714,20 @@ function calculateTemporalAccuracyFromTimes(data,timeColumn,metadata,groupColumn
 				{
 					"type": "DQ_TemporalAccuracy",
 					"measureIdentification": {
-						"code": "CircularMapAccuracy",
+						"code": "MeanAbsoluteError",
 						"domains": [
 							{
-								"name": "DifferentialErrors2D",
+								"name": "DifferentialErrors1D",
 								"params": [
-										{
-										"name": "uncertantie column",
-										"value": timeColumn
-											}
-										]
+									{
+										"name": "Temporal uncertanty column",
+										"value": uncertaintyAttribute
+									},
+									{
+										"name": "Probability",
+										"value": "0.5"
+									}
+								]
 							}
 						]
 					},
@@ -729,13 +736,7 @@ function calculateTemporalAccuracyFromTimes(data,timeColumn,metadata,groupColumn
 							"type": "DQ_QuantitativeResult",
 							"errorStatistic": {
 								"metric": {
-									"name": "Half-lengthConfidenceInterval",
-									"params": [
-										{
-											"name": "level",
-											"value": 0.683
-										}
-									]
+									"name": "MeanAbsolute"
 								}
 							},
 							"valueType": "number",
@@ -745,7 +746,7 @@ function calculateTemporalAccuracyFromTimes(data,timeColumn,metadata,groupColumn
 				}
 			]
 		});
-		return accuracyValue
+		return accuracyValue;
 }
 
 function createObjectToGroupTemporalRecords(data,groupColumn, timeColumn){
@@ -972,39 +973,69 @@ const cdns=[];
 	return cdns.join("");
 }
 
+function getUpperCammelCaseAsTitle(type) {
+	if (type.substring(0, 3)=="DQ_")
+		type=type.substring(3);
+	var s=type.charAt(0);
+	for (var i=1; i<type.length; i++) {
+		if (type.charAt(i)<='Z' && (i+1<type.length || type.charAt(i)!='D' || type.charAt(i-1)<'1' || type.charAt(i-1)>'4'))
+			s+=" "+type.charAt(i).toLowerCase()
+		else	
+			s+=type.charAt(i);
+	}
+	return s;
+}
 
 function metadataAsHTML(metadata) {
 var cdns=[];
 	if (!metadata)
 		return "";
 	if (metadata.dataQualityInfos && metadata.dataQualityInfos.length) {
-		cdns.push("<h2>Data quality</b><h2>");
+		cdns.push("<h2>Data quality<h2>");
 		for (var q=0; q<metadata.dataQualityInfos.length; q++) {
 			for (var r=0; r<metadata.dataQualityInfos[q].reports.length; r++) {
+				if (q!=0 || r!=0)
+					cdns.push("<br>");
 				var report=metadata.dataQualityInfos[q].reports[r];
-				cdns.push("<h3>", report.type, "</h3>");
+				cdns.push("<hr style='width:30%; margin: auto;'><h3>", getUpperCammelCaseAsTitle(report.type), "</h3>");
 				if (report.measureIdentification) {
 					if (report.measureIdentification.code) {
-						cdns.push("<b>Measure:</b>", report.measureIdentification.code, UnfoldButtonIFrame("ShowQualitat_q"+q+"_r"+r, RootURLQualityML+"1.0/measure/"+report.measureIdentification.code), "<br>");
+						cdns.push("<b>Measure:</b>", getUpperCammelCaseAsTitle(report.measureIdentification.code), UnfoldButtonIFrame("ShowQualitat_q"+q+"_r"+r, RootURLQualityML+"1.0/measure/"+report.measureIdentification.code), "<br>");
 						for (var d=0; d<report.measureIdentification.domains.length; d++) {
 							var domain=report.measureIdentification.domains[d];
-							cdns.push("<b>Domain:</b> ", domain.name, UnfoldButtonIFrame("ShowQualitat_q"+q+"_r"+r+"_d"+d, RootURLQualityML+"1.0/domain/"+domain.name), "<br>");
+							cdns.push("<b>Domain:</b> ", getUpperCammelCaseAsTitle(domain.name), UnfoldButtonIFrame("ShowQualitat_q"+q+"_r"+r+"_d"+d, RootURLQualityML+"1.0/domain/"+domain.name), "<br>");
+							if (domain.params && domain.params.length) {
+								for (var p=0; p<domain.params.length; p++)
+									cdns.push("<b>", domain.params[p].name, ":</b> ", domain.params[p].value, "<br>");
+							}
 						}
 					}
 					for (var rr=0; rr<report.results.length; rr++) {
 						var result=report.results[rr];
-						cdns.push("<h4>", result.type, "</h4>");
 						if (result.errorStatistic && result.errorStatistic.metric && result.errorStatistic.metric.name) {
 							var metric=result.errorStatistic.metric;
-							cdns.push("<b>Metric:</b> ", metric.name, UnfoldButtonIFrame("ShowQualitat_q"+q+"_r"+r+"_rr"+rr, RootURLQualityML+"1.0/metrics/"+metric.name), "<br>");
-							for (var p=0; p<metric.params.length; p++)
-								cdns.push("<b>", metric.params[p].name, ":</b> ", metric.params[p].value, "<br>");
+							cdns.push("<b>", getUpperCammelCaseAsTitle(metric.name), UnfoldButtonIFrame("ShowQualitat_q"+q+"_r"+r+"_rr"+rr, RootURLQualityML+"1.0/metrics/"+metric.name), ":</b> <big>");
+							for (var v=0; v<report.results[rr].values.length; v++) {
+								cdns.push(report.results[rr].values[v]);
+								if (v+1<report.results[rr].values.length)
+									cdns.push(", ");
+							}
+							cdns.push("</big><br>");
+							if (metric.params && metric.params.length) {
+								for (var p=0; p<metric.params.length; p++)
+									cdns.push("<b>", metric.params[p].name, ":</b> ", metric.params[p].value, "<br>");
+							}
 						}
-						cdns.push("<b>Result:</b> ");
-						for (var v=0; v<report.results[rr].values.length; v++) {
-							cdns.push(report.results[rr].values[v]);
-							if (v+1<report.results[rr].values.length)
-								cdns.push(", ");
+						else
+						{
+							//cdns.push("<b>Result:</b> <small>(", result.type=="DQ_QuantitativeResult" ? "quantitative" : "conformance", ")</small><big>");
+							cdns.push("<b>Result:</b> <big>");
+							for (var v=0; v<report.results[rr].values.length; v++) {
+								cdns.push(report.results[rr].values[v]);
+								if (v+1<report.results[rr].values.length)
+									cdns.push(", ");
+							}
+							cdns.push("</big><br>");
 						}
 					}
 				}
@@ -1071,59 +1102,7 @@ function calculateRMSEGroup(data, groupingObject, longAttribute, latAttribute, u
 }
 
 function accuracyFromUncertaintyThematicQuality(data, metadata, uncertaintyAttribute) {
-	var uncertainties=[];
-	for (var i=0; i<data.length; i++){
-		uncertainties.push(data[i][uncertaintyAttribute]);
-	}
-
-	var accuracyValue=aggrFuncMean(uncertainties);
-	if (!Number.isInteger(accuracyValue)) 
-		accuracyValue= accuracyValue.toFixed(3);
-
-	if (!metadata.dataQualityInfos)
-		metadata.dataQualityInfos=[];
-	metadata.dataQualityInfos.push(
-		{
-			"reports": [
-				{
-					"type": "",//canviar
-					"measureIdentification": {
-						"code": "CircularMapAccuracy", //canviar?
-						"domains": [
-							{
-								"name": "DifferentialErrors2D",
-								"params": [
-										{
-										"name": "uncertantie column",
-										"value": uncertaintyAttribute
-											}
-										]
-							}
-						]
-					},
-					"results": [
-						{
-							"type": "DQ_QuantitativeResult",
-							"errorStatistic": {
-								"metric": {
-									"name": "Half-lengthConfidenceInterval",
-									"params": [
-										{
-											"name": "level",
-											"value": 0.683
-										}
-									]
-								}
-							},
-							"valueType": "number",
-							"values": [ accuracyValue ]
-						}
-					]
-				}
-			]
-		});
-
-	return accuracyValue;
+	return accuracyFromUncertaintyQuality(data, metadata, uncertaintyAttribute, "DQ_QuantitativeAttributeAccuracy", "DifferentialErrors1D", "Thematic uncertanty column", "MeanAbsolute");
 }
 
 function accuracyFromAlfaNumValuesInThematicQuality (data, metadata, thematicAttributeSelected, grouped,  newColumns){
@@ -1221,7 +1200,7 @@ function createObjectWithDifferentPossibilitiesInColumnsInQualityThematicAlfaNum
 		
 }
 
-function accuracyFromNumValuesInThematicQuality (data, metadata,thematicAttributeSelected, grouped,newColumns){
+function accuracyFromNumValuesInThematicQuality (data, metadata, thematicAttributeSelected, grouped, newColumns){
 	
 	var groupingGroupsObject=createObjectWithDifferentPossibilitiesInColumnsInQualityThematicNum(data, grouped,thematicAttributeSelected)
 		if (newColumns){
@@ -1281,7 +1260,6 @@ function accuracyFromNumValuesInThematicQuality (data, metadata,thematicAttribut
 		});
 
 	 //i completar les metadades
-
 
 	return accuracyValue;
 }
