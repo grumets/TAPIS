@@ -197,37 +197,36 @@ function calculateDataQualityLogicalConsistency(dataTarget, dataReference, targe
 }
 
 function calculateDataQualityTemporalValidity(data, attributeSelected, from, to, metadata, flag) {
-    var attributes = getDataAttributes(data); //Està a tapis.js 
+    var attributes = getDataAttributes(data); 
     if (attributes[attributeSelected].type != "isodatetime") return null;
     if (!from && !to) return null;
     var count = 0;
     var fromDate=new Date(from);
     var toDate=new Date(to);
     var date;
-    for (var i = 0; i < data.length; i++) {
-        if (from) {
-            date= data[i][attributeSelected]
-            if (date < fromDate) {
-                if (date > toDate) {
-                    count++;
-                    if (flag) data[i]["temporalValidity"] = true;
+	for (var i = 0; i < data.length; i++) {
+		date = new Date(data[i][attributeSelected]); 
 
-                } else {
-                    if (flag) data[i]["temporalValidity"] = false;
-                }
-            } else {
-                if (flag) data[i]["temporalValidity"] = false;
-            }
-        } else { //only to
-            if (date > toDate) {
-                count++;
-                if (flag) data[i]["temporalValidity"] = true;
-
-            } else {
-                if (flag) data[i]["temporalValidity"] = false;
-            }
-        }
-    }
+		if (from) {
+			if (date >= fromDate) {
+				if (date <= toDate) {
+					count++;
+					if (flag) data[i]["temporalValidity"] = true;
+				} else {
+					if (flag) data[i]["temporalValidity"] = false;
+				}
+			} else {
+				if (flag) data[i]["temporalValidity"] = false;
+			}
+		} else { // only to
+			if (date <= toDate) { 
+				count++;
+				if (flag) data[i]["temporalValidity"] = true;
+			} else {
+				if (flag) data[i]["temporalValidity"] = false;
+			}
+		}
+	}
 	var params= [{"name": "temporal column","value": attributeSelected}]
 	if(from) params.push({"name": "date from","value": from});
 	if(to) params.push({"name": "date to","value": to});
@@ -271,7 +270,7 @@ function calculateDataQualityTemporalValidity(data, attributeSelected, from, to,
 								}
 							},
 							"valueType": "number",
-							"values": [ (count / dataTarget.length) * 100]
+							"values": [ (count / data.length) * 100]
 						}
 					]
 				}
@@ -281,8 +280,8 @@ function calculateDataQualityTemporalValidity(data, attributeSelected, from, to,
 
 }
 function calculateDataQualityTemporalResolution(data, attributeSelected, resolutionRadioValue, metadata, flag) {
-    var attributes = getDataAttributes(data); //Està a tapis.js 
-    if (attributes[attributeSelected].type != "isodatetime") return null;
+    var attributes = getDataAttributes(data); 
+   //if (attributes[attributeSelected].type != "isodatetime") return null;
     var regex, count = 0;
     for (var i = 0; i < data.length; i++) {
         switch (resolutionRadioValue) {
@@ -422,8 +421,8 @@ function calculateDataQualityTemporalResolution(data, attributeSelected, resolut
 }
 
 function calculateDataQualityTemporalConsistency(data, attributeSelected, number, consistencyRadioValue, consistencyRadioMethod, tolerance, metadata, flag) {
-    var attributes = getDataAttributes(data); //Està a tapis.js 
-    if (attributes[attributeSelected].type != "isodatetime") return null;
+    var attributes = getDataAttributes(data); 
+   //Without 
 
     var currentDate, previousDate;
     var dateFrom, validRange;
@@ -721,7 +720,7 @@ function calculateTemporalAccuracyFromTimes(data,timeColumn,metadata,groupColumn
 								"params": [
 									{
 										"name": "Temporal uncertanty column",
-										"value": uncertaintyAttribute
+										"value": timeColumn
 									},
 									{
 										"name": "Probability",
@@ -757,17 +756,16 @@ function createObjectToGroupTemporalRecords(data,groupColumn, timeColumn){
 			}else{
 					obj[data[i][groupColumn]]= {}
 					obj[data[i][groupColumn]].values=[data[i][timeColumn]]
-			}
-		
+			}		
 	}
 	return obj
 }
 
 
 function accuracyValuesInMetersWithPoints(data, metadata,  longAttribute, latAttribute, units, grouped, newColumns) {
-
-   //Mirar si son numeros.
-   //Falta posar si la casella està buida
+	var attributes = getDataAttributes(data); 
+    if (attributes[longAttribute].type != "integer" && attributes[longAttribute].type != "number") return null;
+	if (attributes[latAttribute].type != "integer" && attributes[latAttribute].type != "number") return null;
  
 
     if (grouped!=false){
@@ -861,9 +859,9 @@ function accuracyValuesInMetersWithPoints(data, metadata,  longAttribute, latAtt
 
 function calculateDataQualityPositionalValidity(data, xmin, xmax, ymin, ymax, longAttribute, latAttribute, metadata, tag) {
    //x-> long, y-> lat
-    // var attributes = getDataAttributes(data);
-    // if (attributes[attributeSelected].type!="geometry") return null;
-    //MIRAR QUE SIGUIN... NUMEROS?(float)
+    var attributes = getDataAttributes(data);
+  	if (attributes[longAttribute].type != "integer" && attributes[longAttribute].type != "number") return null;
+	if (attributes[latAttribute].type != "integer" && attributes[latAttribute].type != "number") return null;
     var valid;
     var count =0;
     
@@ -1094,11 +1092,11 @@ function calculateRMSEGroup(data, groupingObject, longAttribute, latAttribute, u
 
 
     var RMSE = Math.sqrt(sumSquareDistances / groupingObject.DataPositions.length);
-	//@Marta, please Truncate the RMSE to 3 decimals (mm precision). Ho he posat abaix
+	
 
     groupingObject.MeanLong=longitudeMean;
     groupingObject.MeanLat= latitudeMean;
-    groupingObject.RMSE= RMSE.toFixed(3);
+    groupingObject.RMSE= RMSE.toPrecision(3);
 }
 
 function accuracyFromUncertaintyThematicQuality(data, metadata, uncertaintyAttribute) {
@@ -1111,8 +1109,8 @@ function accuracyFromAlfaNumValuesInThematicQuality (data, metadata, thematicAtt
 
 	if (newColumns){
 		 for (var g=0;g<data.length;g++){
-            data[g]["percentageIngroup"]= parseFloat(groupingGroupsObject[data[g][grouped]].values[data[g][thematicAttributeSelected]]);
-			data[g]["groupMode"]= parseFloat(groupingGroupsObject[data[g][grouped]].mode);        
+            data[g]["percentageIngroup"]= groupingGroupsObject[data[g][grouped]].values[data[g][thematicAttributeSelected]];
+			data[g]["groupMode"]=groupingGroupsObject[data[g][grouped]].mode;        
         }
 	}
 	var modeValues=[];
@@ -1130,16 +1128,16 @@ function accuracyFromAlfaNumValuesInThematicQuality (data, metadata, thematicAtt
 		{
 			"reports": [
 				{
-					"type": "",//canviar
+					"type": "DQ_NonQuantitativeAttributeAccuracy",
 					"measureIdentification": {
-						"code": "CircularMapAccuracy", //canviar?
+						"code": "ModePercentage", 
 						"domains": [
 							{
-								"name": "DifferentialErrors2D",
+								"name": "CategoricalCorrespondance",
 								"params": [
 										{
-										"name": "uncertantie column",
-										"value":""// uncertaintyAttribute
+										"name": "column",
+										"value":thematicAttributeSelected
 											}
 										]
 							}
@@ -1160,7 +1158,7 @@ function accuracyFromAlfaNumValuesInThematicQuality (data, metadata, thematicAtt
 								}
 							},
 							"valueType": "number",
-							"values":globalAccuracyValue //[ accuracyValue ]
+							"values":globalAccuracyValue 
 						}
 					]
 				}
@@ -1178,7 +1176,6 @@ function createObjectWithDifferentPossibilitiesInColumnsInQualityThematicAlfaNum
 	for (var i=0;i<data.length;i++){	
 		if (groupingColumn)currentGroupName= data[i][groupingColumn];
 		else currentGroupName= "all"
-		//currentGroupName= data[i][groupingColumn];
 		if (groupingGroupsObject.hasOwnProperty(currentGroupName)){ //group already created (Without group allways here)
 			if (groupingGroupsObject[currentGroupName].values.hasOwnProperty(data[i][valuesColumn])){ //The value in this group exist?
 				groupingGroupsObject[currentGroupName].values[data[i][valuesColumn]]=groupingGroupsObject[currentGroupName].values[data[i][valuesColumn]]+1;
@@ -1201,11 +1198,12 @@ function createObjectWithDifferentPossibilitiesInColumnsInQualityThematicAlfaNum
 }
 
 function accuracyFromNumValuesInThematicQuality (data, metadata, thematicAttributeSelected, grouped, newColumns){
-	
+	var attributes = getDataAttributes(data); 
+	if (attributes[thematicAttributeSelected].type != "integer" && attributes[thematicAttributeSelected].type != "number") return null;
 	var groupingGroupsObject=createObjectWithDifferentPossibilitiesInColumnsInQualityThematicNum(data, grouped,thematicAttributeSelected)
 		if (newColumns){
 		 for (var g=0;g<data.length;g++){
-            data[g]["groupUncertainty"]= parseFloat(groupingGroupsObject[data[g][grouped]].groupUncertainty);   
+            data[g]["groupUncertainty"]= groupingGroupsObject[data[g][grouped]].groupUncertainty;   
         }
 	}
 
@@ -1214,7 +1212,7 @@ function accuracyFromNumValuesInThematicQuality (data, metadata, thematicAttribu
 	for (var i=0; i<groupingGroupsObjectKeys.length; i++){
 		uncertainties.push(groupingGroupsObject[groupingGroupsObjectKeys[i]].groupUncertainty);
 	}
-	var accuracyValue=aggrFuncStandardDeviation(uncertainties); //MITJANAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	var accuracyValue=(uncertainties.length==1)?uncertainties[0]:aggrFuncMean(uncertainties); 
 
 	if (!metadata.dataQualityInfos)metadata.dataQualityInfos=[];
 
@@ -1222,16 +1220,16 @@ function accuracyFromNumValuesInThematicQuality (data, metadata, thematicAttribu
 		{
 			"reports": [
 				{
-					"type": "",//canviar
+					"type": "DQ_QuantitativeAttributeAccuracy",
 					"measureIdentification": {
-						"code": "CircularMapAccuracy", //canviar?						},
+						"code": "RootMeanSquare", 
 						"domains": [
 							{
-								"name": "DifferentialErrors2D",
+								"name": "RootMeanSquareError2D",
 								"params": [
 										{
-										"name": "uncertantie column",
-										"value":""// uncertaintyAttribute
+										"name": "column",
+										"value":thematicAttributeSelected
 											}
 										]
 							}
@@ -1258,15 +1256,11 @@ function accuracyFromNumValuesInThematicQuality (data, metadata, thematicAttribu
 				}
 			]
 		});
-
-	 //i completar les metadades
-
 	return accuracyValue;
 }
 
 function createObjectWithDifferentPossibilitiesInColumnsInQualityThematicNum(data,groupingColumn, valuesColumn){
 	SortTableByColumns(data, [groupingColumn], "asc");
-	//Mirar que siguin NUMEROS
 
 	var groupingGroupsObject={};
 	var currentGroupName;
@@ -1285,7 +1279,6 @@ function createObjectWithDifferentPossibilitiesInColumnsInQualityThematicNum(dat
 	for (var e=0;e<groupingGroupsObjectKeys.length;e++){
 		calculateDesVestInObject(groupingGroupsObject[groupingGroupsObjectKeys[e]]);
 	}
-	// console.log(groupingGroupsObject)
 	return groupingGroupsObject
 }
 
@@ -1301,16 +1294,15 @@ function calculatePercentageInObject(obj){
 
 	for (var a=0;a<objKeys.length;a++){
 		if(obj[objKeys[a]]>mode)mode=obj[objKeys[a]];
-		obj[objKeys[a]]= (Number.isInteger(obj[objKeys[a]]/sum *100))?obj[objKeys[a]]/sum *100:(obj[objKeys[a]]/sum *100).toFixed(3);
+		obj[objKeys[a]]= (Number.isInteger(obj[objKeys[a]]/sum *100))?obj[objKeys[a]]/sum *100:(obj[objKeys[a]]/sum *100);
 	}
 
-	mode= (Number.isInteger(mode/sum *100))?mode/sum *100:(mode/sum *100).toFixed(3);
+	mode= (Number.isInteger(mode/sum *100))?mode/sum *100:(mode/sum *100);
 	return mode
 }
 
 
 function calculateDesVestInObject(obj){
-	//console.log (obj);
 	var sum=0, mean, sumSquaredDistances=0; 
 
 	for (var i=0;i<obj.values.length;i++){
@@ -1321,9 +1313,7 @@ function calculateDesVestInObject(obj){
 	for (var e=0;e<obj.values.length;e++){
 		sumSquaredDistances+= (obj.values[e]-mean)**2;
 	}
-
-	obj.groupUncertainty= Math.sqrt(sumSquaredDistances/obj.values.length).toFixed(3);
-	
+	obj.groupUncertainty= Math.sqrt(sumSquaredDistances/obj.values.length);
 }
 
 function calculateDataQualityThematicValidityWithAList(dataToEvaluate,referenceData, metadata, attributeToEvaluate, referenceAttribute,flag) {
@@ -1335,20 +1325,27 @@ function calculateDataQualityThematicValidityWithAList(dataToEvaluate,referenceD
 	for (var a=0;a<dataToEvaluate.length;a++){
 		itsValid=referenceList.includes(dataToEvaluate[a][attributeToEvaluate])?true:false;
 		if(itsValid)count++;
-		if(flag)data[a]["thematicValidity"]=itsValid
+		if(flag)dataToEvaluate[a]["thematicValidity"]=itsValid
 	}
 	if (!metadata.dataQualityInfos)	metadata.dataQualityInfos=[];
 	metadata.dataQualityInfos.push(
 		{
 			"reports": [
 				{
-					"type": "DQ_PositionalValidity",
+					"type": "DQ_ThematicValidity",
 					"measureIdentification": {
 						"code": "ValueDomain",
 						"domains": [
 							{
 								"name": "Conformance",
-								"params": ""//params
+								"params":[ {
+									"name": "reference column",
+									"value":referenceAttribute 
+									},
+									{
+									"name": "assess column",
+									"value":attributeToEvaluate 
+									}]
                             }
 						]
 					},
@@ -1402,9 +1399,9 @@ function calculateDataQualityThematicValidityWithRange(data,from, to,  metadata,
 				if (to){
 					if (data[i][thematicAttributeSelected]<to){
 						count++;
-						if(flag)data[a]["thematicValidity"]=true;
+						if(flag)data[i]["thematicValidity"]=true;
 					}else{
-						if(flag)data[a]["thematicValidity"]=false;
+						if(flag)data[i]["thematicValidity"]=false;
 					}
 				}
 			}
@@ -1413,9 +1410,9 @@ function calculateDataQualityThematicValidityWithRange(data,from, to,  metadata,
 		if (to){
 			if (data[i][thematicAttributeSelected]<to){
 				count++
-				if(flag)data[a]["thematicValidity"]=true;
+				if(flag)data[i]["thematicValidity"]=true;
 			}else{
-				if(flag)data[a]["thematicValidity"]=false;
+				if(flag)data[i]["thematicValidity"]=false;
 			}
 		}
 	}
@@ -1430,7 +1427,19 @@ function calculateDataQualityThematicValidityWithRange(data,from, to,  metadata,
 						"domains": [
 							{
 								"name": "Conformance",
-								"params": ""//params
+								"params": [ {
+									"name": "column",
+									"value":thematicAttributeSelected 
+									},
+									{
+									"name": "min value",
+									"value":from 
+									},
+									{
+									"name": "max value",
+									"value":to 
+									}
+								]
                             }
 						]
 					},

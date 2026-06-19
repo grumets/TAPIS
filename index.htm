@@ -28,6 +28,8 @@
 	<script type="text/javascript" src="wicket.js" async defer></script>
 	<script type="text/javascript" src="ngeohash.js" async defer></script>
 	<script type="text/javascript" src="h3-js.js" async defer></script><!--https://github.com/uber/h3-js-->
+	<script type="text/javascript" src="proj4.js"></script>
+	<script type="text/javascript" src="crs.js"></script>
 	<script type="text/javascript" src="hello.all.min.js"></script>
 	<script type="text/javascript" src="authenix.js" async defer></script>
 	<script type="text/javascript" src="mmn_postmessage.js" async defer></script>
@@ -53,6 +55,7 @@
 	<script type="text/javascript" src="diagrams.js"></script>
 	<script type="text/javascript" src="aws.js"></script>
 	<script type="text/javascript" src="tapis.js"></script>
+	<script type="text/javascript" src="t_nodes.js"></script>
 	<script type="text/javascript" src="autocompleteMultiCreate.js"></script>
 	<script type="text/javascript" src="data_quality.js"></script>
 
@@ -96,9 +99,10 @@
 				<button onclick='document.getElementById("DialogOpenURLNetwork").showModal();' onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data from a webside or from Help examples" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="OpenURLNetwork.png" height="20" valign="middle"> Open URL...</button>
 				<button onclick='saveNetwork(event);'onmouseover='showHelpToolTip(event, "", "Save your Tapis schema with nodes and data as a JSON to be able to open it later" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="SaveNetwork.png" height="20" valign="middle"> Save as...</button>
 				<button id="buttonOpenLogin" onclick='OpenLogin(event);' onmouseover='showHelpToolTip(event, "", "Login to be able to have access to certain places")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="login.png" height="20" valign="middle"> Login</button>
-				<button id="buttonOpenLogout" onclick='OpenLogout(event);' style="display: none");' onmouseover='showHelpToolTip(event, "", "Close your sesion")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="login.png" height="20" valign="middle"> Logout</button>
+				<button id="buttonOpenLogout" onclick='OpenLogout(event);' style="display: none";' onmouseover='showHelpToolTip(event, "", "Close your sesion")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="login.png" height="20" valign="middle"> Logout</button>
 				<button onclick='OpenConfiguration(event);'onmouseover='showHelpToolTip(event, "", "To modify display configurations")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )' ><img src="config.png" height="20" valign="middle">Configuration</button>
-				<button onclick='OpenHelp(event);' onmouseover='showHelpToolTip(event, "", "Explanations of how to use TAPIS and Examples")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="help.png" height="20" valign="middle">Help</button>
+				<button onclick='OpenHelp(event);' onmouseover='showHelpToolTip(event, "", "Explanations of how to use TAPIS: Tools")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="help.png" height="20" valign="middle">Help</button>
+				<button onclick='OpenRecipes(event);' onmouseover='showHelpToolTip(event, "", "Explanations of how to use TAPIS and Examples")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="documentation.png" height="20" valign="middle">Recipes</button>
 			</td>
 		</tr>
 	</table>
@@ -912,7 +916,7 @@
 						</tr>
 					</tbody>
 				</table>
-			</fieldset>
+			</fieldset></fieldset>
 			<label><input type="checkbox" cheked id="DialogUploadIC_checkbox_checkresult">Add GeoJSON node to check the result</label>
 			<div class="center" style="margin-top:10px">
 				<button type="button" value="default" onClick="GetUploadIC(event)" >OK</button>
@@ -1336,7 +1340,8 @@
 				<legend>CSV source</legend>
 				<label><input type="radio" id="DialogImportCSVSourceNew" name="DialogImportCSVSource" value="new"> New based on CSVW</input></label><br>
 				<label><input type="radio" id="DialogImportCSVSourceFile" name="DialogImportCSVSource" value="file" checked="checked" onClick='SelectImportFileSource(event, "CSV")'>
-				Local file: <input type="file" accept=".csv,*.txt" id="DialogImportCSVSourceFileText" onChange="ReadFileImportCSV(event)"></input></label><br>
+				<!--  <input type="file" accept=".csv,*.txt" id="DialogImportCSVSourceFileText" onChange="ReadFileImportCSV(event)"></input></label><br> -->
+				Local file:<button type="button" onclick="openFileDialog()">Open CSV</button><span id="fileNameLabel">No file selected</span><input type="file" id="csvInput" accept=".csv,.txt" style="display:none"  onchange="ReadFileImportCSV(event)"><br>
 				<label><input type="radio" id="DialogImportCSVSourceURL" name="DialogImportCSVSource" value="url" onClick='SelectImportFileSource(event, "CSV")'>
 				URL: <input type="text" size="70" id="DialogImportCSVSourceURLInput" onChange="ReadURLImportCSV(event)" disabled="disabled"></input> <button type="button" id="DialogImportCSVSourceURLButton" onClick="ReadURLImportCSV(event)" disabled="disabled">Load</button></label><br>
 				<label>Suggested CSV URLs:
@@ -1590,11 +1595,15 @@
 				<br>
 				<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LL" value="LL" id="DialogAddColumnGeoRadioLL" checked="checked">Point coordinates:</label>
 				<fieldset>
-				<label>Longitude:
+				<label>CRS:
+					<select id="DialogAddColumnGeoCRSSelect"></select>
+				</label>
+				<br>
+				<label>X or Longitude:
 					<span id="DialogAddColumnGeoLongitude"></span>
 				</label>
 				<br>
-				<label>Latitude:
+				<label>Y or Latitude:
 					<span id="DialogAddColumnGeoLatitude"></span>
 				</label>
 				</fieldset>
@@ -1609,10 +1618,17 @@
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="UberH3" id="DialogAddColumnGeoRadioUberH3Out" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioUberH3Out");' >Uber H3</label><br>
 					<label><input type="radio" name="DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut" value="LL" id="DialogAddColumnGeoRadioLLOut" onChange='ChangeAddColumnGeoRadioOut(event, "DialogAddColumnGeoRadioLLOut");' >Point coordinates</label>
 				</fieldset>
-				<legend>New column</legend>
-				<label><span id="DialogAddColumnGeoNameOut">Column name:</span><input type="text" size="30" id="DialogAddColumnGeoNameText" value="Geometry"></input><br>
-				<label><span id="DialogAddColumnGeoLatitudeNameOut" style="display:none;">Latitude:</span><input type="text" size="30" id="DialogAddColumnGeoLatitudeNameText" value="Latitude" style="display:none;"></input>
-				<label><span id="DialogAddColumnGeoLevel" style="display:none;">Level:</span><input type="text" size="3" id="DialogAddColumnGeoLevelText" value="10" style="display:none;"></input>
+				<fieldset>
+				<legend>New column name(s)</legend>
+					<span id="DialogAddColumnGeoCRSOutAll" style="display:none;">
+						<span id="DialogAddColumnGeoCRSOut">CRS:</span>
+						<select id="DialogAddColumnGeoCRSOutSelect"></select>
+						<br>
+					</span>
+					<span id="DialogAddColumnGeoNameOutAll"><label><span id="DialogAddColumnGeoNameOut">Column name:</span> <input type="text" size="30" id="DialogAddColumnGeoNameText" value="Geometry"></input><br></span>
+					<span id="DialogAddColumnGeoLatitudeNameOutAll" style="display:none;"><label><span id="DialogAddColumnGeoLatitudeNameOut">Y or Latitude:</span> <input type="text" size="30" id="DialogAddColumnGeoLatitudeNameText" value="Latitude"></input><br></span>
+					<span id="DialogAddColumnGeoLevelAll"><label><span id="DialogAddColumnGeoLevel">Level:</span><input type="text" size="3" id="DialogAddColumnGeoLevelText" value="10"></input></span>
+				</fieldset>
 			</fieldset>
 			<div class="center">
 				<button value="ok" formmethod="dialog" onClick="GetAddColumnGeo(event)" formmethod="dialog">Add</button>
@@ -1944,24 +1960,16 @@
 			<div id="DialogQualityLogicalConsistency_table_div">
 				<table style="border:2px solid black; border-collapse:collapse;">
 					<thead>
-						<th id="DialogQualityLogicalConsistency_table_0"
-							style="border:1px solid black; padding:6px; border-right:1px solid black; text-align:center;"></th>
-						<th id="DialogQualityLogicalConsistency_table_1"
-							style="border:1px solid black; padding:6px; text-align:center;"></th>
+						<th style="border:1px solid black; padding:6px; border-right:1px solid black; text-align:center;"> Target data</th>
+						<th style="border:1px solid black; padding:6px; text-align:center;">Reference data</th>
 					</thead>
 					<tbody>
 						<tr>
-							<td style="border:1px solid black; padding:6px; border-right:1px solid black; text-align:center;">
-								<select id="DialogQualityLogicalConsistency_select_targetOrReference_0">
-									<option value="target">Target</option>
-									<option value="reference">Reference</option>
-								</select>
+							<td style="border:1px solid black; padding:6px; border-right:1px solid black; text-align:center;" id="DialogQualityLogicalConsistency_table_0">
+
 							</td>
-							<td style="border:1px solid black; padding:6px; text-align:center;">
-								<select id="DialogQualityLogicalConsistency_select_targetOrReference_1">
-									<option value="target">Target</option>
-									<option value="reference" selected>Reference</option>
-								</select>
+							<td style="border:1px solid black; padding:6px; text-align:center;" id="DialogQualityLogicalConsistency_table_1">
+
 							</td>
 						</tr>
 						<tr>
@@ -2036,7 +2044,7 @@
 			<div style="margin-top: 20px;">
 				<label><input type="checkbox" value="logicalConsistency_flagBadRecords" id="dataQuality_logicalConsistency_flag" name="dataQuality_logicalConsistency">Flag the bad records (true/false)</label>
 			</div>
-			<div class="center">
+			<div class="center" style="margin-top: 20px;">
 				<button value="ok" onClick="okButtonDataQualityDialogQualityLogicalConsistency(event)" formmethod="dialog">Ok</button>	<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 			<input type="hidden" id="DialogQualityLogicalConsistencyNodeId"></input>
@@ -2048,7 +2056,7 @@
 			<div id="DialogQualityTemporalQuality_attributesList">
 				<label>Temporal column: </label><select  id="TemporalQuality_select_temporalColumn"></select>
 			</div>
-			<fieldset><legend><label><input type="checkbox" checked="checked" value="TemporalQuality_calculate_temporalAccuracy" id="TemporalQuality_checkbox_calculate_temporalAccuracy" name="TemporalQuality_checkbox_calculate">Temporal accuracy</label></legend>
+			<fieldset><legend><label><input type="checkbox"  value="TemporalQuality_calculate_temporalAccuracy" id="TemporalQuality_checkbox_calculate_temporalAccuracy" name="TemporalQuality_checkbox_calculate">Temporal accuracy</label></legend>
 				<table style="border-collapse: collapse; width: 100%;">
 					<tbody>
 
@@ -2354,91 +2362,172 @@
 		</form>
 	</dialog>
 
-
-
 	<dialog id="DialogQualityThematicQuality" onClose='hideNodeDialog("DialogQualityThematicQuality", event)'>
-			<form>
-				<h3> Thematic quality</h3>
-				<div> <label>Table to assess: </label><span id="ThematicQuality_select_tableAssess"></span></div>
-				<label>Column to assess:</label><select id="DialogQualityThematicQuality_attributesList"></select>
-				<div>
-					<fieldset><legend><label><input type="checkbox" id="ThematicQuality_checkbox_ThematicAccuracy" checked>Thematic accuracy</label></legend>
-						<table style="width:100%; border-collapse:collapse;">
-							<tr>
-								<td style="vertical-align:top; padding:10px; text-align:left;" colspan="2">
+		<form>
+			<h3> Thematic quality</h3>
+
+			<div style="margin-bottom: 20px;"> 
+				<label><strong>Table to assess: </strong></label>
+				<span id="ThematicQuality_select_tableAssess"></span>
+			</div>
+
+			<div>
+
+				<fieldset>
+					<legend>
+						<input type="checkbox" id="ThematicQuality_checkbox_ThematicAccuracy_column">
+						Thematic accuracy by accuracy column
+					</legend>
+					<label>Mean of uncertainty column: </label>
+					<select id="DialogQualityThematicQuality_select_uncertantyColumn"></select>
+				</fieldset>
+
+				<br>
+
+				<div style="display:flex; gap:20px; align-items:flex-start;">
+
+					<div style="min-width:250px; max-width:300px;">
+						<div style="background:#f5f5f5; padding:10px; border-radius:6px;">
+							<label><strong>Attribute selection</strong></label>
+							<br><br>
+
+							<label>Column to assess:</label><br>
+							<select id="DialogQualityThematicQuality_attributesList"></select>
+
+							<br><br>
+
+							<small style="color:#666;">
+								Used for thematic accuracy by values and thematic validity
+							</small>
+						</div>
+					</div>
+
+					<div style="flex:1;">
+
+						<fieldset>
+							<legend>
 								<label>
-									<input type="radio"  id="thematicQuality_radio_thematicAccuracy_accuracyStaDev" name="thematicQuality_radio_thematicAccuracy_way" checked value="accuracyStaDev" onclick="enableGroupingModeInThematicQuality(false)">
-									Mean of uncertainty column: 
+									<input type="checkbox" id="ThematicQuality_checkbox_ThematicAccuracy_values">
+									Thematic accuracy by values
 								</label>
-								<select id="DialogQualityThematicQuality_select_uncertantyColumn"></select>
-								</td>
-							</tr>
+							</legend>
 
-							<tr>
-								<td style="border-right:2px solid #ccc; vertical-align:top; padding:10px; text-align:left;">
+							<table style="width:100%; border-collapse:collapse;">
+								<tr>
+									<td style="border-right:2px solid #ccc; vertical-align:top; padding:10px; text-align:left;">
+										<label>
+											<input type="radio" id="thematicQuality_radio_thematicAccuracy_string" name="thematicQuality_radio_thematicAccuracy_way" value="alfaNum" onclick="enableGroupingModeInThematicQuality(true)" checked>
+											Mode of non-numeric column (Most frequent value and its frequency)
+										</label>
+									</td>
+
+									<td rowspan="2" style="vertical-align:top; padding:10px;">
+										<fieldset>
+											<legend>Grouping mode</legend>
+
+											<label>
+												<input type="radio" id="thematicQuality_radio_thematicAccuracy_group" name="thematicQuality_radio_thematicAccuracy_grouping" checked>
+												Grouped by column
+											</label>
+
+											<label>
+												Grouping column:
+												<select id="DialogQualityThematicQuality_select_accuracy_group"></select>
+											</label>
+
+											<br>
+
+											<label style="margin-left:30px;">
+												<input type="checkbox" id="thematicQuality_radio_thematicAccuracy_grouping_groupCheckbox" checked>
+												Create new columns with grouped result
+											</label>
+
+											<br>
+
+											<label>
+												<input type="radio" id="thematicQuality_radio_thematicAccuracy_column" name="thematicQuality_radio_thematicAccuracy_grouping">
+												All records
+											</label>
+										</fieldset>
+									</td>
+								</tr>
+
+								<tr>
+									<td style="border-right:2px solid #ccc; vertical-align:top; padding:10px; text-align:left;">
+										<label>
+											<input type="radio" id="thematicQuality_radio_thematicAccuracy_number" name="thematicQuality_radio_thematicAccuracy_way" value="number" onclick="enableGroupingModeInThematicQuality(true)">
+											Mean of the standard deviation (numeric)
+										</label>
+									</td>
+								</tr>
+							</table>
+
+						</fieldset>
+
+						<br>
+
+						<fieldset>
+							<legend>
 								<label>
-									<input type="radio" id="thematicQuality_radio_thematicAccuracy_string" name="thematicQuality_radio_thematicAccuracy_way" value="alfaNum" onclick="enableGroupingModeInThematicQuality(true)">
-									Mode of non-numeric column (Most frequent value and its frequency)
+									<input type="checkbox" id="ThematicQuality_checkbox_ThematicValidity">
+									Thematic validity
 								</label>
-								</td>
+							</legend>
 
-								<td rowspan="2" style="vertical-align:top; padding:10px;">
-								<fieldset>
-									<legend>Grouping mode</legend>
+							<div>
+								<label>Table with list of possible values: </label>
+								<span id="ThematicQuality_select_tableList"></span>
+							</div>
 
-									<label>
-									<input type="radio" 	id="thematicQuality_radio_thematicAccuracy_group" name="thematicQuality_radio_thematicAccuracy_grouping" 	checked>
-									Grouped by column
-									</label>
-									<label>
-									Grouping column:
-									<select id="DialogQualityThematicQuality_select_accuracy_group"></select>
-									</label>
-									<br>
-									<label style="margin-left:30px;">
-									<input type="checkbox" 	id="thematicQuality_radio_thematicAccuracy_grouping_groupCheckbox" 	checked>
-									Create new columns with grouped result
-									</label>
-									<br>
-									<label>
-									<input type="radio" 	id="thematicQuality_radio_thematicAccuracy_column" 	name="thematicQuality_radio_thematicAccuracy_grouping">
-									All records
-									</label>
-								</fieldset>
-								</td>
-							</tr>
+							<label>
+								<input type="radio" id="thematicQuality_radio_thematicValidity_list" name="thematicQuality_radio_thematicValidity" checked>
+								List of values
+							</label>
 
-							<tr>
-								<td style="border-right:2px solid #ccc; vertical-align:top; padding:10px; text-align:left;">
-								<label>
-									<input type="radio" id="thematicQuality_radio_thematicAccuracy_number" name="thematicQuality_radio_thematicAccuracy_way" value="number" onclick="enableGroupingModeInThematicQuality(true)">
-									Mean of the standard deviation (numeric)
-								</label>
-								</td>
-							</tr>
-						</table>
+							<select id="DialogQualityThematic_select_Validity"></select>
 
-					</fieldset>
-					<fieldset><legend><label><input type="checkbox" id="ThematicQuality_checkbox_ThematicValidity">Thematic validity</label></legend>
-							<div><label>Table with list of possible values: </label><span id="ThematicQuality_select_tableList"></span></div>
-							<label><input type="radio" id="thematicQuality_radio_thematicValidity_list" name="thematicQuality_radio_thematicValidity" checked> List of values </label><select id="DialogQualityThematic_select_Validity"></select><br>
-							<label><input type="radio" id="thematicQuality_radio_thematicValidity_range" name="thematicQuality_radio_thematicValidity"> Range</label>	
-							<label style ="margin-left: 15px">From:<input type="text" id="thematicQuality_input_thematicValidity_from"> </label>
-							<label>To: <input type="text" id="thematicQuality_input_thematicValidity_to"></label>
-							<br><label><input type="checkbox"  id="dataQuality_thematicValidity_flag">Flag the bad records (true/false)</label>
-					</fieldset>
+							<br>
+
+							<label>
+								<input type="radio" id="thematicQuality_radio_thematicValidity_range" name="thematicQuality_radio_thematicValidity">
+								Range
+							</label>
+
+							<label style="margin-left: 15px">
+								From:<input type="text" id="thematicQuality_input_thematicValidity_from">
+							</label>
+
+							<label>
+								To: <input type="text" id="thematicQuality_input_thematicValidity_to">
+							</label>
+
+							<br>
+
+							<label>
+								<input type="checkbox" id="dataQuality_thematicValidity_flag">
+								Flag the bad records (true/false)
+							</label>
+						</fieldset>
+
+					</div>
 				</div>
-				<div>
-				
+			</div>
 
-				</div>
-				<div class="center">
-					<button value="default" onClick="okButtonDataQualityThematicQuality(event)" >Ok</button>	<button value="cancel" formmethod="dialog">Cancel</button>
-				</div>
+			<div class="center">
+				<button value="default" onClick="okButtonDataQualityThematicQuality(event)">Ok</button>
+				<button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
 
-			<input type="hidden" id="DialogQualityThematicQualityNodeId"></input>
-			</form>
+			<input type="hidden" id="DialogQualityThematicQualityNodeId">
+		</form>
 	</dialog>
+
+
+
+	 
+
+
+
 
 	<dialog id="dataQualityResult" onClose='hideNodeDialog("DialogQualityTemporalQuality", event)'>
 		<form>
