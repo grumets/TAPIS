@@ -1359,15 +1359,27 @@
 
 	<dialog id="DialogSaveTable" onClose='hideNodeDialog("DialogSaveTable", event)'>
 		<form>
-			Save the table as CSV
+			Save table
 			<br>
-			<label>CSV delimiter:
-				<input type="text" id="DialogSaveTableDelimiter" size="2" maxlength="1" value=";"></input>
-			</label>
-			<!--span id="DialogSaveTableOptions"></span--><br>
+			<fieldset>
+				<legend>CSV+CSVW</legend>
+				<label>CSV delimiter:
+					<input type="text" id="DialogSaveTableDelimiter" size="2" maxlength="1" value=";"></input>
+				</label>
+				<div class="center">
+					<button value="csv" onClick="SaveCSV(event)" formmethod="dialog">Save CSV</button>
+					<button value="dbf" onClick="SaveDBF(event)" formmethod="dialog">Save DBF</button>
+					<button value="csvw" onClick="SaveCSVW(event)" formmethod="dialog">Save CSVW</button>
+				</div>
+			</fieldset>
+			<fieldset>
+				<legend>DBF</legend>
+				<label><input type="checkbox" id="DialogSaveTableForceExtendedDBF"></input> Force extended DBF</label>
+				<div class="center">
+					<button value="dbf" onClick="SaveDBF(event)" formmethod="dialog">Save DBF</button> 
+				</div>
+			</fieldset>
 			<div class="center">
-				<button value="default" onClick="SaveTable(event)" formmethod="dialog">Save CSV</button>
-				<button value="csvw" onClick="SaveCSVW(event)" formmethod="dialog">Save CSVW</button>
 				<button value="cancel" formmethod="dialog">Cancel</button>
 			</div>
 		</form>

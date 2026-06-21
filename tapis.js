@@ -5896,7 +5896,7 @@ function ShareMeaningTable(event) {
 	showInfoMessage("Sharing Meaning. Redirected to NiMMbus (please authenticate and save).");
 }
 
-function SaveTable(event) {
+function SaveCSV(event) {
 	hideNodeDialog("DialogSaveTable", event);
 	var delimiter=document.getElementById("DialogSaveTableDelimiter").value;
 	var parentNode=GetFirstParentNode(currentNode);
@@ -5906,6 +5906,15 @@ function SaveTable(event) {
 	}
 }
 
+function SaveDBF(event) {
+	hideNodeDialog("DialogSaveTable", event);
+	var delimiter=document.getElementById("DialogSaveTableDelimiter").value;
+	var parentNode=GetFirstParentNode(currentNode);
+	if (parentNode) {
+		SaveLocalDataFile(createUintArrayDBF(parentNode.STAdata, parentNode.STAdataAttributes), 
+				(IdOfSTAEntity(parentNode) == -1) ?  "table" : STAEntitiesArray[IdOfSTAEntity(parentNode)], ".dbf", "application/dbase"); 
+	}
+}
 
 function SaveCSVW(event) {
 	hideNodeDialog("DialogSaveTable", event);
