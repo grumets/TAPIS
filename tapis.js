@@ -10,7 +10,7 @@
   
 	The TAPIS client is free software under the terms of the MIT License
 
-	Copyright (c) 2023 Joan Masó
+	Copyright (c) 2023-2026 Joan Masó
 
 	Permission is hereby granted, free of charge, to any person obtaining a copy
 	of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 	
-	The TAPIS can be updated from https://github.com/joanma747/tapis.
+	The TAPIS can be updated from https://github.com/grumets/tapis.
 
 	Aquest codi JavaScript ha estat idea de Joan Masó Pau (joan maso at uab cat) 
 	dins del grup del MiraMon. MiraMon és un projecte del 
@@ -42,7 +42,7 @@
 	
 	En particular, el TAPIS es distribueix sota els termes de la llicència MIT.
 	
-	El TAPIS es pot actualitzar des de https://github.com/joanma747/tapis.
+	El TAPIS es pot actualitzar des de https://github.com/grumets/tapis.
 */
 
 /*
@@ -392,9 +392,14 @@ function StartSTAPage() {
 	setEventFunctionsNetwork();
 	PrepareTextAreaCalculator();
 	startProj4();
+	startDGGAL();
 	UpdateConfiguration();
 
 	InitSTAPage();  //promise
+}
+
+function StopSTAPage() {
+	stopDGGAL();
 }
 
 function PlaceButtonsSTAEntities() {
@@ -479,7 +484,6 @@ function textOperationButton(parentDivId, prefixDivId, operation, name, descript
 
 async function InitSTAPage() {
 	var response=await HTTPJSONData("config.json");
-	const nCol=4;
 	config=(response && response.obj) ? response.obj : null;
 	if (!config)
 	{
@@ -494,7 +498,7 @@ async function InitSTAPage() {
 		window.opener.postMessage(JSON.stringify({msg: "Tapis is listening"}), "*");
 }
 
-function PopulateContextMenu(nodeId){ //Chage to show only linkable nodes
+function PopulateContextMenu(nodeId){ //Change to show only linkable nodes
 	var parentNode= networkNodes.get(nodeId);
 	var node = {image:""};
 	const nCol=7;
@@ -503,7 +507,7 @@ function PopulateContextMenu(nodeId){ //Chage to show only linkable nodes
 	var generalBox= "<div class='SectionButtonsContextMenu'><div class='TitleButtonsContextMenu' style='background-color: COLOR;'>TITLE</div><div class='ButtonsButtonsContextMenu'>CONTENT</div></div><br>";
 
 	provisional=[];
-	for (var i = 0; i < ServicesAndAPIsArray.length; i++) { //mirar com gestionar aquests			
+	for (var i = 0; i < ServicesAndAPIsArray.length; i++) {
 		provisional.push(textOperationButton("DialogContextMenu", "ContextMenu", ServicesAndAPIsArray[i], ServicesAndAPIs[ServicesAndAPIsArray[i]].name, ServicesAndAPIs[ServicesAndAPIsArray[i]].description, ServicesAndAPIs[ServicesAndAPIsArray[i]].help, ServicesAndAPIs[ServicesAndAPIsArray[i]], "Data Input tool", ServicesAndAPIsType.singular),
 				(i+1)%nCol==0 || i == ServicesAndAPIsArray.length-1 ? "<br>" : " ");
 	}
@@ -5087,47 +5091,53 @@ function GetGeoJSON(data, selectedOptions) {
 	{
 		for (var i = 0; i < data.length; i++) {
 			var a=data[i];
-			if (selectedOptions.geohash) {
-				if (a[selectedOptions.geohash]) {
-					var bbox=ngeohash_decode_bbox(a[selectedOptions.geohash])
-					geojson.features.push({
-						"type": "Feature",
-						"geometry": {
-							"type": "Polygon",
-							"coordinates": [ [ 
-								[ bbox[1], bbox[0] ], 
-								[ bbox[1], bbox[2] ], 
-								[ bbox[3], bbox[2] ], 
-								[ bbox[3], bbox[0] ], 
-								[ bbox[1], bbox[0] ]
-							] ]
-						},
-						"properties": {
-						}
-					});
-				} else {
-					geojson.features.push({
-						"type": "Feature",
-						"geometry": null,
-						"properties": {
-						}
-					});
-				}
-			} else if (selectedOptions.uberH3) {
-				if (a[selectedOptions.uberH3]) {
-					var hexagon=h3.cellToBoundary(a[selectedOptions.uberH3])
-					for (var c=0; c<hexagon.length; c++)
-						hexagon[c]=hexagon[c].reverse()
-					hexagon.push(hexagon[0]);
-					geojson.features.push({
-						"type": "Feature",
-						"geometry": {
-							"type": "Polygon",
-							"coordinates": [ hexagon ]
-						},
-						"properties": {
-						}
-					});
+			if (selectedOptions.zoneId) {
+				if (a[selectedOptions.zoneId]) {
+					if (selectedOptions.DGGS=="Geohash")
+					{
+						var bbox=ngeohash_decode_bbox(a[selectedOptions.zoneId])
+						geojson.features.push({
+							"type": "Feature",
+							"geometry": {
+								"type": "Polygon",
+								"coordinates": [ [ 
+									[ bbox[1], bbox[0] ], 
+									[ bbox[1], bbox[2] ], 
+									[ bbox[3], bbox[2] ], 
+									[ bbox[3], bbox[0] ], 
+									[ bbox[1], bbox[0] ]
+								] ]
+							},
+							"properties": {
+							}
+						});
+					} else if (selectedOptions.DGGS=="UberH3") {
+						var hexagon=h3.cellToBoundary(a[selectedOptions.zoneId]);
+						for (var c=0; c<hexagon.length; c++)
+							hexagon[c]=hexagon[c].reverse()
+						hexagon.push(hexagon[0]);
+						geojson.features.push({
+							"type": "Feature",
+							"geometry": {
+								"type": "Polygon",
+								"coordinates": [ hexagon ]
+							},
+							"properties": {
+							}
+						});
+					} else {
+						var hexagon=DGGSToBoundary(selectedOptions.DGGS, a[selectedOptions.zoneId]);
+						hexagon.push(hexagon[0]);
+						geojson.features.push({
+							"type": "Feature",
+							"geometry": {
+								"type": "Polygon",
+								"coordinates": [ hexagon ]
+							},
+							"properties": {
+							}
+						});
+					}
 				} else {
 					geojson.features.push({
 						"type": "Feature",
@@ -5516,15 +5526,15 @@ function GetGeoJSONStyles(data, selectedOptions) {
 			"desc": null,
 			"DescItems": null,
 			"TipusObj": "P",
-			"nItemLlegAuto": (selectedOptions.geohash || selectedOptions.uberH3) && selectedOptions.place ? 9 : null,
-			"ItemLleg": (selectedOptions.geohash || selectedOptions.uberH3) && selectedOptions.place ? null : [
+			"nItemLlegAuto": selectedOptions.DGGS && selectedOptions.place ? 9 : null,
+			"ItemLleg": selectedOptions.DGGS && selectedOptions.place ? null : [
 				{
 					"color": "#ff0000",
 					"DescColor": ""
 				}
 			],
 			"ncol": 1,
-			"simbols": selectedOptions.geohash || selectedOptions.uberH3 ? null : [
+			"simbols": selectedOptions.DGGS ? null : [
 				{
 					"simbol": [
 						{
@@ -5544,7 +5554,7 @@ function GetGeoJSONStyles(data, selectedOptions) {
 						]
 					}
 				},
-				"interior": (selectedOptions.geohash || selectedOptions.uberH3) && selectedOptions.place ? {
+				"interior": selectedOptions.DGGS && selectedOptions.place ? {
 					"NomCamp": "Place",
 					"paleta": {
 						"ramp": [{"i_color": 0, "color" : "rgba(255,0,0,0.4)"},
@@ -5562,7 +5572,7 @@ function GetGeoJSONStyles(data, selectedOptions) {
 					}
 				}
 			}],
-			"fonts": selectedOptions.geohash || selectedOptions.uberH3 ? null : {
+			"fonts": selectedOptions.DGGS ? null : {
 				"NomCampText": selectedOptions.place ? "Place" : null,
 				"aspecte": [
 					{
@@ -5706,11 +5716,11 @@ function ShowSaveLayerDialogSelects(node, descripUoM) {
 		var dataAttributes = parentNode.STAdataAttributes ? parentNode.STAdataAttributes : getDataAttributes(data);
 		var s, elem;
 		PopulateSelectSaveLayerDialog("DialogSaveLayerPlace", dataAttributes, "FeatureOfInterest/description");
-		PopulateSelectSaveLayerDialog("DialogSaveLayerSelectGeometry", dataAttributes, "FeatureOfInterest/feature");
-		PopulateSelectSaveLayerDialog("DialogSaveLayerSelectGeohash", dataAttributes, "Geohash");
-		PopulateSelectSaveLayerDialog("DialogSaveLayerSelectUberH3", dataAttributes, "H3");
-		PopulateSelectSaveLayerDialog("DialogSaveLayerLongitude", dataAttributes, "FeatureOfInterest/feature/coordinates_0");
-		PopulateSelectSaveLayerDialog("DialogSaveLayerLatitude", dataAttributes, "FeatureOfInterest/feature/coordinates_1");
+		PopulateSelectSaveLayerDialog("DialogSaveLayerSelectGeometry", dataAttributes, "FeatureOfInterest/feature", "document.getElementById('DialogSaveLayerGeo').click()");
+		PopulateSelectSaveLayerDialog("DialogSaveLayerSelectZoneId", dataAttributes, "Zone", "document.getElementById('DialogSaveLayerDGGS').click()");
+		document.getElementById("DialogSaveLayerDGGSSelect").innerHTML=getOptionsSelectDGGSHashUber();
+		PopulateSelectSaveLayerDialog("DialogSaveLayerLongitude", dataAttributes, "FeatureOfInterest/feature/coordinates_0", "document.getElementById('DialogSaveLayerLL').click()");
+		PopulateSelectSaveLayerDialog("DialogSaveLayerLatitude", dataAttributes, "FeatureOfInterest/feature/coordinates_1", "document.getElementById('DialogSaveLayerLL').click()");
 		PopulateSelectSaveLayerDialog("DialogSaveLayerTime", dataAttributes, "phenomenonTime");
 		PopulateSelectSaveLayerDialog("DialogSaveLayerVariable", dataAttributes, "Datastream/ObservedProperty/name");
 		if (descripUoM){
@@ -5734,10 +5744,10 @@ function GetSelectedOptionsSaveLayer(descripUoM){
 	selectedOptions.place=document.getElementById("DialogSaveLayerPlaceSelect").value;
 	if (document.getElementById("DialogSaveLayerGeo").checked)
 		selectedOptions.geometry=document.getElementById("DialogSaveLayerSelectGeometrySelect").value;
-	else if (document.getElementById("DialogSaveLayerGeoHash").checked)
-		selectedOptions.geohash=document.getElementById("DialogSaveLayerSelectGeohashSelect").value;
-	else if (document.getElementById("DialogSaveLayerUberH3").checked)
-		selectedOptions.uberH3=document.getElementById("DialogSaveLayerSelectUberH3Select").value;
+	else if (document.getElementById("DialogSaveLayerDGGS").checked) {
+		selectedOptions.zoneId=document.getElementById("DialogSaveLayerSelectZoneIdSelect").value;
+		selectedOptions.DGGS=document.getElementById("DialogSaveLayerDGGSSelect").value;
+	}
 	else //if (document.getElementById("DialogSaveLayerLL").checked)
 	{
 		selectedOptions.longitude=document.getElementById("DialogSaveLayerLongitudeSelect").value;
@@ -6129,26 +6139,35 @@ function transformObservedPropertyTimeValueIntoTimeSemanticValues(data, dataAttr
 	return {data: resultData, dataAttributes: resultDataAttributes};
 }
 
+function getMaxLevelDGGSHashUber(dggrsName) {
+	if (dggrsName=="Geohash")
+		return 30;
+	if (dggrsName=="UberH3")
+		return 15;
+	return getMaxLevelDGGS(dggrsName);
+}
+
 function GetSelectedOptionsAddColumnGeo(){
 	var selectedOptions={};
-	//selectedOptions.radioIn=document.getElementById("DialogAddColumnGeoRadioJSON_WKT_geohash_LL").value;
-	selectedOptions.radioIn=document.DialogAddColumnGeoForm.DialogAddColumnGeoRadioJSON_WKT_geohash_LL.value;
+	//selectedOptions.radioIn=document.getElementById("DialogAddColumnGeoRadioJSON_WKT_DGGS_LL").value;
+	selectedOptions.radioIn=document.DialogAddColumnGeoForm.DialogAddColumnGeoRadioJSON_WKT_DGGS_LL.value;
 	selectedOptions.JSONIn=document.getElementById("DialogAddColumnGeoJSONSelect").value;
 	selectedOptions.WKTIn=document.getElementById("DialogAddColumnGeoWKTSelect").value;
-	selectedOptions.geohashIn=document.getElementById("DialogAddColumnGeohashSelect").value;
-	selectedOptions.uberH3In=document.getElementById("DialogAddColumnUberH3Select").value;
+	selectedOptions.zoneIdIn=document.getElementById("DialogAddColumnGeoZoneIdSelect").value;
+	selectedOptions.DGGSIn=document.getElementById("DialogAddColumnGeoDGGSSelect").value;
 	selectedOptions.CRSIn=document.getElementById("DialogAddColumnGeoCRSSelect").value;
 	selectedOptions.longitudeIn=document.getElementById("DialogAddColumnGeoLongitudeSelect").value;
 	selectedOptions.latitudeIn=document.getElementById("DialogAddColumnGeoLatitudeSelect").value;
 
-	selectedOptions.radioOut=document.DialogAddColumnGeoForm.DialogAddColumnGeoRadioJSON_WKT_geohash_LLOut.value;
+	selectedOptions.radioOut=document.DialogAddColumnGeoForm.DialogAddColumnGeoRadioJSON_WKT_DGGS_LLOut.value;
 	selectedOptions.CRSOut=document.getElementById("DialogAddColumnGeoCRSOutSelect").value;
 	selectedOptions.nameOut=document.getElementById("DialogAddColumnGeoNameText").value;
 	selectedOptions.latitudeOut=document.getElementById("DialogAddColumnGeoLatitudeNameText").value;
-	if (selectedOptions.radioOut=="Geohash" || selectedOptions.radioOut=="UberH3") {
+	if (selectedOptions.radioOut=="DGGS") {
 		selectedOptions.level=parseInt(document.getElementById("DialogAddColumnGeoLevelText").value);
-		if (isNaN(selectedOptions.level) || selectedOptions.level<=0 || selectedOptions.level>(selectedOptions.radioOut=="UberH3" ? 15 : 30)) {
-			alert("Level is not a positive number or it is too high. '10' will be used this time");
+		selectedOptions.DGGSOut=document.getElementById("DialogAddColumnGeoDGGSOutSelect").value
+		if (isNaN(selectedOptions.level) || selectedOptions.level<=0 || selectedOptions.level>getMaxLevelDGGSHashUber(selectedOptions.DGGSOut)) {
+			alert("Level is not a positive number or it is higher than " + getMaxLevelDGGSHashUber(selectedOptions.DGGSOut) + ". The level 10 will be used instead.");
 			selectedOptions.level=10;
 		}
 	}	
@@ -6172,12 +6191,8 @@ function GetOptionsDGGSCodesBbox(){
 		minLat: parseFloat(document.getElementById("DialogDGGSCodesBboxMinLat").value),
 		maxLong: parseFloat(document.getElementById("DialogDGGSCodesBboxMaxLong").value),
 		maxLat: parseFloat(document.getElementById("DialogDGGSCodesBboxMaxLat").value),
-		level: parseInt(document.getElementById("DialogDGGSCodesBboxLevel").value)};
-
-	if (document.getElementById("DialogDGGSCodesBboxCodeGeohash").checked)
-		result.codeType="Geohash";
-	else //if (document.getElementById("DialogDGGSCodesBboxCodeUberH3").checked)
-		result.codeType="UberH3";
+		level: parseInt(document.getElementById("DialogDGGSCodesBboxLevel").value),
+		DGGS: document.getElementById("DialogDGGSCodesBboxCodeSelect").value};
 
 	if (document.getElementById("DialogDGGSCodesBboxParents").checked)
 		result.parents=true;
@@ -6191,7 +6206,7 @@ function GetCreateTableDGGSCodes(event) {
 	hideNodeDialog("DialogDGGSCodesBbox", event);
 	var node=getNodeDialog("DialogDGGSCodesBbox");
 	var selectedOptions=GetOptionsDGGSCodesBbox();
-	var result=CreateTableDGGSCodes(selectedOptions);
+	var result=CreateTableDGGSZoneIds(selectedOptions);
 	node.STAdata=result.data;
 	node.STAdataAttributes=result.dataAttributes;
 	networkNodes.update(node);
@@ -6199,16 +6214,27 @@ function GetCreateTableDGGSCodes(event) {
 	UpdateChildenTable(node);
 }
 
+function getOptionsSelectDGGSHashUber(selectedId){
+var cdns=[];
+	cdns.push(getOptionsSelectDGGS(selectedId));
+	cdns.push("<optgroup label=\"Other\">");
+	cdns.push("<option value=\"Geohash\" ", ((selectedId && "Geohash"==selectedId) ? "selected=\"selected\"" : ""), ">Geohash: Fast and Readable Geographical Hashing (CTA-5009-A)</option>");
+	cdns.push("<option value=\"UberH3\" ", ((selectedId && "UberH3"==selectedId) ? "selected=\"selected\"" : ""), ">Uber H3: Hexagonal Hierarchical Geospatial Indexing System</option>");
+	cdns.push("</optgroup>");
+	return cdns.join("");
+}
+
 function ShowAddColumnGeoDialog(node) {
 	var dataAttributes=currentNode.STAdataAttributes ? currentNode.STAdataAttributes : getDataAttributes(node.STAdata);
 	PopulateSelectSaveLayerDialog("DialogAddColumnGeoJSON", dataAttributes, "geometry", "document.getElementById('DialogAddColumnGeoRadioJSON').click()"); 
 	PopulateSelectSaveLayerDialog("DialogAddColumnGeoWKT", dataAttributes, "wkt", "document.getElementById('DialogAddColumnGeoRadioWKT').click()");
-	PopulateSelectSaveLayerDialog("DialogAddColumnGeohash", dataAttributes, "geohash", "document.getElementById('DialogAddColumnGeoRadioGeohash').click()");
-	PopulateSelectSaveLayerDialog("DialogAddColumnUberH3", dataAttributes, "H3", "document.getElementById('DialogAddColumnGeoRadioUberH3').click()");
+	PopulateSelectSaveLayerDialog("DialogAddColumnGeoZoneId", dataAttributes, "zone id", "document.getElementById('DialogAddColumnGeoRadioDGGS').click()");
 	PopulateSelectSaveLayerDialog("DialogAddColumnGeoLongitude", dataAttributes, "long", "document.getElementById('DialogAddColumnGeoRadioLL').click()");
 	PopulateSelectSaveLayerDialog("DialogAddColumnGeoLatitude", dataAttributes, "lat", "document.getElementById('DialogAddColumnGeoRadioLL').click()");
 	document.getElementById("DialogAddColumnGeoCRSSelect").innerHTML=getOptionsSelectProj4();
 	document.getElementById("DialogAddColumnGeoCRSOutSelect").innerHTML=getOptionsSelectProj4();
+	document.getElementById("DialogAddColumnGeoDGGSSelect").innerHTML=getOptionsSelectDGGSHashUber();
+	document.getElementById("DialogAddColumnGeoDGGSOutSelect").innerHTML=getOptionsSelectDGGSHashUber();
 
 	saveNodeDialog("DialogAddColumnGeo", node);
 	ChangeAddColumnGeoRadioOut();
@@ -6217,8 +6243,7 @@ function ShowAddColumnGeoDialog(node) {
 function ChangeAddColumnGeoRadioOut(event) {
 	if (document.getElementById("DialogAddColumnGeoRadioJSONOut").checked || 
 	    document.getElementById("DialogAddColumnGeoRadioWKTOut").checked ||
-	    document.getElementById("DialogAddColumnGeoRadioGeohashOut").checked ||
-	    document.getElementById("DialogAddColumnGeoRadioUberH3Out").checked) {
+	    document.getElementById("DialogAddColumnGeoRadioDGGSOut").checked) {
 		document.getElementById("DialogAddColumnGeoNameOut").innerHTML="Column name:";
 		document.getElementById("DialogAddColumnGeoLatitudeNameOutAll").style.display="none";
 		document.getElementById("DialogAddColumnGeoCRSOutAll").style.display="none";
@@ -6229,12 +6254,7 @@ function ChangeAddColumnGeoRadioOut(event) {
 		document.getElementById("DialogAddColumnGeoLatitudeNameOutAll").style.display="inline";
 		document.getElementById("DialogAddColumnGeoCRSOutAll").style.display="inline";
 	}
-	if (document.getElementById("DialogAddColumnGeoRadioGeohashOut").checked ||
-	    document.getElementById("DialogAddColumnGeoRadioUberH3Out").checked) {
-		document.getElementById("DialogAddColumnGeoLevelAll").style.display="inline";
-	} else {
-		document.getElementById("DialogAddColumnGeoLevelAll").style.display="none";
-	}
+	document.getElementById("DialogAddColumnGeoLevelAll").style.display=document.getElementById("DialogAddColumnGeoRadioDGGSOut").checked ? "inline" : "none";
 }
 
 
@@ -7541,6 +7561,7 @@ function networkDoubleClick(params) {
 			showNodeDialog("DialogImportGeoJSON");
 		}
 		else if (currentNode.image == "CreateDGGS.png") {
+			document.getElementById("DialogDGGSCodesBboxCodeSelect").innerHTML = getOptionsSelectDGGSHashUber();
 			saveNodeDialog("DialogDGGSCodesBbox", currentNode);
 			showNodeDialog("DialogDGGSCodesBbox");
 		}
