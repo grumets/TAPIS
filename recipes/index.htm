@@ -1369,17 +1369,17 @@ This recipe has demosntrated that is possible to connect ot a STA endpoint from 
 	<div class="toolPage_main"><div class="toolPage_main_text">
 	<a id="recipe11"></a>
 	<h3 class="toolPage_title">Recipe 11: Pivoting a table, from values in the rows of a selected column to new columns</h3>
-	<p>In this example, we have a table, on every record represents a measure of the amount of water in a reservoir on a concrete date. In order to allow for some analisis we need to reorganize the data and transform the values of the collumn that refer to a Station into new columns. "Pivot table" tool can be applied to all data sources as TAPIS always represente the output data as tables. In this example, data is imported from CSV with the "Import CSV" tool. A fragment of the original table is shown below: 
+	<p>In this example, we have a table, on every record represents a measure of the amount of water in a reservoir on a concrete date. In order to allow for some analisis we need to reorganize the data and transform the values of the column that refer to a Station into new columns. "Pivot table" tool can be applied to all data sources as TAPIS always represente the output data as tables. In this example, data is imported from CSV with the "Import CSV" tool. A fragment of the original table is shown below: 
 		
 	<br><img src="recipe11_initialTable.png" width="900" class="center">
 	</p>
 	<p>
-Now we link the "pivot table" tool to apply the desired changes to the current table. After clicking it, the dialogue allows for adding the values to different places. It is not allowed to repeat names of Columns and Rows, and at least one column has to be added to each section. The tool is inspided by the Excel pivot tables tool, in which collumns that need to be preserved from the current table should be selected in one of the sections to appear in the new table. <br><br>
-	There are three different sections to add collumns and values to the new table:
+	Now we link the "pivot table" tool to apply the desired changes to the current table. After double-clicking it, the dialogue allows for adding the values to different places. It is not allowed to repeat names of Columns and Rows, and at least one column has to be added to each section. The tool is inspided by the Excel pivot tables tool, in which columns that need to be preserved from the current table should be selected in one of the sections to appear in the new table. <br><br>
+	There are three different sections to add columns and values to the new table:
 	<ol>
-		<li><b>Columns:</b> The unique values of the selected collumns will be transformed into new columns on the new table. So the collumns selected here should contain a relatively low number of unique values, otherwise the number of collumns in the resulting table will explode. It is possible to add more than one collumns (it will be shown afterwards). If more than one collumn is chosen, the new column names will be the concatenation of these values in the given order, the first selected collumn takes precedence over the second and the following ones. </li>
-		<li><b>Rows:</b> This parameter defines which column will remain similar to a column in the new table. The difference is that values will not be repeated. Same as in "columns", more than one collumn can be selected, and in this case, the concatenation will occur in the values of the columns. </li>
-		<li><b>Values:</b> This column values will be the value of the intersection of the new columns and rowsIf there is more than one record that should be in the same cell in the new table, the aggregation rule will be applied. If there is more than one column selected in this section, new columns will be created, and every column created in Columns will be repeated so many times as values are selected. </li>
+		<li><b>Columns:</b> The unique values of the selected columns will be transformed into new column names on the new table. The columns selected here should contain a relatively low number of unique values, otherwise the number of new columns in the resulting table will explode. If more than one column is chosen, the new column names will be the concatenation of these values in the given order, the first selected column takes precedence over the second and so on.</li>
+		<li><b>Rows:</b> This parameter defines which column names will remain as column names in the new table. Teh values of the column will be the same but with repetitions. Same as in "Columns", more than one column can be selected; and in this case, the the values of the columns will be concatenated.</li>
+		<li><b>Values:</b> This column values will be the value of the intersection of the new columns and rows (see example 1). If there is more than one value that corresponds to the same cell in the new table (meaning that the value is in more that one record with the same "Columns" and "Rows" values), the aggregation rule will be applied. If there is more than one column selected in this section, there will be c*v new column names (being c the number of selected "Columns" and v the number of selected "Values"), with column names the concatenation of the combinations of the "Column" names and the "Values" names (see example 2).</li>
 	</ol>
 	
 	The <b><i>"Repited values aggregated by"</i> </b> section defines the kind of aggregation applied if more than one values converge in the same cell. <br><br>
@@ -1437,8 +1437,8 @@ Now we link the "pivot table" tool to apply the desired changes to the current t
 	</ul>
 	<img src="recipe11_resultTable_2_values.png"  class="center">
 	
-	<u><b>Example 3: adding 2 collumns to Columns</b></u> <br>
-	The new columns will be the existing combination of values from original table values in the selected columns (County and Station). In other words, every unique value from the first collumn added will be concatenated to every unique value of the next added column. 
+	<u><b>Example 3: adding 2 columns to Columns</b></u> <br>
+	The new columns will be the existing combination of values from original table values in the selected columns (County and Station). In other words, every unique value from the first column added will be concatenated to every unique value of the next added column. 
 	<br><img src="recipe11_pivotTableDialog_2_columns.png"  height="450px">
 	<br><br>
 	List of new columns (attributes)
@@ -1456,7 +1456,7 @@ Now we link the "pivot table" tool to apply the desired changes to the current t
 	<img src="recipe11_resultTable_2_columns.png"  class="center">
 	
 	
-	<u><b>Example 4: adding 2 collumns to Rows</b> </u> <br>
+	<u><b>Example 4: adding 2 columns to Rows</b> </u> <br>
 	This works in the the same way as for the combination explained in "combination of more than one Column", however, in this case, the combination will be the result of "reference column" values. Name of this new column will be the result of the combination of the name of the original columns used. 
 	<br><img src="recipe11_pivotTableDialog_2_rows.png"  height="450px">
 	<br>
