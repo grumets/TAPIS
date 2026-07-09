@@ -531,9 +531,6 @@ async function AnalyzeQueryParams() {
 				showInfoMessage('Download TAPIS schema completed.');
 			}
 		}
-		if (query["REFRESH"]) {
-			await reloadSTA();
-		}
 		if (query["OPEN"]) {
 			//Look for a node called 'query["OPEN"]'
 			var nodesArray=networkNodes.get();
@@ -548,6 +545,9 @@ async function AnalyzeQueryParams() {
 			}
 			if (!found)
 				showInfoMessage("Error opening \'" + query["OPEN"] + "\'. Not found in the schema");
+		}
+		if (query["REFRESH"]) {
+			await reloadSTA();
 		}
 	}
 }
@@ -907,17 +907,24 @@ function updateQueryAndTableArea(node) {
 }
 
 async function LoadJSONNodeSTAData(node, callback, url) {
-	var response, jsonData, options={headers:{"Accept": "application/json"}};
+	var response, jsonData, options;
 	try {
 		var url_fetch;
 		if (url)
 			url_fetch=url;
-		else if ((typeof node.OGCExpectedLength==="undefined" && (!node.STASelectedExpands || typeof node.top==="undefined"))  || node?.OGCType == "OGCAPIcollection")
+		else if ((typeof node.OGCExpectedLength==="undefined" && (!node.STASelectedExpands || typeof node.top==="undefined"))  || node?.OGCType == "OGCAPIcollection" || node?.OGCType == "fileURL")
 			url_fetch=node.STAURL;
 		else if (node.STASelectedExpands && typeof node.STASelectedExpands.top!=="undefined")
 			url_fetch=AddQueryParamsToURL(node.STAURL, "$top=" + node.STASelectedExpands.top);
 		else
 			url_fetch=AddQueryParamsToURL(node.STAURL, ((node.OGCType == "OGCAPIcollections" || node.OGCType == "OGCAPIitems") ? "limit=" : ((node.OGCType == "GUF") ? "COUNT=" : "$top=")) + node.OGCExpectedLength);
+		if (node.OGCType=="OGCCSW" || node.OGCType=="GUF")
+			options={headers:{"Accept": "application/xml"}};
+		else if (node.image=="ImportCSV.png")
+			options={headers:{"Accept": "*/*"}};  //the media type of .csv is not very well defined. IIS says application/octet-stream
+		else
+			options={headers:{"Accept": "application/json"}};
+
 		AddHeadersIfNeeded(options, node.STAsecurity, url_fetch);
 
 		if (options.headers)
@@ -943,6 +950,8 @@ async function LoadJSONNodeSTAData(node, callback, url) {
 	try {
 		if (node.OGCType=="OGCCSW" || node.OGCType=="GUF")
 			jsonData = JSON.parse(xml2json(parseXml(await response.text()), false, null));
+		else if (node.image=="ImportCSV.png")
+			jsonData = await response.text();
 		else
 			jsonData = await response.json();
 	} catch (error) {
@@ -973,6 +982,8 @@ async function LoadJSONNodeSTAData(node, callback, url) {
 			node.STAdata.push(...getSimplifyOGCCSWRecord(jsonData['csw:GetRecordsResponse']['csw:SearchResults']['gmd:MD_Metadata']));
 		else if (node.OGCType=="GUF")
 			node.STAdata.push(...await getSimplifyGUFRecords(jsonData['feed']['entry']));
+		else if (node.image=="ImportCSV.png")
+			node.STAdata.push(...await TransformCSVToTable(jsonData));
 		else {
 			node.STAdata.push(...jsonData.value);
 			nextLink = jsonData["@iot.nextLink"];
@@ -1002,11 +1013,13 @@ async function LoadJSONNodeSTAData(node, callback, url) {
 		} else if(node.OGCType=="OGCAPIitem") {
 			node.STAdata = TransformGeoJSONToTable(jsonData);
 			//nextLink: This should be one object without "next".
-		} else if (node.OGCType=="OGCCSW") {
+		} else if (node.OGCType=="OGCCSW")
 			node.STAdata = getSimplifyOGCCSWRecord(jsonData['csw:GetRecordsResponse']['csw:SearchResults']['gmd:MD_Metadata']);
-		} else if (node.OGCType=="GUF") {
+		else if (node.OGCType=="GUF")
 			node.STAdata = await getSimplifyGUFRecords(jsonData['feed']['entry']);
-		} else {
+		else if (node.image=="ImportCSV.png")
+			node.STAdata = await TransformCSVToTable(jsonData);
+		else {
 			node.STAdata = (typeof jsonData.value!=="undefined") ? jsonData.value : [jsonData];
 			nextLink = jsonData["@iot.nextLink"];
 		}
@@ -1015,20 +1028,16 @@ async function LoadJSONNodeSTAData(node, callback, url) {
 	if (jsonData.value && (
 			(node.STASelectedExpands && typeof node.STASelectedExpands.top!=="undefined" && node.STAdata.length<node.STASelectedExpands.top) || 
 			(node.OGCExpectedLength && node.STAdata.length<node.OGCExpectedLength)
-		) && nextLink)
-	{
+		) && nextLink) {
 		networkNodes.update(node);
 		await LoadJSONNodeSTAData(node, callback, jsonData["@iot.nextLink"]);
-	}
-	else
-	{
-		if (node.image!="sta.png" && !node.OGCType && node.image!="staRoot.png")
-		{
+	} else 	{
+		if (node.image!="sta.png" && !node.OGCType && node.image!="staRoot.png") {
 			node.STAdataAttributes=getDataAttributes(node.STAdata);
 			addSemanticsSTADataAttributes(node.STAdataAttributes, node.STAURL);
 		}
 		networkNodes.update(node);
-		if (node.image!="FilterRowsByTime.png"){
+		if (node.image!="FilterRowsByTime.png") {
 			showInfoMessage("Completed."); 
 		}
 		updateQueryAndTableArea(node);
@@ -1267,34 +1276,46 @@ function TransformDatesToISO(data) {
 	}
 }
 
+function TransformCSVToTable(csvText) {
+	var result = Papa.parse(csvText, {delimiter: (document.getElementById("DialogImportCSVDelimiterAuto").checked ? null : (document.getElementById("DialogImportCSVDelimiterText").checked ? document.getElementById("DialogImportCSVDelimiter").value : '\t')),
+		header: document.getElementById("DialogImportCSVHeader").checked,
+		dynamicTyping: document.getElementById("DialogImportCSVStringTyping").checked ? false : true,
+		skipEmptyLines: true});
+	if (result && result.data) {
+		TransformDatesToISO(result.data);  //Papa.parse transforms ISO dates to javascript Dates. I revert this to ISO date expressed in text.
+		//We can consider to remove dynamicTyping because is generating all sort of problems with dates and then analize the response ourselves.
+		return result.data;
+	}
+	return null;
+}
+
+
 function TransformTextCSVToTable(csvText, url, node) {
-	try
-	{
-		var result = Papa.parse(csvText, {delimiter: (document.getElementById("DialogImportCSVDelimiterAuto").checked ? null : (document.getElementById("DialogImportCSVDelimiterText").checked ? document.getElementById("DialogImportCSVDelimiter").value : '\t')),
-			header: document.getElementById("DialogImportCSVHeader").checked,
-			dynamicTyping: document.getElementById("DialogImportCSVStringTyping").checked ? false : true,
-			skipEmptyLines: true});
+	var data;
+	try {
+		data = TransformCSVToTable(csvText);
+	} catch (e) {
+		showInfoMessage("CSV parse error: " + e + " The file content fragment:\n" + csvText.substring(0, 1000));
+		data = null;
+	}
+	if (data) {
 		var node=getNodeDialog("DialogImportCSV");
-		node.STAdata=result.data;
-		//Papa.parse transforms ISO dates to javascript Dates. I revert this to ISO date expressed in text.
-		TransformDatesToISO(node.STAdata);
+		node.STAdata=data;
 		if (url)
 			node.STAfileUrl=url;
 		networkNodes.update(node);
 		updateQueryAndTableArea(node);
 		UpdateChildenTable(node);
-	}
-	catch (e) 
-	{
-		showInfoMessage("CSV parse error: " + e + " The file content fragment:\n" + csvText.substring(0, 1000));
+	} else {
 		node.STAdata=null;
 		networkNodes.update(node);
-		return;
 	}
 }
+
 function openFileDialog() { //Click the hide input type =file. All this is necessary to allow to load same file again and show file name. 
     document.getElementById("csvInput").click();
 }
+
 function ReadFileImportCSV(event) {
 	var input = event.target;
 	
@@ -4945,6 +4966,11 @@ async function UpdateChildenLoadJSONCallback(parentNode) {
 			if (isNodeDialogOpen("DialogScatterPlot"))
 				UpdateScatterPlot(null);
 		}
+		else if (node.image == "BarPlot.png")
+		{
+			if (isNodeDialogOpen("DialogBarPlot"))
+				DrawBarPlot(null);
+		}
 	}
 }
 
@@ -8476,6 +8502,14 @@ async function reloadSTA(event) {
 			showInfoMessage("Requesting OGC CSW collections...");
 			await LoadJSONNodeSTAData(node, function () {
 				showInfoMessage("Reload OGC CSW records and dependencies completed.");
+			});
+		}
+		else if (node.image=="ImportCSV.png")
+		{
+			showInfoMessage("Reload CSV records and dependencies...");
+			showInfoMessage("Requesting CSV URL table...");
+			await LoadJSONNodeSTAData(node, function () {
+				showInfoMessage("Reload CSV records and dependencies completed.");
 			});
 		}
 	}
