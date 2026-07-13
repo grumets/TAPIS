@@ -1822,7 +1822,7 @@ var columnCreated=false, record, json, point, point2, bbox;
 }
 
 function CreateTableDGGSZoneIds(selectedOptions) {
-var data=[], dataAttributes={}, cells, g;
+var data=[], j=0, dataAttributes={}, cells, g;
 
 	for (var l=selectedOptions.level; l>=(selectedOptions.parents ? (selectedOptions.DGGS=="Geohash" ? 1 : 0) : selectedOptions.level); l--) {
 		if (selectedOptions.DGGS=="Geohash")
@@ -1838,28 +1838,28 @@ var data=[], dataAttributes={}, cells, g;
 
 		if (selectedOptions.centroid) {
 			if (selectedOptions.DGGS=="Geohash") {
-				for (var i=0; i<cells.length; i++) {
+				for (var i=0; i<cells.length; i++, j++) {
 					g=ngeohash_decode(cells[i]);
 					data.push({longitude: g.longitude, latitude: g.latitude});
-					data[i][selectedOptions.DGGS]=cells[i];
+					data[j][selectedOptions.DGGS]=cells[i];
 				}
 			} else if (selectedOptions.DGGS=="UberH3") {
-				for (var i=0; i<cells.length; i++) {
+				for (var i=0; i<cells.length; i++, j++) {
 					g=h3.cellToLatLng(cells[i]);
 					data.push({longitude: g[1], latitude: g[0]});
-					data[i][selectedOptions.DGGS]=cells[i];
+					data[j][selectedOptions.DGGS]=cells[i];
 				}
 			} else {
-				for (var i=0; i<cells.length; i++) {
+				for (var i=0; i<cells.length; i++, j++) {
 					g=DGGSToLongLat(selectedOptions.DGGS, cells[i]);
 					data.push({longitude: g.longitude, latitude: g.latitude});
-					data[i][selectedOptions.DGGS]=cells[i];
+					data[j][selectedOptions.DGGS]=cells[i];
 				}
 			}
 		} else {
-			for (var i=0; i<cells.length; i++) {
-				data[i]={};
-				data[i][selectedOptions.DGGS]=cells[i];
+			for (var i=0; i<cells.length; i++, j++) {
+				data[j]={};
+				data[j][selectedOptions.DGGS]=cells[i];
 			}
 		}
 	}
@@ -1869,5 +1869,5 @@ var data=[], dataAttributes={}, cells, g;
 		dataAttributes.longitude={type: "number", description: "Longitude"};
 		dataAttributes.latitude={type: "number", description: "Latitude"};
 	}
-	return {data: data, dataAttributes: dataAttributes}
+	return {data: data, dataAttributes: dataAttributes};
 }

@@ -1312,10 +1312,6 @@ function TransformTextCSVToTable(csvText, url, node) {
 	}
 }
 
-function openFileDialog() { //Click the hide input type =file. All this is necessary to allow to load same file again and show file name. 
-    document.getElementById("csvInput").click();
-}
-
 function ReadFileImportCSV(event) {
 	var input = event.target;
 	
@@ -4935,39 +4931,31 @@ async function UpdateChildenLoadJSONCallback(parentNode) {
 		//if (node.image == "SeparateColumns.png")
 			//SeparateColumnsNode(node, parentNode); No se si te sentit perque ara hi ha més possibilitats que quan es va pensar això
 		//else 
-		if (node.image == "SelectColumnsTable.png")
-		{
+		if (node.image == "SelectColumnsTable.png") {
 			//pensar com es podria fer.
 			showInfoMessage("Automatic update of SelectColumns not implemented for table nodes.");
-		}
-		else if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || (STAOperations[removeFileExtension(node.image)] && STAOperations[removeFileExtension(node.image)].callSTALoad))  
-		{
+		} else if (IdOfSTAEntity(node) != -1 || IdOfSTASpecialQueries(node)!=-1 || (STAOperations[removeFileExtension(node.image)] && STAOperations[removeFileExtension(node.image)].callSTALoad)) {
 			showInfoMessage("Updating "+ removeFileExtension(node.image) + " ...");
 			await LoadJSONNodeSTAData(node);
-		}
-		else if (node.image == "OneValueSTA.png")
-		{
+		} else if (node.image == "OneValueSTA.png") {
 			if (node.STAtimeOut) {
 				clearTimeout(node.STAtimeOut);
 				node.STAtimeOut=null;
 			}
 			await RequestLastObservationAndRefreshOneValueSTA(node);
-		}
-		else if (node.image == "CountResultsSTA.png")
-		{
+		} else if (node.image == "CountResultsSTA.png") {
 			if (node.STAtimeOut) {
 				clearTimeout(node.STAtimeOut);
 				node.STAtimeOut=null;
 			}
 			await requestAndRefreshCountResults(node, node.STAredrawPeriodCount);
-		}
-		else if (node.image == "ScatterPlot.png")
-		{
+		} else if (node.image == "GroupBy.png") {
+			UpdateGroupBy(node);
+			UpdateChildenLoadJSONCallback(node);
+		} else if (node.image == "ScatterPlot.png") {
 			if (isNodeDialogOpen("DialogScatterPlot"))
 				UpdateScatterPlot(null);
-		}
-		else if (node.image == "BarPlot.png")
-		{
+		} else if (node.image == "BarPlot.png") {
 			if (isNodeDialogOpen("DialogBarPlot"))
 				DrawBarPlot(null);
 		}

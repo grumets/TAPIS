@@ -1341,7 +1341,7 @@
 				<legend>CSV source</legend>
 				<label><input type="radio" id="DialogImportCSVSourceNew" name="DialogImportCSVSource" value="new"> New based on CSVW</input></label><br>
 				<label><input type="radio" id="DialogImportCSVSourceFile" name="DialogImportCSVSource" value="file" checked="checked" onClick='SelectImportFileSource(event, "CSV")'>
-				Local file:<button type="button" onclick="openFileDialog()">Open CSV</button><span id="fileNameLabel">No file selected</span><input type="file" id="DialogImportCSVSourceFileText" accept=".csv,.txt" style="display:none"  onchange="ReadFileImportCSV(event)"><br>
+				Local file:<button type="button" onclick='document.getElementById("DialogImportCSVSourceFileText").click();'>Open CSV</button><span id="fileNameLabel">No file selected</span><input type="file" id="DialogImportCSVSourceFileText" accept=".csv,.txt" style="display:none"  onchange="ReadFileImportCSV(event)"><br>
 				<label><input type="radio" id="DialogImportCSVSourceURL" name="DialogImportCSVSource" value="url" onClick='SelectImportFileSource(event, "CSV")'>
 				URL: <input type="text" size="70" id="DialogImportCSVSourceURLInput" disabled="disabled"></input> <button type="button" id="DialogImportCSVSourceURLButton" onClick="ReadURLImportCSV(event)" disabled="disabled">Load</button></label><br>
 				<label>Suggested CSV URLs:
@@ -1731,20 +1731,20 @@
 			DGGS codes table from geospatial extent
 			<fieldset>
 				<legend>Geospatial extent</legend>
-				<label>Minimum longitude: <input type="text" id="DialogDGGSCodesBboxMinLong" size="16" value="-120"></input></label>
+				<label>Minimum longitude: <input type="text" id="DialogDGGSCodesBboxMinLong" size="16" value="-70"></input></label>
 				<br>
-				<label>Minimum latitude: <input type="text" id="DialogDGGSCodesBboxMinLat" size="16" value="-70"></input></label>
+				<label>Minimum latitude: <input type="text" id="DialogDGGSCodesBboxMinLat" size="16" value="-45"></input></label>
 				<br>
-				<label>Maximum longitude: <input type="text" id="DialogDGGSCodesBboxMaxLong" size="16" value="120"></input></label>
+				<label>Maximum longitude: <input type="text" id="DialogDGGSCodesBboxMaxLong" size="16" value="70"></input></label>
 				<br>
-				<label>Maximum latitude: <input type="text" id="DialogDGGSCodesBboxMaxLat" size="16" value="70"></input></label>
+				<label>Maximum latitude: <input type="text" id="DialogDGGSCodesBboxMaxLat" size="16" value="45"></input></label>
 				<br>
 			</fieldset>
 			<br>
 			<label>DGGS:
 				<select id="DialogDGGSCodesBboxCodeSelect"></select>
 			<br>
-			<label>Level: <input type="text" size="2" id="DialogDGGSCodesBboxLevel" value="9"></input><label>
+			<label>Level: <input type="text" size="2" id="DialogDGGSCodesBboxLevel" value="4"></input><label>
 			<label><input type="checkbox" id="DialogDGGSCodesBboxParents" checked="checked">Parent levels</label><br>
 			<label><input type="checkbox" id="DialogDGGSCodesBboxCentroid" checked="checked">Add centroid coordinates</label><br>
 			<div class="center">
