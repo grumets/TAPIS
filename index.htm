@@ -91,25 +91,23 @@
 					</tr>
 				</table>				
 			</td>
-			<td align="right" valign="top">
+			<td align="right" valign="top" class="tdGeneralButtons">
 				<span id="UserInfoText"></span>
-				<button id="buttonReloadSTA" onclick='reloadSTA(event);'onmouseover='showHelpToolTip(event, "", "Reload all schema to upload the data" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="reload.png" height="20" valign="middle"> Refresh</button>
-				<label class=labelbotton onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="OpenNetwork.png" height="20" valign="middle" > Open...
-				<input type="file" accept=".json" id="openNetworkFileName" hidden onchange='openFileNetwork(event);'/>
-				</label> <!-- https://dev.to/faddalibrahim/how-to-create-a-custom-file-upload-button-using-html-css-and-javascript-1c03 -->
-				<button onclick='document.getElementById("DialogOpenURLNetwork").showModal();' onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data from the web or from \"recipies\" examples" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="OpenURLNetwork.png" height="20" valign="middle"> Open URL...</button>
-				<button onclick='saveNetwork(event);'onmouseover='showHelpToolTip(event, "", "Save your Tapis schema with nodes and data as a JSON to be able to open it later" )' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="SaveNetwork.png" height="20" valign="middle"> Save as...</button>
-				<button id="buttonOpenLogin" onclick='OpenLogin(event);' onmouseover='showHelpToolTip(event, "", "Login to be able to have access to certain places")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="login.png" height="20" valign="middle"> Login</button>
-				<button id="buttonOpenLogout" onclick='OpenLogout(event);' style="display: none";' onmouseover='showHelpToolTip(event, "", "Close your sesion")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="login.png" height="20" valign="middle"> Logout</button>
-				<button onclick='OpenConfiguration(event);'onmouseover='showHelpToolTip(event, "", "To modify display configurations")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )' ><img src="config.png" height="20" valign="middle">Configuration</button>
-				<button onclick='OpenHelp(event);' onmouseover='showHelpToolTip(event, "", "Explanations of how to use TAPIS: Tools")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="help.png" height="20" valign="middle">Help</button>
-				<button onclick='OpenRecipes(event);' onmouseover='showHelpToolTip(event, "", "Explanations of how to use TAPIS and Examples")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="documentation.png" height="20" valign="middle">Recipes</button>
+				<button id="buttonReloadSTA" class="generalButton" onclick="reloadSTA(event);" onmouseover='showHelpToolTip(event, "", "Reload all schema to upload the data")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event, "")'><img src="reload.png" alt="Reload"><span>Refresh</span></button>
+				<label class="generalButton" for="openNetworkFileName" onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data")' onmousemove='moveHelpToolTip(event, "")'onmouseout='hideHelpToolTip(event, "")'><img src="OpenNetwork.png" alt="Open">  <span>Open...</span> </label><input id="openNetworkFileName" type="file" hidden accept=".json"onchange="openFileNetwork(event)">
+	   			<button class="generalButton" onclick='document.getElementById("DialogOpenURLNetwork").showModal();' onmouseover='showHelpToolTip(event, "", "Open a JSON Tapis schema with nodes and data from a website or from Help examples")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event, "")'><img src="OpenURLNetwork.png" alt="Open URL"><span>Open URL...</span></button>
+				<button class="generalButton" onclick="saveNetwork(event);" onmouseover='showHelpToolTip(event, "", "Save your Tapis schema with nodes and data as a JSON to be able to open it later")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event, "")'><img src="SaveNetwork.png" alt="Save"><span>Save as...</span></button>
+				<button id="buttonOpenLogin" class="generalButton" onclick="OpenLogin(event);" onmouseover='showHelpToolTip(event, "", "Login to be able to have access to certain places")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event, "")'><img src="login.png" alt="Login"><span>Login</span></button>
+				<button id="buttonOpenLogout" class="generalButton" onclick="OpenLogout(event);" style="display:none;" onmouseover='showHelpToolTip(event, "", "Close your session")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event, "")'><img src="login.png" alt="Logout"><span>Logout</span></button>
+				<button class="generalButton" onclick="OpenConfiguration(event);" onmouseover='showHelpToolTip(event, "", "Modify display configuration")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event, "")'><img src="config.png" alt="Configuration"><span>Configuration</span></button>
+				<button class="generalButton" onclick="OpenHelp(event);" onmouseover='showHelpToolTip(event, "", "Explanations of how to use TAPIS: Tools")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event, "")'><img src="help.png" alt="Help"><span>Help</span></button>
+				<button class="generalButton" onclick="OpenRecipes(event);" onmouseover='showHelpToolTip(event, "", "Explanations of how to use TAPIS and Examples")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event, "")'><img src="documentation.png" alt="Recipes"><span>Recipes</span></button>
 			</td>
 		</tr>
 	</table>
 
-	<span id="ButtonsSTAEntities"></span>
-	<button onclick='addEdge();' onmouseover='showHelpToolTip(event, "", "Connect two nodes.<hr> Click on the end node and drop it on the previous node")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="connect.png" height="20" valign="middle">Connect two nodes</button><br>
+	<span id="ButtonsSTAEntities" class="tdGeneralButtons mainPageGeneralButtons"></span>
+	<button  class="generalButton" onclick='addEdge();'  onmouseover='showHelpToolTip(event, "", "Connect two nodes.<hr> Click on the end node and drop it on the previous node")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="connect.png" height="20" valign="middle">Connect two nodes</button><br>
 
 	<div>
 		<div id="mynetwork" style="float: left; width: 59.4%; height: 400px;"></div>
@@ -535,6 +533,7 @@
 			  <button value="default" onClick="addColumnsToTableInCreateColumns()">Ok</button>
 			  <button value="cancel" formmethod="dialog" onclick="cancelButtonRecoveryOldData(event)">Cancel</button>
 			</div>
+			<input type="hidden" id="DialogCreateColumnsNodeId"></input>
 		  </form>
 	</dialog>
 
@@ -588,10 +587,9 @@
 			<button value="default" onClick="addColumnsToTableInAggregateColumns(event)">Ok</button>
 			  <button value="cancel" formmethod="dialog" onclick="cancelButtonRecoveryOldData(event)">Cancel</button>
 			</div>
+			<input type="hidden" id="DialogAggregateColumnsNodeId"></input>
 		  </form>
 	</dialog>
-
-
 
 
 	<dialog id="DialogColumnsCalculator">
@@ -738,6 +736,7 @@
 			  <button value="default" onClick="addColumnsToTableInColumnsCalculator()">Ok</button>
 				<button value="cancel" formmethod="dialog" onclick="cancelButtonRecoveryOldData(event)">Cancel</button>
 			</div>
+			<input type="hidden" id="DialogColumnsCalculatorNodeId"></input>
 		</form>
 	</dialog>
 	
@@ -1243,9 +1242,10 @@
 				<div class="SectionButtonsContextMenu">
 					<div class="TitleButtonsContextMenu">Node operations</div>
 					<div class="ButtonsButtonsContextMenu" >
-				<button onclick='removeCircularImage(event, "DialogContextMenu")'onmouseover='showHelpToolTip(event, "", "Remove a node and any connection to previous nodes")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="remove.png" height="20" valign="middle">Remove</button>
-				<button onclick='renameCircularImage(event, "DialogContextMenu")'onmouseover='showHelpToolTip(event, "", "Renames de node.<hr> You can change the text by default to make it more explainatory. <small>Do not rename &quote;One Value&quote; or &quote;Count&quote; nodes.<small>")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="rename.png" height="20" valign="middle">Rename</button>
-					</div>
+					<div class="tdGeneralButtons contextMenuGeneralButtons ">
+						<button class="generalButton" onclick='removeCircularImage(event, "DialogContextMenu")'onmouseover='showHelpToolTip(event, "", "Remove a node and any connection to previous nodes")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="remove.png" height="20" valign="middle">Remove</button>
+						<button class="generalButton" onclick='renameCircularImage(event, "DialogContextMenu")'onmouseover='showHelpToolTip(event, "", "Renames de node.<hr> You can change the text by default to make it more explainatory. <small>Do not rename &quote;One Value&quote; or &quote;Count&quote; nodes.<small>")' onmousemove='moveHelpToolTip(event, "")' onmouseout='hideHelpToolTip(event,"" )'><img src="rename.png" height="20" valign="middle">Rename</button>
+					</div></div>
 				</div>
 
 			</p>
@@ -1840,8 +1840,8 @@
 			<form>
 			<fieldset>
     				<legend>Plot type:</legend>
-				<label><input type="radio" name="DialogBarPlotType" id="DialogBarPlotTypeBar" checked="checked"></input>Bar</label>
-				<label><input type="radio" name="DialogBarPlotType" id="DialogBarPlotTypePie"></input>Pie</label>
+				<label><input type="radio" name="DialogBarPlotType" id="DialogBarPlotTypeBar" checked="checked" onclick="disableClassificationInBarPlot(false)"></input>Bar</label>
+				<label><input type="radio" name="DialogBarPlotType" id="DialogBarPlotTypePie" onclick="disableClassificationInBarPlot(true)"></input>Pie</label>
 			</fieldset>
 			<fieldset>
     				<legend>Axes:</legend>
@@ -2037,6 +2037,67 @@
 			</div>
 
 		<input type="hidden" id="DialogQualityCompletnessOmissionNodeId"></input>
+		</form>
+	</dialog>
+	<dialog id="DialogQualityMisclassificationMatrix"
+		onClose='hideNodeDialog("DialogQualityMisclassificationMatrix", event)'>
+		<form>
+			<h3> Misclassification matrix</h3>
+			<div>
+				<fieldset>
+					<legend>Add columns to compare</legend>
+
+					<div style="display:flex; align-items:end; gap:10px;">
+						<div style="flex:1;">
+							<label for="Misclassification_select_classified">Classified</label><br>
+							<select id="Misclassification_select_classified" style="width:100%;"></select>
+						</div>
+
+						<div style="flex:1;">
+							<label for="Misclassification_select_reference">Reference</label><br>
+							<select id="Misclassification_select_reference" style="width:100%;"></select>
+						</div>
+
+						<div>
+							<button type="button" onclick="addColumnToMisclassificationMatrixTable(event)">Add</button>
+						</div>
+					</div>
+				</fieldset>
+
+				<br>
+				<p>Columns to compare: </p>
+				<div id="Misclassification_table_pairs_div"></div>
+				<br>
+				</p>
+			</div>
+			<div>
+				<p>
+					In addition to the <strong>Misclassification Matrix</strong>, the following accuracy metrics will be
+					calculated:
+				</p>
+
+				<ul>
+					<li>Overall Accuracy</li>
+					<li>Overall Error</li>
+					<li>Producer's Accuracy (Recall)</li>
+					<li>User's Accuracy (Precision)</li>
+					<li>Omission Error (1 − Recall)</li>
+					<li>Commission Error (1 − Precision)</li>
+					<li>Cohen's Kappa (Kappa Coefficient)</li>
+				</ul>
+			</div>
+			<div>
+				<ul>
+
+				</ul>
+			</div>
+
+			<div class="center">
+				<button value="ok" onClick="okButtonDataQualityMisclassificationmatrix(event)"
+					formmethod="dialog">Ok</button> <button value="cancel" formmethod="dialog">Cancel</button>
+			</div>
+
+			<input type="hidden" id="DialogQualityMisclassificationMatrixNodeId"></input>
 		</form>
 	</dialog>
 	<dialog id="DialogQualityLogicalConsistency" onClose='hideNodeDialog("DialogQualityLogicalConsistency", event)'>

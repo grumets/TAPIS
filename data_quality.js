@@ -1475,3 +1475,193 @@ function calculateDataQualityThematicValidityWithRange(data,from, to,  metadata,
     return [count, (count / data.length) * 100]
 
 }
+function calculateDataQualityMisclassificationMatrix(data, metadata, classifiedReferencedAttributes, confusionMatrixResult) {
+	var confusionMatrix = {}, classified, reference, categoriesClassification=[], categoriesReference=[];
+	for (var a = 0; a < data.length; a++) {
+		for (var e = 0; e<classifiedReferencedAttributes.classified.length; e++) {
+			//build attributes
+			if (e == 0) {
+				classified = data[a][classifiedReferencedAttributes.classified[e]];
+				reference = data[a][classifiedReferencedAttributes.reference[e]];
+			} else {
+				classified += "-" + data[a][classifiedReferencedAttributes.classified[e]];
+				reference += "-" + data[a][classifiedReferencedAttributes.reference[e]];
+			}
+			//add to matrix
+			if (e == classifiedReferencedAttributes.classified.length - 1) {
+
+				if (Object.hasOwn(confusionMatrix, classified)) {
+					if (Object.hasOwn(confusionMatrix[classified], reference)) {
+						confusionMatrix[classified][reference] += 1;
+					} else {
+						confusionMatrix[classified][reference] = 1;
+					}
+				} else {
+					confusionMatrix[classified] = {};
+					confusionMatrix[classified][reference] = 1;
+				}
+			}
+			if (e==classifiedReferencedAttributes.classified.length-1){
+				if(!categoriesClassification.includes(classified))categoriesClassification.push(classified);
+				if(!categoriesReference.includes(reference))categoriesReference.push(reference);
+			}
+
+		}
+	}
+	//All categories together to add classification and references categories. To calculate index Kappa is necessary to have it all. 
+	var allCategories= [...new Set([...categoriesClassification,...categoriesReference])];
+	//If a classified doesn't exist in reference or other way round:
+	for (var f=0;f<allCategories.length;f++){
+		if (!Object.hasOwn(confusionMatrix, allCategories[f]))confusionMatrix[allCategories[f]]={};
+		for(var g=0;g<allCategories.length;g++){
+			if (!Object.hasOwn(confusionMatrix[allCategories[f]], allCategories[g]))confusionMatrix[allCategories[f]][allCategories[g]]=0;
+		}
+	}
+
+
+	//matrix
+	var matrix=[], rows;
+	for (var r=0;r<allCategories.length;r++){
+		rows=[];
+		for (var s=0;s<allCategories.length;s++){
+			rows.push(confusionMatrix[allCategories[r]][allCategories[s]])
+		}
+		matrix.push(rows)
+	}
+	var valuesInMetadata=  [{"rows": allCategories, "columns": allCategories, "matrix": matrix}];
+	
+
+
+	//calculate  totalClassified, totalReference, wellClassified
+	confusionMatrixResult.totalSamples= data.length;
+	var classificationKeys= Object.keys(confusionMatrix);
+	var referenceKeys, totalClassified={}, totalReference={},wellClassified={} ;
+	for (var i=0;i<classificationKeys.length;i++){ //same keys as confusionmatrix
+		referenceKeys= Object.keys(confusionMatrix[classificationKeys[i]]);
+		totalClassified[classificationKeys[i]]=0
+		wellClassified[classificationKeys[i]] = 0; //it is possible to have empty cathegories
+		for (var u=0;u<referenceKeys.length;u++){
+			totalClassified[classificationKeys[i]]+=confusionMatrix[classificationKeys[i]][referenceKeys[u]];
+			if(Object.hasOwn(totalReference, referenceKeys[u]))totalReference[referenceKeys[u]]+=confusionMatrix[classificationKeys[i]][referenceKeys[u]]
+			else totalReference[referenceKeys[u]]=confusionMatrix[classificationKeys[i]][referenceKeys[u]];
+			if(classificationKeys[i]==referenceKeys[u])wellClassified[classificationKeys[i]]= confusionMatrix[classificationKeys[i]][referenceKeys[u]]
+		}
+	}
+	confusionMatrixResult.totalClassified=totalClassified;
+	confusionMatrixResult.totalReference=totalReference;
+	confusionMatrixResult.wellClassified=wellClassified;
+	var wellClassifiedKeys=Object.keys(wellClassified);
+	var numberOfWellClassified=0;
+	var producerAccuracy={}, producerAccuracyValue, userAccuracy={},userAccuracyValue, omissionError={},comissionError={};
+	for (var b=0;b<wellClassifiedKeys.length;b++){
+		numberOfWellClassified+=wellClassified[wellClassifiedKeys[b]];
+		//producerAccuracy
+		producerAccuracyValue= wellClassified[wellClassifiedKeys[b]]/totalReference[wellClassifiedKeys[b]]
+		producerAccuracy[wellClassifiedKeys[b]]= producerAccuracyValue;
+		omissionError[wellClassifiedKeys[b]]= 1- producerAccuracyValue;
+		//UserAccuracy
+		userAccuracyValue= wellClassified[wellClassifiedKeys[b]]/totalClassified[wellClassifiedKeys[b]];
+		userAccuracy[wellClassifiedKeys[b]]= userAccuracyValue;
+		comissionError[wellClassifiedKeys[b]]= 1-userAccuracyValue;
+
+	}
+	confusionMatrixResult.numberOfWellClassified=numberOfWellClassified;
+	confusionMatrixResult.producerAccuracy=producerAccuracy;
+	confusionMatrixResult.userAccuracy=userAccuracy;
+	confusionMatrixResult.omissionError=omissionError;
+	confusionMatrixResult.comissionError=comissionError;
+	confusionMatrixResult.overallAccuracy= numberOfWellClassified/confusionMatrixResult.totalSamples;
+	confusionMatrixResult.overallError= 1-confusionMatrixResult.overallAccuracy;
+	confusionMatrixResult.indexKappa={}
+	confusionMatrixResult.indexKappa.observedAgreement= numberOfWellClassified/confusionMatrixResult.totalSamples;
+	var totalClassified_totalReference_product=0;
+
+	var totalClassified_totalReference_keys= [...new Set([ ...Object.keys(totalClassified), ...Object.keys(totalReference)])]
+	
+	for(var d=0;d<totalClassified_totalReference_keys.length;d++){
+				totalClassified_totalReference_product+=totalClassified[totalClassified_totalReference_keys[d]] * totalReference[totalClassified_totalReference_keys[d]]
+ 			if(Number.isNaN(totalClassified_totalReference_product))debugger
+	}
+	confusionMatrixResult.indexKappa.expectedAgreement= totalClassified_totalReference_product/confusionMatrixResult.totalSamples**2;
+	confusionMatrixResult.indexKappa.result= (confusionMatrixResult.indexKappa.observedAgreement-confusionMatrixResult.indexKappa.expectedAgreement)/(1-confusionMatrixResult.indexKappa.expectedAgreement);
+	
+	if (!metadata.dataQualityInfos)	metadata.dataQualityInfos=[];
+		metadata.dataQualityInfos.push(
+			{
+				"reports": [
+					{
+					"type": "DQ_ThematicClassificationCorrectness",
+					"measureIdentification": {
+						"code": "MisclassificationMatrix",
+						"domains": [
+						{
+							"name": "ClassificationCorrectness",
+							"params": [
+								{
+									"name": "classified attribute",
+									"value": classified
+								},
+								{
+									"name": "reference attribute",
+									"value": reference
+								}
+							]
+						}
+						]
+					},
+
+					"results": [
+						{
+						"type": "DQ_QuantitativeResult",
+
+						"errorStatistic": {
+							"metric": {
+							"name": "misclassification matrix",
+							"params": [
+								{
+								"name": "subtype",
+								"value": "matrix"
+								}
+							]
+							}
+						},
+
+						"valueType": "matrix",
+
+						"values": [
+							valuesInMetadata
+						],
+
+						"derivedResults": {
+							"overallAccuracy": confusionMatrixResult.overallAccuracy,
+							"overallError": confusionMatrixResult.overallError,
+
+							"kappa": {
+								"value": confusionMatrixResult.indexKappa.result,
+								"observedAgreement": confusionMatrixResult.indexKappa.observedAgreement,
+								"expectedAgreement": confusionMatrixResult.indexKappa.expectedAgreement
+							},
+
+							"producerAccuracy": confusionMatrixResult.producerAccuracy,
+							"userAccuracy": confusionMatrixResult.userAccuracy,
+
+							"omissionError": confusionMatrixResult.omissionError,
+							"commissionError": confusionMatrixResult.comissionError
+						}
+						}
+					]
+					}
+				]
+				})
+
+
+
+
+
+	return confusionMatrixResult;
+
+
+}
+
+
+

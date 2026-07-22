@@ -367,21 +367,21 @@ function JoinTablesData(dataLeft, dataRight, dataLeftAttributesNull, dataRightAt
 			dataRightNameInJoin[i]==null;
 			continue; //This should be not included as it is already there.
 		}
-		for (var j=0; j<dataLeftAttributesArray.length; j++) {
-			if (dataLeftAttributesArray==dataRightAttributesArray) {
+		for (var j=0; j<dataRightAttributesArray.length; j++) {
+			if (dataLeftAttributesArray.includes(dataRightAttributesArray[i])) {
 				//Change the name
-				dataRightNameInJoin[i]=dataRightAttributesArray+"_"+Math.floor(Math.random() * 100000);
-				dataCurrentAttributes[dataRightNameInJoin[i]]=deapCopy(dataRightAttributes[dataRightAttributesArray[i]]);
+				dataRightNameInJoin[i]=dataRightAttributesArray[i] + "_Table2";
+				dataCurrentAttributes[dataRightNameInJoin[i]] = deapCopy(dataRightAttributes[dataRightAttributesArray[i]]);
 				break;
 			}
-		}
+		} 
 		if (j<dataLeftAttributesArray.length) //Already done
 			continue;
 		//Add
 		dataRightNameInJoin[i]=dataRightAttributesArray[i];
 		dataCurrentAttributes[dataRightNameInJoin[i]]=deapCopy(dataRightAttributes[dataRightAttributesArray[i]]);
 	}
-			
+
 	var dataCurrentAttributesArray = Object.keys(dataCurrentAttributes);
 	
 	//Sort a duplicate of the second tabla by the matching criteria.
@@ -435,8 +435,15 @@ function JoinTablesData(dataLeft, dataRight, dataLeftAttributesNull, dataRightAt
 			if (!matchRightRecord[j]) {
 				dataCurrent.push({});
 				for (var i=0; i<dataRightAttributesArray.length; i++) {
-					if (dataRightNameInJoin[i]!=null)
-						dataCurrent[dataCurrent.length-1][dataRightNameInJoin[i]]=dataRightSorted[j][dataRightAttributesArray[i]];
+					//if (dataRightNameInJoin[i]!=null)
+					for (var e=0;e<options.RowMatching.length;e++){
+						if (options.RowMatching[e].right==dataRightAttributesArray[i]){
+							dataCurrent[dataCurrent.length-1][options.RowMatching[e].left]=dataRightSorted[j][dataRightAttributesArray[i]];
+							break;
+						}else{
+							dataCurrent[dataCurrent.length-1][dataRightAttributesArray[i]]=dataRightSorted[j][dataRightAttributesArray[i]];
+						}
+					}
 				}
 			}
 		}
@@ -1541,7 +1548,7 @@ var columnCreated=false, record, json, point;
 			record=data[i];
 			if (!record[selectedOptions.zoneIdIn])
 				continue;
-			point=h3.cellToLatLng(record[selectedOptions.zoneIdIn]);
+			point=h3.cellToLatLng(typeof record[selectedOptions.zoneIdIn]==="number" ? record[selectedOptions.zoneIdIn].toString(16) : record[selectedOptions.zoneIdIn]);
 			json={type:"Point", coordinates:[point[1], point[0]]};
 			if (selectedOptions.radioOut=="JSON") {
 				record[selectedOptions.nameOut]=json;
@@ -1555,7 +1562,7 @@ var columnCreated=false, record, json, point;
 					record[selectedOptions.nameOut]=ngeohash_encode(point[0], point[1], selectedOptions.level);
 					columnCreated=true;
 				} else if (selectedOptions.DGGSOut=="UberH3") {
-					record[selectedOptions.nameOut]=record[selectedOptions.zoneIdIn];
+					record[selectedOptions.nameOut]=typeof (record[selectedOptions.zoneIdIn])==="number" ? record[selectedOptions.zoneIdIn].toString(16) : record[selectedOptions.zoneIdIn];
 					columnCreated=true;
 				} else {
 					record[selectedOptions.nameOut]=LongLatToDGGS(selectedOptions.DGGSOut, {longitude: point[1], latitude: point[0]}, selectedOptions.level);
@@ -1827,13 +1834,26 @@ var data=[], j=0, dataAttributes={}, cells, g;
 	for (var l=selectedOptions.level; l>=(selectedOptions.parents ? (selectedOptions.DGGS=="Geohash" ? 1 : 0) : selectedOptions.level); l--) {
 		if (selectedOptions.DGGS=="Geohash")
 			cells=ngeohash_bboxes(selectedOptions.minLat, selectedOptions.minLong, selectedOptions.maxLat, selectedOptions.maxLong, selectedOptions.level);		
-		else if (selectedOptions.DGGS=="UberH3")
-			cells=h3.polygonToCellsExperimental([[selectedOptions.minLat, selectedOptions.minLong],
-						[selectedOptions.minLat, selectedOptions.maxLong], 
+		else if (selectedOptions.DGGS=="UberH3"){
+			if (selectedOptions.maxLong-selectedOptions.minLong>180) {  //avoiding retrieving the cells from the "other side of the Earth".
+				cells=h3.polygonToCellsExperimental([[selectedOptions.minLat, selectedOptions.minLong],
+						[selectedOptions.maxLat, selectedOptions.minLong], 
+						[selectedOptions.maxLat, 0],
+						[selectedOptions.minLat, 0],
+						[selectedOptions.minLat, selectedOptions.minLong]], l, h3.POLYGON_TO_CELLS_FLAGS.containmentOverlapping);
+				cells.push(...h3.polygonToCellsExperimental([[selectedOptions.minLat, 0],
+						[selectedOptions.maxLat, 0], 
 						[selectedOptions.maxLat, selectedOptions.maxLong],
-						[selectedOptions.maxLat, selectedOptions.minLong],
-						[selectedOptions.minLat, selectedOptions.minLong]], l, h3.POLYGON_TO_CELLS_FLAGS.containmentOverlapping)
-		else
+						[selectedOptions.minLat, selectedOptions.maxLong],
+						[selectedOptions.minLat, 0]], l, h3.POLYGON_TO_CELLS_FLAGS.containmentOverlapping));
+				cells=[...new Set(cells)];   //This avoids repetitions in the list.
+			} else
+				cells=h3.polygonToCellsExperimental([[selectedOptions.minLat, selectedOptions.minLong],
+						[selectedOptions.maxLat, selectedOptions.minLong], 
+						[selectedOptions.maxLat, selectedOptions.maxLong],
+						[selectedOptions.minLat, selectedOptions.maxLong],
+						[selectedOptions.minLat, selectedOptions.minLong]], l, h3.POLYGON_TO_CELLS_FLAGS.containmentOverlapping);
+		}else
 			cells=DGGSZonesInABBox(selectedOptions.DGGS, selectedOptions.minLong, selectedOptions.minLat, selectedOptions.maxLong, selectedOptions.maxLat, l);
 
 		if (selectedOptions.centroid) {
